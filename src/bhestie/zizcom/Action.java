@@ -4,9 +4,10 @@ import java.io.Serializable;
 
 public class Action implements Serializable{
 	private static final long serialVersionUID = 1L;
-	private String from;
-	private String to;
-	private String state;
+	
+	private final String from;
+	private final String to;
+	private final String state;
 	
 	/**
 	 * An action object to write to the server the next move
@@ -19,33 +20,34 @@ public class Action implements Serializable{
 		this.to = to;
 		this.state = state;
 	}
-	
-	
-	public Action() {
-		this.from = "";
-		this.to = "";
-		this.state = "";
+	/**
+	 *  An action object to write to the server the next move
+	 * @param fx form x
+	 * @param fy from y
+	 * @param tx to x
+	 * @param ty to y
+	 * @param state current status
+	 */
+	public Action(int fx, int fy, int tx, int ty, String state) {
+		this.from = String.format("%c%d", this.convertToAlphaBeth(fx), fy);
+		this.to = String.format("%c%d", this.convertToAlphaBeth(tx), ty);
+		this.state = state;
 	}
 
-
+	private char convertToAlphaBeth(int input){
+		return (char) ('`' + input);
+	}
+	
 	public synchronized String getFrom() {
 		return from;
-	}
-	public synchronized void setFrom(String from) {
-		this.from = from;
 	}
 	public synchronized String getTo() {
 		return to;
 	}
-	public synchronized void setTo(String to) {
-		this.to = to;
-	}
 	public synchronized String getState() {
 		return state;
 	}
-	public synchronized void setState(String state) {
-		this.state = state;
-	}
+
 
 
 	@Override

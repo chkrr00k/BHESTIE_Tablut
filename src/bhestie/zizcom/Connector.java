@@ -14,7 +14,7 @@ public class Connector {
 	private String host = null;
 	private String player = null;
 	private DataOutputStream dos = null;
-	private DataInputStream din = null;
+	private DataInputStream dis = null;
 	private Gson gson = null;
 	
 	/**
@@ -46,10 +46,10 @@ public class Connector {
 		try{
 			this.s = new Socket(this.host, this.port);
 			this.dos = new DataOutputStream(this.s.getOutputStream());
-			this.din = new DataInputStream(this.s.getInputStream());
+			this.dis = new DataInputStream(this.s.getInputStream());
+			this.host = null; // saves us some bytes;
 			return true;
 		}catch(IOException e){
-			System.err.println(e.getMessage());
 			return false;
 		}
 	}
@@ -58,7 +58,7 @@ public class Connector {
 	 * @throws IOException
 	 */
 	public void present() throws IOException{
-		this.write(this.player);
+		this.write(this.gson.toJson(this.player));
 	}
 	/**
 	 * Read current read board status
@@ -67,7 +67,16 @@ public class Connector {
 	 */
 	public Board readBoard() throws IOException{
 		return this.gson.fromJson(this.read(), Board.class);
-
+	}
+	public boolean dispose(){
+		try{
+			this.dis.close();
+			this.dos.close();
+			this.s.close();
+		}catch(IOException e){
+			return false;
+		}
+		return true;
 	}
 	/**
 	 * Write an action to the server
@@ -79,9 +88,9 @@ public class Connector {
 
 	}
 	private String read() throws IOException{
-		int len = this.din.readInt();
+		int len = this.dis.readInt();
 		byte[] rB = new byte[len];
-		this.din.readFully(rB, 0, len);
+		this.dis.readFully(rB, 0, len);
 		return new String(rB, StandardCharsets.UTF_8);
 	}
 	private void write(String input) throws IOException{
