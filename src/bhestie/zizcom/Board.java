@@ -1,7 +1,6 @@
 package bhestie.zizcom;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,6 +10,7 @@ public class Board implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	private static final int PAWNS_NUMBER = 25;
+	@SuppressWarnings("unused")
 	private static final String EMPTY_TILE = "EMPTY";
 	private static final String BLACK_TILE = "BLACK";
 	private static final String WHITE_TILE = "WHITE";
@@ -18,7 +18,6 @@ public class Board implements Serializable{
 	
 	private String[][] board;
 	private String turn;
-	//XXX tmp structure;
 	private transient List<Pawn> pawns = null;
 	
 	
@@ -29,7 +28,7 @@ public class Board implements Serializable{
 		this.pawns = new LinkedList<Pawn>();
 	}
 	/**
-	 * Convert the internal received array to a list of pawns
+	 * Convert the internal received array to a list of pawns and frees the pawn array
 	 */
 	public void convert(){
 		final short size = (short) (this.board.length - 1); // start point of the array
@@ -54,6 +53,7 @@ public class Board implements Serializable{
 				}
 			}
 		}
+		this.board = null; // frees the board;
 	}
 	
 	public List<Pawn> get(){
