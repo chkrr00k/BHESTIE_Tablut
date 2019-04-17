@@ -3,15 +3,11 @@ package bhestie.levpos;
 public class Pawn {
 	public boolean bw; //false=white, true=black
 	public Position position;
-	public int x; // 1 to 9
-	public int y; // 1 to 9
 	public boolean king = false; // true if is a King
 
 	public Pawn(boolean bw, int x, int y, boolean king) {
 		this.bw = bw;
 		this.position = new Position(x, y);
-		this.x = x;
-		this.y = y;
 		this.king = king;
 	}
 
@@ -26,8 +22,8 @@ public class Pawn {
 	@Override
 	public String toString() {
 		StringBuilder result = new StringBuilder();
-		result.append(x);
-		result.append(y);
+		result.append(this.position.x);
+		result.append(this.position.y);
 		result.append(this.bw ? 'B' : (this.king ? 'K' : 'W'));
 		return result.toString();
 	}

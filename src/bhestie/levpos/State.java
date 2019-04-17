@@ -87,23 +87,23 @@ public class State {
 		// se è simmetrica NORD-SUD e/o EST-OVEST
 		for (Pawn currentPawn : this.pawns.stream().filter(p -> p.filterByTurn(this.turn)).collect(Collectors.toList())) {
 
-			for (int i = currentPawn.x + 1; i <= 9; i++) {
-				if (!this.checkXY(i, currentPawn.y, actions, currentPawn))
+			for (int i = currentPawn.position.x + 1; i <= 9; i++) {
+				if (!this.checkXY(i, currentPawn.position.y, actions, currentPawn))
 					break;
 			}
 
-			for (int i = currentPawn.x - 1; i >= 1; i--) {
-				if (!this.checkXY(i, currentPawn.y, actions, currentPawn))
+			for (int i = currentPawn.position.x - 1; i >= 1; i--) {
+				if (!this.checkXY(i, currentPawn.position.y, actions, currentPawn))
 					break;
 			}
 
-			for (int i = currentPawn.y + 1; i <= 9; i++) {
-				if(!this.checkXY(currentPawn.x, i, actions, currentPawn))
+			for (int i = currentPawn.position.y + 1; i <= 9; i++) {
+				if(!this.checkXY(currentPawn.position.x, i, actions, currentPawn))
 					break;
 			}
 
-			for (int i = currentPawn.y - 1; i >= 1; i--) {
-				if(!this.checkXY(currentPawn.x, i, actions, currentPawn))
+			for (int i = currentPawn.position.y - 1; i >= 1; i--) {
+				if(!this.checkXY(currentPawn.position.x, i, actions, currentPawn))
 					break;
 			}
 
@@ -115,7 +115,7 @@ public class State {
 	private boolean checkXY(final int x,final int y, List<State> actions, Pawn currentPawn) {
 		boolean haveToAddThePawn;
 
-		haveToAddThePawn = !this.pawns.stream().anyMatch(p -> p.y == y && p.x == x); // Se non c'è già un altro pezzo
+		haveToAddThePawn = !this.pawns.stream().anyMatch(p -> p.position.y == y && p.position.x == x); // Se non c'è già un altro pezzo
 
 		if (currentPawn.bw == false /*is white*/
 				|| currentPawn.bw == true && !citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn)) /*il pezzo è nero e non in una citadel*/ ) {
@@ -155,12 +155,12 @@ public class State {
 					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
 			
 			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
-				final int partnerPositionX_2 = pawn.x + (deltaY>0 ? 1 : 0);
-				final int partnerPositionY_2 = pawn.y + (deltaX>0 ? 1 : 0);
+				final int partnerPositionX_2 = pawn.position.x + (deltaY>0 ? 1 : 0);
+				final int partnerPositionY_2 = pawn.position.y + (deltaX>0 ? 1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX_2 && p.position.y == partnerPositionY_2)) ||
 						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
-				final int partnerPositionX_3 = pawn.x + (deltaY>0 ? -1 : 0);
-				final int partnerPositionY_3 = pawn.y + (deltaX>0 ? -1 : 0);
+				final int partnerPositionX_3 = pawn.position.x + (deltaY>0 ? -1 : 0);
+				final int partnerPositionY_3 = pawn.position.y + (deltaX>0 ? -1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX_3 && p.position.y == partnerPositionY_3)) ||
 						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
 			}
@@ -215,7 +215,7 @@ public class State {
 			for(int j = 1; j <= 9; j++) { // scan x
 				int x = j;
 				int y = i;
-				Optional<Pawn> pawn = this.pawns.stream().filter(p -> p.x==x && p.y==y).findAny();
+				Optional<Pawn> pawn = this.pawns.stream().filter(p -> p.position.x==x && p.position.y==y).findAny();
 				if(pawn.isPresent()) {
 					result.append((pawn.get().bw ? 'B' : (pawn.get().king) ? 'K' : 'W'));
 				} else {
