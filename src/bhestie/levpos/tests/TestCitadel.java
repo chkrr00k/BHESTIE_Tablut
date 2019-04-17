@@ -1,19 +1,18 @@
 package bhestie.levpos.tests;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
-
-import org.junit.jupiter.api.Test;
 
 import bhestie.levpos.Citadel;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.Position;
 
-class TestCitadel {
+public class TestCitadel {
 
 	@Test
-	void testCitadel() {
+	public void testCitadel() {
 		ArrayList<Position> positions = new ArrayList<>(4);
 		positions.add(new Position(5, 1));
 		positions.add(new Position(4, 1));

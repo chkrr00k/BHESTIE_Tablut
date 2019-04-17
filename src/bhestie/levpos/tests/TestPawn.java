@@ -1,25 +1,24 @@
 package bhestie.levpos.tests;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
 
 import bhestie.levpos.Pawn;
 import bhestie.zizcom.Board;
 
-class TestPawn {
+public class TestPawn {
 
 	@Test
-	void testCreatingPawn() {
+	public void testCreatingPawn() {
 		Pawn pawn = new Pawn(true, 1, 2, false); // create black in (1,1)
 		assertEquals(1, pawn.position.x);
 		assertEquals(2, pawn.position.y);
 	}
 
 	@Test
-	void testPawnFromBoardReceived() {
+	public void testPawnFromBoardReceived() {
 		Board b = new Board();
 		String[][] exampleBoard = {
 				{"EMPTY","BLACK","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY","EMPTY"},

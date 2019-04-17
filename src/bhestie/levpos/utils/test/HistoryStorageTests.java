@@ -1,11 +1,10 @@
 package bhestie.levpos.utils.test;
 
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.List;
-
-import org.junit.Test;
 
 import bhestie.levpos.Pawn;
 import bhestie.levpos.utils.HistoryStorage;

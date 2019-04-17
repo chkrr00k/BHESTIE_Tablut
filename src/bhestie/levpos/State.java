@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import bhestie.levpos.utils.HistoryStorage;
+
 public class State {
+	public final HistoryStorage historyStorage;
 	/**
 	 * Turn. TRUE=Black, FALSE=White
 	 */
@@ -92,14 +95,19 @@ public class State {
 		protectedKingPositions.add(new Position(6, 5));
 	}
 	
+	public State(List<Pawn> pawns, boolean turn) {
+		this(pawns, turn, new HistoryStorage());
+	}
+	
 	/**
 	 * Creates a new State
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
 	 */
-	public State(List<Pawn> pawns, boolean turn){
+	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage){
 		this.turn = turn;
 		this.pawns = new LinkedList<>(pawns);
+		this.historyStorage = historyStorage;
 	}
 
 	/**
@@ -167,9 +175,12 @@ public class State {
 			List<Pawn> newPawns = new LinkedList<>(this.pawns);
 			newPawns.remove(currentPawn);
 			Pawn newPawn = new Pawn(currentPawn.bw, x, y, currentPawn.king);
-			checkPawnsEaten(x, y, currentPawn, newPawns);
+			boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
 			newPawns.add(newPawn);
-			actions.add(new State(newPawns, !this.turn));
+			HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : this.historyStorage.clone()); // if eaten -> new storage
+			newHistoryStorage.add(newPawns);
+			State newState = new State(newPawns, !this.turn, newHistoryStorage);
+			actions.add(newState);
 			return true;
 		}
 		return false;
