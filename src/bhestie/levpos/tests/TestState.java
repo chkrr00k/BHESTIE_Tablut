@@ -1,12 +1,26 @@
 package bhestie.levpos.tests;
 
+<<<<<<< HEAD
 import static org.junit.Assert.*;
 import org.junit.Test;
+=======
+/*
+import static org.junit.Assert.*;
+import org.junit.Test;
+*/
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+>>>>>>> branch 'master' of https://github.com/chkrr00k/BHESTIE_Tablut.git
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> branch 'master' of https://github.com/chkrr00k/BHESTIE_Tablut.git
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
 

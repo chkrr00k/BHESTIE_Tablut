@@ -1,9 +1,11 @@
 package bhestie.levpos.tests;
 
+import org.junit.jupiter.api.Test;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
 import java.util.ArrayList;
+
 
 import bhestie.levpos.Citadel;
 import bhestie.levpos.Pawn;
