@@ -1,20 +1,25 @@
 package bhestie.levpos.tests;
 
+/*
+import static org.junit.Assert.*;
+import org.junit.Test;
+*/
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+
 
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
 
-class TestState {
+public class TestState {
 
 	@Test
-	void testPrintBoard() {
+	public void testPrintBoard() {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(true, 1, 2, false));
 		
@@ -23,7 +28,7 @@ class TestState {
 	}
 	
 	@Test
-	void testDoubleEatNotNearCitadel() {
+	public void testDoubleEatNotNearCitadel() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 1, 1, true)); // King, to be sure is in the board
 		
@@ -48,7 +53,7 @@ class TestState {
 	}
 	
 	@Test
-	void testTripleEatNearCitadel() {
+	public void testTripleEatNearCitadel() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 1, 1, true)); // King, to be sure is in the board
 		
@@ -74,7 +79,7 @@ class TestState {
 	}
 	
 	@Test
-	void testTripleEatNearCitadelOtherOrientation() {
+	public void testTripleEatNearCitadelOtherOrientation() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 1, 1, true)); // King, to be sure is in the board
 		
@@ -100,7 +105,7 @@ class TestState {
 	}
 	
 	@Test
-	void testNotPassiveEat() {
+	public void testNotPassiveEat() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 1, 1, true)); // King, to be sure is in the board
 		
@@ -123,7 +128,7 @@ class TestState {
 	}
 	
 	@Test
-	void testEatKingNearTrone() {
+	public void testEatKingNearTrone() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 4, 5, true)); // King, to be sure is in the board
 		
@@ -146,7 +151,7 @@ class TestState {
 	}
 	
 	@Test
-	void testNotEatWithInternatCitadelAsPartner() {
+	public void testNotEatWithInternatCitadelAsPartner() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		
 		initialPawnState.add(new Pawn(false, 2, 7, false)); // Pawn to move that eats pawns in (7,3) and (7,5)
