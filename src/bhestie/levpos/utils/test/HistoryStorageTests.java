@@ -59,9 +59,9 @@ public class HistoryStorageTests {
 		assertTrue("Contains a just put state", hs.includes(state));
 		hs.clear();
 		assertFalse("Contains a just cleared status", hs.includes(state2));
-		hs.add(state);
+		hs.add(state2);
 		try {
-			hs.add(state);
+			hs.add(state2);
 			fail("Illegal Argument Exception was expected");
 		} catch (IllegalArgumentException e) {}
 		assertTrue("FAIL THIS IF YOU CAN", true);
