@@ -45,8 +45,8 @@ public class Tests {
 		b = new Gson().fromJson(board, Board.class);
 		b.convert();
 		assertTrue("Board size from json", b.get().size() == 1);
-		assertTrue("Pawn's x form json", b.get().get(0).x == 0);
-		assertTrue("Pawn's y form json", b.get().get(0).y == 0);
+		assertTrue("Pawn's x form json", b.get().get(0).x == 1);
+		assertTrue("Pawn's y form json", b.get().get(0).y == 1);
 		assertTrue("Pawn's type form json", !b.get().get(0).bw);
 		assertTrue("If pawn is king form json", !b.get().get(0).king);
 	}
@@ -81,8 +81,8 @@ public class Tests {
 		Board b = c.readBoard();
 		b.convert();
 		assertTrue("Board size from server", b.get().size() == 1);
-		assertTrue("Pawn's x form server", b.get().get(0).x == 0);
-		assertTrue("Pawn's y form server", b.get().get(0).y == 0);
+		assertTrue("Pawn's x form server", b.get().get(0).x == 1);
+		assertTrue("Pawn's y form server", b.get().get(0).y == 1);
 		assertTrue("Pawn's type form server", !b.get().get(0).bw);
 		assertTrue("If pawn is king form server", !b.get().get(0).king);
 		

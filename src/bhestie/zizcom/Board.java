@@ -37,17 +37,17 @@ public class Board implements Serializable{
 			for(short j = size; j >= 0 && p <= PAWNS_NUMBER; j--){ // ditto
 				if((tile = this.board[i][j]).equals(BLACK_TILE)){ // if the tile is black
 					
-					this.pawns.add(new Pawn(true, i, j, false));
+					this.pawns.add(new Pawn(true, j+1, i+1, false));
 					p++;
 					
 				}else if(tile.equals(WHITE_TILE)){ // if the tile is white
 					
-					this.pawns.add(new Pawn(false, i, j, false));
+					this.pawns.add(new Pawn(false, j+1, i+1, false));
 					p++;
 					
 				}else if(tile.equals(KING_TILE)){ // if the tile is king
 					
-					this.pawns.add(new Pawn(false, i, j, true));
+					this.pawns.add(new Pawn(false, j+1, i+1, true));
 					p++;
 					
 				}

@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 public class State {
@@ -113,7 +112,7 @@ public class State {
 		return actions;
 	}
 
-	private boolean checkXY(int x, int y, List<State> actions, Pawn currentPawn) {
+	private boolean checkXY(final int x,final int y, List<State> actions, Pawn currentPawn) {
 		boolean haveToAddThePawn;
 
 		haveToAddThePawn = !this.pawns.stream().anyMatch(p -> p.y == y && p.x == x); // Se non c'è già un altro pezzo
@@ -135,7 +134,6 @@ public class State {
 			newPawns.remove(currentPawn);
 			Pawn newPawn = new Pawn(currentPawn.bw, x, y, currentPawn.king);
 			checkPawnsEaten(x, y, currentPawn, newPawns);
-			// TODO aggiungere funzione per calcolare i "mangiati"
 			newPawns.add(newPawn);
 			actions.add(new State(newPawns, !this.turn));
 			return true;
@@ -143,7 +141,7 @@ public class State {
 		return false;
 	}
 
-	private void checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
+	private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
 		// Get all the "near" pawns (near means +1 or -1 in vertical or horrizontal) 
 		List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.bw != movedPawn.bw && (Math.abs(p.position.x - toX) + Math.abs(p.position.y - toY) == 1)).collect(Collectors.toList());
 		for (Pawn pawn : pawnOfInterest) {
@@ -171,7 +169,9 @@ public class State {
 			if (haveToEat) {
 				newPawns.remove(pawn);
 			}
+			return haveToEat;
 		}
+		return false;
 	}
 
 	public long getHeuristic() {
@@ -180,7 +180,8 @@ public class State {
 	}
 
 	public boolean isTerminal() {
-		// TODO inserire se black finisce i pezzi
+		if (!this.pawns.stream().anyMatch(p -> p.bw == true /*is black*/)) // No more black pawns
+			return true;
 		Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
 		// XXX comprimere gli if di sotto
 		if (!king.isPresent()) { // Se non c'è il re -> nero vince
@@ -191,6 +192,7 @@ public class State {
 		return false;
 	}
 
+	// XXX rimuovere ed evitare la chiamata a funzione
 	private boolean kingEscaped(Pawn king) {
 		return (escapePositions.contains(king.position)); // Se il re è nella posizione di una via di fuga
 	}
@@ -210,10 +212,10 @@ public class State {
 
 	public String stampaScacchiera() {
 		StringBuilder result = new StringBuilder();
-		for(int i = 1; i <= 9; i++) {
-			for(int j = 1; j <= 9; j++) {
-				int x = i;
-				int y = j;
+		for(int i = 1; i <= 9; i++) { // scan y
+			for(int j = 1; j <= 9; j++) { // scan x
+				int x = j;
+				int y = i;
 				Optional<Pawn> pawn = this.pawns.stream().filter(p -> p.x==x && p.y==y).findAny();
 				if(pawn.isPresent()) {
 					result.append((pawn.get().bw ? 'B' : (pawn.get().king) ? 'K' : 'W'));
