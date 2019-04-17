@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 
@@ -64,29 +65,29 @@ public class State {
 		citadelPositions.add(new Position(6, 9));
 		citadelPositions.add(new Position(5, 8));
 		citadels.add(new Citadel(citadelPositions));
-		
+
 		/***** ESCAPE POSITIONS *****/
-		
+
 		escapePositions.add(new Position(1, 2));
 		escapePositions.add(new Position(1, 3));
 		escapePositions.add(new Position(1, 7));
 		escapePositions.add(new Position(1, 8));
-		
+
 		escapePositions.add(new Position(2, 1));
 		escapePositions.add(new Position(3, 1));
 		escapePositions.add(new Position(7, 1));
 		escapePositions.add(new Position(8, 1));
-		
+
 		escapePositions.add(new Position(9, 2));
 		escapePositions.add(new Position(9, 3));
 		escapePositions.add(new Position(9, 7));
 		escapePositions.add(new Position(9, 8));
-		
+
 		escapePositions.add(new Position(2, 9));
 		escapePositions.add(new Position(3, 9));
 		escapePositions.add(new Position(7, 9));
 		escapePositions.add(new Position(8, 9));
-		
+
 		/***** PROTECTED KING POSITIONS *****/
 		protectedKingPositions.add(tronePosition);
 		protectedKingPositions.add(new Position(5, 6));
@@ -94,15 +95,21 @@ public class State {
 		protectedKingPositions.add(new Position(4, 5));
 		protectedKingPositions.add(new Position(6, 5));
 	}
-	
-	public State(List<Pawn> pawns, boolean turn) {
-		this(pawns, turn, new HistoryStorage());
-	}
-	
+
 	/**
 	 * Creates a new State
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
+	 */
+	public State(List<Pawn> pawns, boolean turn) {
+		this(pawns, turn, new HistoryStorage());
+	}
+
+	/**
+	 * Creates a new State
+	 * @param pawns The pawns in the board
+	 * @param turn The turn. TRUE=Black, FALSE=White
+	 * @param historyStorage The history storage
 	 */
 	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage){
 		this.turn = turn;
@@ -117,19 +124,73 @@ public class State {
 	public Collection<State> getActions(){
 		List<State> actions = new LinkedList<>();
 
-		// TODO controllare se la scacchiera è simmetrica, nel caso non controllare tutti i pawn
-		// se è simmetrica NORD-SUD e/o EST-OVEST
-		for (Pawn currentPawn : this.pawns.stream().filter(p -> p.filterByTurn(this.turn)).collect(Collectors.toList())) {
+		boolean simmetricalNorthSouth = true;
+		boolean simmetricalEastWest = true;
+		boolean simmetricalDiagonal = true;
+		boolean simmetricalAntiDiagonal = true;
+
+		// Check the simmetrical North-South
+		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y < 5).collect(Collectors.toList())) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y==10-pawn.position.y && !p.king)) {
+				simmetricalNorthSouth = false;
+				break;
+			}
+		}
+
+		// Check the simmetrical East-West
+		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x < 5).collect(Collectors.toList())) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==10-pawn.position.x && p.position.y==pawn.position.y && !p.king)) {
+				simmetricalEastWest = false;
+				break;
+			}
+		}
+
+		// Check the simmetrical Diagonal
+		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y <= p.position.x).collect(Collectors.toList())) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && !p.king)) {
+				simmetricalDiagonal = false;
+				break;
+			}
+		}
+
+		// Check the simmetrical Anti-Diagonal
+		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x <= p.position.y).collect(Collectors.toList())) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x+pawn.position.y>=10 && !p.king)) {
+				simmetricalAntiDiagonal = false;
+				break;
+			}
+		}
+
+		Stream<Pawn> pawnToScanStream = this.pawns.stream().filter(p -> p.filterByTurn(this.turn));
+
+		if (simmetricalEastWest)
+			pawnToScanStream = pawnToScanStream.filter(p -> p.position.x >= 5); // Takes only the high part, X from 5 to 9 (from E to I)
+		if (simmetricalNorthSouth)
+			pawnToScanStream = pawnToScanStream.filter(p -> p.position.y >= 5); // Takes only the high part, Y from 5 to 9
+		if (simmetricalDiagonal)
+			pawnToScanStream = pawnToScanStream.filter(p -> p.position.y >= p.position.x); // Takes only the lower triangle part
+		if (simmetricalAntiDiagonal)
+			pawnToScanStream = pawnToScanStream.filter(p -> p.position.x+p.position.y >= 10); // Takes only the lower triangle part (built in the anti-diagonal way)
+
+		Collection<Pawn> pawnToScan = pawnToScanStream.collect(Collectors.toList());
+
+		boolean checkOnlyXPosition = (simmetricalEastWest && simmetricalNorthSouth && simmetricalDiagonal && simmetricalAntiDiagonal); // if this -> it's simmetrical and I can check only the X assis
+		for (Pawn currentPawn : pawnToScan) {
+
+			final int stopDecrementX = (simmetricalEastWest && simmetricalNorthSouth && currentPawn.position.x==5 ? 5 : 1); // If it's complete simmetrical and the currentPawn is in the simmetrical-assis I can stop watching with X=5
 
 			for (int i = currentPawn.position.x + 1; i <= 9; i++) {
 				if (!this.checkXY(i, currentPawn.position.y, actions, currentPawn))
 					break;
 			}
 
-			for (int i = currentPawn.position.x - 1; i >= 1; i--) {
+			for (int i = currentPawn.position.x - 1; i >= stopDecrementX; i--) {
 				if (!this.checkXY(i, currentPawn.position.y, actions, currentPawn))
 					break;
 			}
+
+			if (checkOnlyXPosition)
+				continue;
 
 			for (int i = currentPawn.position.y + 1; i <= 9; i++) {
 				if(!this.checkXY(currentPawn.position.x, i, actions, currentPawn))
@@ -206,7 +267,7 @@ public class State {
 			boolean haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX && p.position.y == partnerPositionY)) ||
 					(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
 					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
-			
+
 			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
 				final int partnerPositionX_2 = pawn.position.x + (deltaY>0 ? 1 : 0);
 				final int partnerPositionY_2 = pawn.position.y + (deltaX>0 ? 1 : 0);
@@ -217,7 +278,7 @@ public class State {
 				haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX_3 && p.position.y == partnerPositionY_3)) ||
 						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
 			}
-			
+
 			if (haveToEat) {
 				newPawns.remove(pawn);
 				haveEaten = true;
@@ -295,7 +356,7 @@ public class State {
 		}
 		return result.toString();
 	}
-	
+
 	@Override
 	public String toString() {
 		return this.printBoard();

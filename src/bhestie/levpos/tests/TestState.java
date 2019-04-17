@@ -161,5 +161,33 @@ public class TestState {
 
 		assertTrue(afterState.stream().allMatch(s -> s.pawns.size() == initialPawnState.size()));
 	}
+	
+	@Test
+	public void testSimmetricsGeneratingChildStates() {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		State s = new State(pawns, false); // White turn
+		assertEquals(5, s.getActions().size());
+	}
+	
+	@Test
+	public void test2SimmetricsGeneratingChildStates() {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		
+		pawns.add(new Pawn(false, 2, 3, false));
+		pawns.add(new Pawn(false, 2, 7, false));
+		pawns.add(new Pawn(false, 8, 3, false));
+		pawns.add(new Pawn(false, 8, 7, false));
+		
+		State s = new State(pawns, false); // White turn
+		assertEquals(12, s.getActions().size());
+	}
 
 }
