@@ -18,6 +18,6 @@ public class Citadel {
 	}
 	public boolean isXYInFringeCitadels(int x, int y) {
 		int position = (this.citadelPositions.indexOf(new Position(x, y)));
-		return (position >= 0 && position != 3);
+		return (position >= 0 && position != 1);
 	}
 }
