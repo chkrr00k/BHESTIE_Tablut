@@ -2,6 +2,7 @@ package bhestie.levpos;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 	
@@ -49,11 +50,24 @@ public class Main {
 	    System.out.println("Total Memory  : " + Runtime.getRuntime().totalMemory() + " bytes");
 	    System.out.println("Max Memory    : " + Runtime.getRuntime().maxMemory() + " bytes");
 		
+	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+		long a = System.nanoTime();
+		System.out.println(Minimax.alphaBeth(new State(initialState, false), 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
+		long b = System.nanoTime();
+		long c = System.nanoTime();
+		System.out.println("Completed:");
+		System.out.println("Started at " + a + " time stamp");
+		System.out.println("Generated the tree in " + (b - a) + "ns\n\t(which is: " + TimeUnit.MILLISECONDS.convert((b - a), TimeUnit.NANOSECONDS) +"ms)");
+		System.out.println("Total invocation time: " + (c - a) + "\n\t(which is " + TimeUnit.MILLISECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"ms)");
+		System.out.println("\t\t(which is " + TimeUnit.SECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"s)");
+	    
         boolean end = false;
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
         	System.out.println("Turno " + (statoCorrente.turn ? "Black" : "White"));
         	System.out.println(statoCorrente.stampaScacchiera());
+        	
+        	//System.out.println(Minimax.alphaBeth(statoCorrente, 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
         	
         	statoCorrente = Minimax.minimaxDecision(statoCorrente);
             if (statoCorrente.isTerminal()){
