@@ -18,29 +18,29 @@ public class State {
 	private static final List<Position> protectedKingPositions = new LinkedList<>();
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(4, 1));
 		citadelPositions.add(new Position(5, 1));
+		citadelPositions.add(new Position(4, 1));
 		citadelPositions.add(new Position(6, 1));
 		citadelPositions.add(new Position(5, 2));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(1, 4));
 		citadelPositions.add(new Position(1, 5));
+		citadelPositions.add(new Position(1, 4));
 		citadelPositions.add(new Position(1, 6));
 		citadelPositions.add(new Position(2, 5));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(9, 4));
 		citadelPositions.add(new Position(9, 5));
+		citadelPositions.add(new Position(9, 4));
 		citadelPositions.add(new Position(9, 6));
 		citadelPositions.add(new Position(8, 5));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(4, 9));
 		citadelPositions.add(new Position(5, 9));
+		citadelPositions.add(new Position(4, 9));
 		citadelPositions.add(new Position(6, 9));
 		citadelPositions.add(new Position(5, 8));
 		citadels.add(new Citadel(citadelPositions));
@@ -142,6 +142,7 @@ public class State {
 	}
 
 	private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
+		boolean haveEaten = false;
 		// Get all the "near" pawns (near means +1 or -1 in vertical or horrizontal) 
 		List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.bw != movedPawn.bw && (Math.abs(p.position.x - toX) + Math.abs(p.position.y - toY) == 1)).collect(Collectors.toList());
 		for (Pawn pawn : pawnOfInterest) {
@@ -157,21 +158,19 @@ public class State {
 				final int partnerPositionX_2 = pawn.x + (deltaY>0 ? 1 : 0);
 				final int partnerPositionY_2 = pawn.y + (deltaX>0 ? 1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX_2 && p.position.y == partnerPositionY_2)) ||
-						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2) ||
-						(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX_2, partnerPositionY_2)));
+						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
 				final int partnerPositionX_3 = pawn.x + (deltaY>0 ? -1 : 0);
 				final int partnerPositionY_3 = pawn.y + (deltaX>0 ? -1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.bw == movedPawn.bw && (p.position.x == partnerPositionX_3 && p.position.y == partnerPositionY_3)) ||
-						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3) ||
-						(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX_3, partnerPositionY_3)));
+						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
 			}
 			
 			if (haveToEat) {
 				newPawns.remove(pawn);
+				haveEaten = true;
 			}
-			return haveToEat;
 		}
-		return false;
+		return haveEaten;
 	}
 
 	public long getHeuristic() {
