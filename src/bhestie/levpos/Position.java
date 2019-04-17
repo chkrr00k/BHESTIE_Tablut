@@ -1,4 +1,7 @@
 package bhestie.levpos;
+
+import java.util.ArrayList;
+
 public class Position {
 	/**
 	 * The X position
@@ -36,17 +39,31 @@ public class Position {
 		if (!(obj instanceof Position)) {
 			return false;
 		}
-		Position other = (Position) obj;
-		if (x != other.x) {
-			return false;
-		}
-		if (y != other.y) {
-			return false;
-		}
-		return true;
+		Position position = (Position) obj;
+		return (this.x==position.x && this.y==position.y);
+	}
+	public boolean equals(Position position) {
+		return (this.x==position.x && this.y==position.y);
 	}
 	@Override
 	public String toString() {
 		return "[" + x + ";" + y + "]";
+	}
+	
+	private static final ArrayList<Position> flightweightPositions = new ArrayList<>(81); // Can't have more than 81 elements
+	/**
+	 * Flightweight of position. It returns a Position.
+	 * @param x The X position.
+	 * @param y The Y position.
+	 * @return A position of (X, Y)
+	 */
+	public static Position of(final int x, final int y) {
+		for (Position position : flightweightPositions) {
+			if (position.x==x && position.y==y)
+				return position;
+		}
+		Position result = new Position(x, y);
+		flightweightPositions.add(result);
+		return result;
 	}
 }

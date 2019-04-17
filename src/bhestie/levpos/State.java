@@ -11,11 +11,11 @@ public class State {
 	/**
 	 * Turn. TRUE=Black, FALSE=White
 	 */
-	public boolean turn = false; // false=white, true=black
+	public final boolean turn;
 	/**
 	 * List of Pawn in the board.
 	 */
-	public List<Pawn> pawns;
+	public final List<Pawn> pawns;
 
 	/**
 	 * List of citadels

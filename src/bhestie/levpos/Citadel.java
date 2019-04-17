@@ -3,7 +3,7 @@ package bhestie.levpos;
 import java.util.ArrayList;
 
 public class Citadel {
-	public ArrayList<Position> citadelPositions = null;
+	public final ArrayList<Position> citadelPositions;
 	/**
 	 * Citadel constructor.
 	 * Important: the first element of the ArrayList MUST be the internal citadel
