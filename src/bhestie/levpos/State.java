@@ -8,13 +8,30 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class State {
+	/**
+	 * Turn. TRUE=Black, FALSE=White
+	 */
 	public boolean turn = false; // false=white, true=black
+	/**
+	 * List of Pawn in the board.
+	 */
 	public List<Pawn> pawns;
 
-	private static final List<Citadel> citadels = new ArrayList<>(4); // List of citadels
-	//private final List<Position> citadels = new LinkedList<>(); // List of Citadel positions
-	private static final Position tronePosition = new Position(5, 5); // King position
+	/**
+	 * List of citadels
+	 */
+	private static final List<Citadel> citadels = new ArrayList<>(4); 
+	/**
+	 * King trone position
+	 */
+	private static final Position tronePosition = new Position(5, 5);
+	/**
+	 * List of escape positions. The king in this positions wins.
+	 */
 	private static final List<Position> escapePositions = new ArrayList<>(16);
+	/**
+	 * List of positions where the king have to be fully surrounded.
+	 */
 	private static final List<Position> protectedKingPositions = new LinkedList<>();
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
@@ -67,7 +84,7 @@ public class State {
 		escapePositions.add(new Position(7, 9));
 		escapePositions.add(new Position(8, 9));
 		
-		/* PROTECTED KING POSITIONS */
+		/***** PROTECTED KING POSITIONS *****/
 		protectedKingPositions.add(tronePosition);
 		protectedKingPositions.add(new Position(5, 6));
 		protectedKingPositions.add(new Position(5, 4));
@@ -75,11 +92,20 @@ public class State {
 		protectedKingPositions.add(new Position(6, 5));
 	}
 	
+	/**
+	 * Creates a new State
+	 * @param pawns The pawns in the board
+	 * @param turn The turn. TRUE=Black, FALSE=White
+	 */
 	public State(List<Pawn> pawns, boolean turn){
 		this.turn = turn;
 		this.pawns = new LinkedList<>(pawns);
 	}
 
+	/**
+	 * Get the list of the next possible States.
+	 * @return The list of the next possible States.
+	 */
 	public Collection<State> getActions(){
 		List<State> actions = new LinkedList<>();
 
@@ -112,6 +138,14 @@ public class State {
 		return actions;
 	}
 
+	/**
+	 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
+	 * @param x The nex X position
+	 * @param y The new Y position
+	 * @param actions The list of next possible states
+	 * @param currentPawn The pawn that is moving
+	 * @return If it added a new action of not
+	 */
 	private boolean checkXY(final int x,final int y, List<State> actions, Pawn currentPawn) {
 		boolean haveToAddThePawn;
 
@@ -141,6 +175,14 @@ public class State {
 		return false;
 	}
 
+	/**
+	 * Checks if (after moving a @param movedPawn) some pawns have to be eaten.
+	 * @param toX The new X position
+	 * @param toY The new Y position
+	 * @param movedPawn The pawn that is moved
+	 * @param newPawns List of new Pawns in the next state board
+	 * @return If some pawns have been eaten.
+	 */
 	private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
 		boolean haveEaten = false;
 		// Get all the "near" pawns (near means +1 or -1 in vertical or horrizontal) 
@@ -173,11 +215,19 @@ public class State {
 		return haveEaten;
 	}
 
+	/**
+	 * Returns a value that stimate the "goodness" of the pawns in the board.
+	 * @return A value that stimate the "goodness" of the pawns in the board.
+	 */
 	public long getHeuristic() {
 		// TODO da fare
 		return 0;
 	}
 
+	/**
+	 * Checks if the board is in a terminal position.
+	 * @return If the board is in a terminal position.
+	 */
 	public boolean isTerminal() {
 		if (!this.pawns.stream().anyMatch(p -> p.bw == true /*is black*/)) // No more black pawns
 			return true;
@@ -196,6 +246,10 @@ public class State {
 		return (escapePositions.contains(king.position)); // Se il re è nella posizione di una via di fuga
 	}
 
+	/**
+	 * Returns a value that stimate the "goodness" of a terminal state of the game.
+	 * @return A value that stimate the "goodness" of a terminal state of the game.
+	 */
 	public double getUtility() {
 		if (this.isTerminal()) {
 			// TODO Dire se ho vinto o perso (o pareggiato)
@@ -209,7 +263,11 @@ public class State {
 			return Double.MAX_VALUE;*/
 	}
 
-	public String stampaScacchiera() {
+	/**
+	 * Prints the board in a String
+	 * @return The board as a String
+	 */
+	public String printBoard() {
 		StringBuilder result = new StringBuilder();
 		for(int i = 1; i <= 9; i++) { // scan y
 			for(int j = 1; j <= 9; j++) { // scan x
@@ -229,6 +287,6 @@ public class State {
 	
 	@Override
 	public String toString() {
-		return this.stampaScacchiera();
+		return this.printBoard();
 	}
 }

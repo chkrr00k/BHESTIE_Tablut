@@ -1,11 +1,30 @@
 package bhestie.levpos;
 
 public class Pawn {
-	public boolean bw; //false=white, true=black
-	public Position position;
-	public boolean king = false; // true if is a King
+	/**
+	 * TRUE=Black, FALSE=White
+	 */
+	public final boolean bw;
+	/**
+	 * The Pawn position
+	 */
+	public final Position position;
+	/**
+	 * If the Pawn is a king
+	 */
+	public final boolean king; // true if is a King
 
-	public Pawn(boolean bw, int x, int y, boolean king) {
+	/**
+	 * Pawn constructor.
+	 * @param bw TRUE=Black, FALSE=White
+	 * @param x X Position
+	 * @param y Y Position
+	 * @param king TRUE if the Pawn is the king. (Valid only if bw=FALSE)
+	 * @throws IllegalArgumentException If both king and bw are TRUE
+	 */
+	public Pawn(boolean bw, int x, int y, boolean king) throws IllegalArgumentException {
+		if (king && bw)
+			throw new IllegalArgumentException("Can't exist a Black King.");
 		this.bw = bw;
 		this.position = new Position(x, y);
 		this.king = king;

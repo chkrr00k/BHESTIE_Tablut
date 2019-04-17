@@ -65,14 +65,14 @@ public class Main {
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
         	System.out.println("Turno " + (statoCorrente.turn ? "Black" : "White"));
-        	System.out.println(statoCorrente.stampaScacchiera());
+        	System.out.println(statoCorrente.printBoard());
         	
         	//System.out.println(Minimax.alphaBeth(statoCorrente, 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
         	
         	statoCorrente = Minimax.minimaxDecision(statoCorrente);
             if (statoCorrente.isTerminal()){
                 end = true;
-                System.out.println(statoCorrente.stampaScacchiera());
+                System.out.println(statoCorrente.printBoard());
                 System.out.println("Ha vinto: " + (statoCorrente.turn ? "Black" : "White"));
                 System.out.println("Game over");
             }

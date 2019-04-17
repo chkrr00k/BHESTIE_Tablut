@@ -1,7 +1,18 @@
 package bhestie.levpos;
 public class Position {
-	public int x;
-	public int y;
+	/**
+	 * The X position
+	 */
+	public final int x;
+	/**
+	 * The Y position
+	 */
+	public final int y;
+	/**
+	 * Creates a new position with coord X and Y
+	 * @param x X position
+	 * @param y Y position
+	 */
 	public Position(int x, int y) {
 		this.x = x;
 		this.y = y;
@@ -34,6 +45,7 @@ public class Position {
 		}
 		return true;
 	}
+	@Override
 	public String toString() {
 		return "[" + x + ";" + y + "]";
 	}
