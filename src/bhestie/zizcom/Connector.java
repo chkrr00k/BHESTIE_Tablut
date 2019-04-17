@@ -14,8 +14,9 @@ public class Connector {
 	private String host = null;
 	private String player = null;
 	private DataOutputStream dos = null;
-	private DataInputStream din = null;
+	private DataInputStream dis = null;
 	private Gson gson = null;
+	private boolean error;
 	
 	/**
 	 * Generate a new connector object for the communicate with the server.
@@ -29,6 +30,7 @@ public class Connector {
 		this.host = host;
 		this.player = player;
 		this.gson = new Gson();
+		this.error = false;
 	}
 	/**
 	 * Generate a new connector object for the communicate with the server.
@@ -45,11 +47,13 @@ public class Connector {
 	public boolean init(){
 		try{
 			this.s = new Socket(this.host, this.port);
+			this.s.setTcpNoDelay(true); // i have no clue what this does
 			this.dos = new DataOutputStream(this.s.getOutputStream());
-			this.din = new DataInputStream(this.s.getInputStream());
+			this.dis = new DataInputStream(this.s.getInputStream());
+			this.host = null; // saves us some bytes;
 			return true;
 		}catch(IOException e){
-			System.err.println(e.getMessage());
+			this.error = true;
 			return false;
 		}
 	}
@@ -58,7 +62,7 @@ public class Connector {
 	 * @throws IOException
 	 */
 	public void present() throws IOException{
-		this.write(this.player);
+		this.write(this.gson.toJson(this.player));
 	}
 	/**
 	 * Read current read board status
@@ -67,7 +71,29 @@ public class Connector {
 	 */
 	public Board readBoard() throws IOException{
 		return this.gson.fromJson(this.read(), Board.class);
-
+	}
+	/**
+	 * Finalized and close the socket
+	 * @return if the disposal succeed
+	 */
+	public boolean dispose(){
+		try{
+			this.dis.close();
+			this.dos.close();
+			this.s.close();
+		}catch(IOException e){
+			this.error = true;
+			return false;
+		}
+		return true;
+	}
+	/**
+	 * @return if the socket is connected and no error was recorded
+	 */
+	public boolean isFault(){
+		boolean result = !this.error;
+		this.error = false;
+		return result && this.s.isConnected();
 	}
 	/**
 	 * Write an action to the server
@@ -79,16 +105,27 @@ public class Connector {
 
 	}
 	private String read() throws IOException{
-		int len = this.din.readInt();
-		byte[] rB = new byte[len];
-		this.din.readFully(rB, 0, len);
-		return new String(rB, StandardCharsets.UTF_8);
+		try{
+			int len = this.dis.readInt();
+			byte[] rB = new byte[len];
+			this.dis.readFully(rB, 0, len);
+			return new String(rB, StandardCharsets.UTF_8);
+		}catch(IOException e){
+			this.error = true;
+			throw e;
+		}
+
 	}
 	private void write(String input) throws IOException{
-		byte[] wB = input.getBytes(StandardCharsets.UTF_8);
-		this.dos.writeInt(input.length());
-		this.dos.write(wB);
-		this.dos.flush();
+		try{
+			byte[] wB = input.getBytes(StandardCharsets.UTF_8);
+			this.dos.writeInt(input.length());
+			this.dos.write(wB);
+			this.dos.flush();
+		}catch(IOException e){
+			this.error = true;
+			throw e;
+		}
 	}
 	
 }

@@ -9,13 +9,15 @@ import bhestie.zizcom.Connector;
 public class Main {
 
 	public static void main(String[] args) throws IOException {
-		Connector c = new Connector("white", 5800);
+		Connector c = new Connector("__BHeStIE__", 5800);
 		Action a = new Action("e4", "f4", "W");
 		Board b = null;
 		c.init();
 		c.present();
-		c.writeAction(a);
 		b = c.readBoard();
+		
+		c.writeAction(a);
+
 		b.convert();
 		System.out.println(b);
 		b = c.readBoard();
