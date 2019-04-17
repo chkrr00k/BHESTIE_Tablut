@@ -1,6 +1,7 @@
 package bhestie.levpos;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,7 +37,7 @@ public final class Minimax {
 			return state.getUtility();
 		}
 		return state.getActions().stream().parallel()
-				.sorted(comparatore).limit(1)
+				//.sorted(comparatore).limit(1)
 				.map(Minimax::minValue)
 				.max(Comparator.comparing(Double::valueOf)).get();
 	}
@@ -49,9 +50,72 @@ public final class Minimax {
 			return state.getUtility();
 		}
 		return state.getActions().stream().parallel()
-				.sorted(comparatore).limit(1)
+				//.sorted(comparatore).limit(1)
 				.map(Minimax::maxValue)
 				.min(Comparator.comparing(Double::valueOf)).get();
+	}
+	
+	private static long lastRun = 0;
+	private static final void clean(){
+		long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+//		System.out.println(used);
+		if(used > 100000000 && lastRun + 10000 < System.currentTimeMillis()){
+			System.out.println("GC running");
+			lastRun = System.currentTimeMillis();
+			System.gc();
+		}
+	}
+	private static List<State> stack;
+	static{
+		stack = new LinkedList<State>();
+	}
+	private static double maxHeuFound = Double.MIN_VALUE;
+	public static final double alphaBeth(final State n, final int depth, double alpha, double beth, final boolean max){
+		double v = 0;
+		if(n.isTerminal()){
+			final double utility = n.getUtility();
+			if (max) {
+				if (utility > maxHeuFound) {
+					stack.clear();
+					maxHeuFound = utility;
+					stack.add(n);
+				} else if (utility == maxHeuFound) {
+					stack.add(n);
+				}
+			}
+			return utility;
+		} else if(depth == 0) {
+			final double heuristic = n.getHeuristic();
+			if (heuristic > maxHeuFound) {
+				stack.clear();
+				maxHeuFound = heuristic;
+				stack.add(n);
+			} else if (heuristic == maxHeuFound) {
+				stack.add(n);
+			}
+			return heuristic;
+		} else if(max){
+			v = Double.MIN_VALUE;
+			for(State c : n.getActions()){
+				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
+				alpha = Math.max(alpha, v);
+				if(beth <= alpha){
+					//clean();
+					break;
+				}
+			}
+			return v;
+		}else{
+			v = Double.MAX_VALUE;
+			for(State c : n.getActions()){
+				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
+				beth = Math.min(beth, v);
+				if(beth <= alpha){
+					break;
+				}
+			}
+		}
+		return v;
 	}
 
 	public static synchronized void interrupt() {
