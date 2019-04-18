@@ -14,7 +14,7 @@ public class Position {
 	 * @param x X position
 	 * @param y Y position
 	 */
-	public Position(int x, int y) {
+	private Position(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -48,7 +48,7 @@ public class Position {
 		return "[" + x + ";" + y + "]";
 	}
 	
-	private static final Position[][] flightweightPositions = new Position[9][9]; // Can't have more than 81 elements
+	private static final Position[][] flightweightPositions = new Position[11][11]; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
 	/**
 	 * Flightweight of position. It returns a Position.
 	 * @param x The X position.
@@ -60,6 +60,7 @@ public class Position {
 		try {
 			result = flightweightPositions[x][y];
 		} catch(IndexOutOfBoundsException e) {
+			System.out.println("Non ottimizzato");
 			return new Position(x, y);
 		}
 		if (result == null) {

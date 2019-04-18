@@ -28,7 +28,7 @@ public class Pawn {
 		if (king && bw)
 			throw new IllegalArgumentException("Can't exist a Black King.");
 		this.bw = bw;
-		this.position = new Position(x, y);
+		this.position = Position.of(x, y);
 		this.king = king;
 	}
 

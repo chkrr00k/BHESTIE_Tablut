@@ -5,12 +5,18 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 
 public class State {
+	private final State parent;
+	private boolean drawCase = false;
+	/**
+	 * History storage. Storage of all mosses done.
+	 */
 	public final HistoryStorage historyStorage;
 	/**
 	 * Turn. TRUE=Black, FALSE=White
@@ -28,7 +34,7 @@ public class State {
 	/**
 	 * King trone position
 	 */
-	private static final Position tronePosition = new Position(5, 5);
+	private static final Position tronePosition = Position.of(5, 5);
 	/**
 	 * List of escape positions. The king in this positions wins.
 	 */
@@ -39,61 +45,61 @@ public class State {
 	private static final List<Position> protectedKingPositions = new LinkedList<>();
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(5, 1));
-		citadelPositions.add(new Position(4, 1));
-		citadelPositions.add(new Position(6, 1));
-		citadelPositions.add(new Position(5, 2));
+		citadelPositions.add(Position.of(5, 1));
+		citadelPositions.add(Position.of(4, 1));
+		citadelPositions.add(Position.of(6, 1));
+		citadelPositions.add(Position.of(5, 2));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(1, 5));
-		citadelPositions.add(new Position(1, 4));
-		citadelPositions.add(new Position(1, 6));
-		citadelPositions.add(new Position(2, 5));
+		citadelPositions.add(Position.of(1, 5));
+		citadelPositions.add(Position.of(1, 4));
+		citadelPositions.add(Position.of(1, 6));
+		citadelPositions.add(Position.of(2, 5));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(9, 5));
-		citadelPositions.add(new Position(9, 4));
-		citadelPositions.add(new Position(9, 6));
-		citadelPositions.add(new Position(8, 5));
+		citadelPositions.add(Position.of(9, 5));
+		citadelPositions.add(Position.of(9, 4));
+		citadelPositions.add(Position.of(9, 6));
+		citadelPositions.add(Position.of(8, 5));
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
-		citadelPositions.add(new Position(5, 9));
-		citadelPositions.add(new Position(4, 9));
-		citadelPositions.add(new Position(6, 9));
-		citadelPositions.add(new Position(5, 8));
+		citadelPositions.add(Position.of(5, 9));
+		citadelPositions.add(Position.of(4, 9));
+		citadelPositions.add(Position.of(6, 9));
+		citadelPositions.add(Position.of(5, 8));
 		citadels.add(new Citadel(citadelPositions));
 
 		/***** ESCAPE POSITIONS *****/
 
-		escapePositions.add(new Position(1, 2));
-		escapePositions.add(new Position(1, 3));
-		escapePositions.add(new Position(1, 7));
-		escapePositions.add(new Position(1, 8));
+		escapePositions.add(Position.of(1, 2));
+		escapePositions.add(Position.of(1, 3));
+		escapePositions.add(Position.of(1, 7));
+		escapePositions.add(Position.of(1, 8));
 
-		escapePositions.add(new Position(2, 1));
-		escapePositions.add(new Position(3, 1));
-		escapePositions.add(new Position(7, 1));
-		escapePositions.add(new Position(8, 1));
+		escapePositions.add(Position.of(2, 1));
+		escapePositions.add(Position.of(3, 1));
+		escapePositions.add(Position.of(7, 1));
+		escapePositions.add(Position.of(8, 1));
 
-		escapePositions.add(new Position(9, 2));
-		escapePositions.add(new Position(9, 3));
-		escapePositions.add(new Position(9, 7));
-		escapePositions.add(new Position(9, 8));
+		escapePositions.add(Position.of(9, 2));
+		escapePositions.add(Position.of(9, 3));
+		escapePositions.add(Position.of(9, 7));
+		escapePositions.add(Position.of(9, 8));
 
-		escapePositions.add(new Position(2, 9));
-		escapePositions.add(new Position(3, 9));
-		escapePositions.add(new Position(7, 9));
-		escapePositions.add(new Position(8, 9));
+		escapePositions.add(Position.of(2, 9));
+		escapePositions.add(Position.of(3, 9));
+		escapePositions.add(Position.of(7, 9));
+		escapePositions.add(Position.of(8, 9));
 
 		/***** PROTECTED KING POSITIONS *****/
 		protectedKingPositions.add(tronePosition);
-		protectedKingPositions.add(new Position(5, 6));
-		protectedKingPositions.add(new Position(5, 4));
-		protectedKingPositions.add(new Position(4, 5));
-		protectedKingPositions.add(new Position(6, 5));
+		protectedKingPositions.add(Position.of(5, 6));
+		protectedKingPositions.add(Position.of(5, 4));
+		protectedKingPositions.add(Position.of(4, 5));
+		protectedKingPositions.add(Position.of(6, 5));
 	}
 
 	/**
@@ -102,7 +108,7 @@ public class State {
 	 * @param turn The turn. TRUE=Black, FALSE=White
 	 */
 	public State(List<Pawn> pawns, boolean turn) {
-		this(pawns, turn, new HistoryStorage());
+		this(pawns, turn, new HistoryStorage(), null);
 	}
 
 	/**
@@ -110,11 +116,13 @@ public class State {
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
 	 * @param historyStorage The history storage
+	 * @param parent The parent
 	 */
-	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage){
+	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent){
 		this.turn = turn;
 		this.pawns = new LinkedList<>(pawns);
 		this.historyStorage = historyStorage;
+		this.parent = parent;
 	}
 
 	/**
@@ -127,37 +135,46 @@ public class State {
 		boolean simmetricalNorthSouth = true;
 		boolean simmetricalEastWest = true;
 		boolean simmetricalDiagonal = true;
-		boolean simmetricalAntiDiagonal = true;
+		boolean simmetricalAntiDiagonal = false;
 
 		// Check the simmetrical North-South
-		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y < 5).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y==10-pawn.position.y && p.bw==pawn.bw && !p.king)) {
-				simmetricalNorthSouth = false;
-				break;
+		if (simmetricalNorthSouth) {
+			for (Pawn pawn : this.pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
+				if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
+					simmetricalNorthSouth = false;
+					break;
+				}
 			}
 		}
 
 		// Check the simmetrical East-West
-		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x < 5).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==10-pawn.position.x && p.position.y==pawn.position.y && p.bw==pawn.bw && !p.king)) {
-				simmetricalEastWest = false;
-				break;
+		if (simmetricalEastWest) {
+			for (Pawn pawn : this.pawns.stream()/*.filter(p -> p.position.x < 5)*/.collect(Collectors.toList())) {
+				if (!this.pawns.stream().anyMatch(p -> p.position.x+pawn.position.x==10 && p.position.y==pawn.position.y && p.bw==pawn.bw && p.king==pawn.king)) {
+					simmetricalEastWest = false;
+					break;
+				}
 			}
 		}
 
 		// Check the simmetrical Diagonal
-		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y <= p.position.x).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && p.bw==pawn.bw && !p.king)) {
-				simmetricalDiagonal = false;
-				break;
+		if (simmetricalDiagonal) {
+			for (Pawn pawn : this.pawns.stream()/*.filter(p -> p.position.y <= p.position.x)*/.collect(Collectors.toList())) {
+				if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && p.bw==pawn.bw && p.king==pawn.king)) {
+					simmetricalDiagonal = false;
+					break;
+				}
 			}
 		}
 
 		// Check the simmetrical Anti-Diagonal
-		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x <= p.position.y).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x+pawn.position.y>=10 && p.bw==pawn.bw && !p.king)) {
-				simmetricalAntiDiagonal = false;
-				break;
+		if (simmetricalAntiDiagonal) {
+			for (Pawn pawn : this.pawns.stream()/*.filter(p -> p.position.x <= p.position.y)*/.collect(Collectors.toList())) {
+				final int difference = (pawn.position.x+pawn.position.y>10 ? pawn.position.y - pawn.position.x : -pawn.position.y - pawn.position.x);
+				if (!this.pawns.stream().anyMatch(p -> p.position.x==(pawn.position.x-difference) && p.position.y==(pawn.position.y-difference) && p.bw==pawn.bw && p.king==pawn.king)) {
+					simmetricalAntiDiagonal = false;
+					break;
+				}
 			}
 		}
 
@@ -240,8 +257,14 @@ public class State {
 			boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
 			newPawns.add(newPawn);
 			HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : this.historyStorage.clone()); // if eaten -> new storage
-			newHistoryStorage.add(newPawns);
-			State newState = new State(newPawns, !this.turn, newHistoryStorage);
+			boolean drawCase = false;
+			try {
+				newHistoryStorage.add(newPawns);
+			}catch(IllegalArgumentException e) {
+				drawCase = true;
+			}
+			State newState = new State(newPawns, !this.turn, newHistoryStorage, this);
+			newState.drawCase = drawCase;
 			actions.add(newState);
 			return true;
 		}
@@ -288,13 +311,27 @@ public class State {
 		return haveEaten;
 	}
 
+	public List<State> unfold(){
+		List<State> result = new LinkedList<State>();
+		State tmp = this;
+		while(tmp.parent != null){
+			result.add(tmp);
+			tmp = tmp.parent;
+		}
+		//result.add(tmp);
+		return result;
+	}
+	
 	/**
 	 * Returns a value that stimate the "goodness" of the pawns in the board.
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
-	public long getHeuristic() {
+	public double getHeuristic() {
 		// TODO da fare
-		return 0;
+		double result = new Random().nextDouble();
+		if (new Random().nextInt() % 100000 == 1324)
+			return 1000 * (this.turn ? 1 : -1);
+		return Math.floor(result * 6 * (new Random().nextBoolean() ? 1 : -1));
 	}
 
 	/**
@@ -302,6 +339,8 @@ public class State {
 	 * @return If the board is in a terminal position.
 	 */
 	public boolean isTerminal() {
+		if (this.drawCase)
+			return true;
 		if (!this.pawns.stream().anyMatch(p -> p.bw == true /*is black*/)) // No more black pawns
 			return true;
 		Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
@@ -326,6 +365,8 @@ public class State {
 	public double getUtility() {
 		if (this.isTerminal()) {
 			// TODO Dire se ho vinto o perso (o pareggiato)
+			if (drawCase)
+				return 0; // Draw
 		} else {
 			System.err.println("Non ci devo andare");
 		}

@@ -52,16 +52,23 @@ public class Main {
 		
 	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 		long a = System.nanoTime();
-		System.out.println(Minimax.alphaBeth(new State(initialState, false), 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
+		System.out.println(Minimax.alphaBeth(new State(initialState, false), 10, -Double.MAX_VALUE, Double.MAX_VALUE, true));
 		long b = System.nanoTime();
+		for(State s : Minimax.stack){
+			List<State> unfold = s.unfold();
+			System.out.println(unfold);
+		}
 		long c = System.nanoTime();
 		System.out.println("Completed:");
 		System.out.println("Started at " + a + " time stamp");
 		System.out.println("Generated the tree in " + (b - a) + "ns\n\t(which is: " + TimeUnit.MILLISECONDS.convert((b - a), TimeUnit.NANOSECONDS) +"ms)");
+		System.out.println("Unfolded " + Minimax.stack.size() + " nodes in " + (c - b) + "ns\n\t(which is: " + TimeUnit.MILLISECONDS.convert((c - b), TimeUnit.NANOSECONDS) +"ms)");
+		System.out.println("\twhich means " + (c - b)/Minimax.stack.size() + "ns per node\n\t\t(which is: " + TimeUnit.MILLISECONDS.convert((c - b)/Minimax.stack.size(), TimeUnit.NANOSECONDS) +"ms)");
 		System.out.println("Total invocation time: " + (c - a) + "\n\t(which is " + TimeUnit.MILLISECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"ms)");
 		System.out.println("\t\t(which is " + TimeUnit.SECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"s)");
+		System.out.println("Explored " + Minimax.nodeExplored + " nodes.");
 	    
-        boolean end = false;
+        boolean end = true;
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
         	System.out.println("Turno " + (statoCorrente.turn ? "Black" : "White"));
