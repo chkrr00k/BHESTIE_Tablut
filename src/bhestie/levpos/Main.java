@@ -52,7 +52,7 @@ public class Main {
 		
 	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 		long a = System.nanoTime();
-		System.out.println(Minimax.alphaBeth(new State(initialState, false), 10, -Double.MAX_VALUE, Double.MAX_VALUE, true));
+		System.out.println(Minimax.alphaBeth(new State(initialState, false), 6, -Double.MAX_VALUE, Double.MAX_VALUE, true));
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
 			List<State> unfold = s.unfold();

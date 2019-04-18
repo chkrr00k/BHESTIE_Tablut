@@ -39,6 +39,12 @@ public class Pawn {
 			return !bw;
 		}
 	}
+	public final int getX(){
+		return this.position.x;
+	}
+	public final int getY() {
+		return this.position.y;
+	}
 	
 	@Override
 	public String toString() {
@@ -97,4 +103,6 @@ public class Pawn {
 		flightweightPawns.add(pawn);
 		return pawn;
 	}
+
+
 }

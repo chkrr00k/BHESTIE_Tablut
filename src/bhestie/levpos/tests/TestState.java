@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
@@ -188,6 +189,54 @@ public class TestState {
 		
 		State s = new State(pawns, false); // White turn
 		assertEquals(12, s.getActions().size());
+	}
+	@Test
+	public void testDiagonalSystem() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		
+		pawns.add(new Pawn(false, 2, 3, false));
+		pawns.add(new Pawn(false, 2, 7, false));
+		pawns.add(new Pawn(false, 8, 3, false));
+		pawns.add(new Pawn(false, 8, 7, false));
+		
+		long a = System.nanoTime();/*
+		boolean xsy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getX)).values().stream().parallel().allMatch((e) -> {
+			if(e.size() != 2){
+				return false;
+			}else{
+				return e.get(0).getY() + e.get(1).getY() == 10;
+			}
+		});*/
+		for (Pawn pawn : pawns) {
+			if (!pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
+				break;
+			}
+		}
+		long b = System.nanoTime();
+//		assertTrue(xsy);
+		
+		long c = System.nanoTime();
+		for (Pawn pawn : pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
+			if (!pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
+				break;
+			}
+		}
+		long d = System.nanoTime();
+		
+		System.out.println(b - a);
+		System.out.println(d - c);
+		boolean ysy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getY)).values().stream().allMatch((e) -> {
+			if(e.size() != 2){
+				return false;
+			}else{
+				return e.get(0).getX() + e.get(1).getX() == 10;
+			}
+		});
+		assertFalse(ysy);
 	}
 
 }
