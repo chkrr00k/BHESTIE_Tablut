@@ -154,7 +154,7 @@ public class State {
 				symmetricalDiagonal = false;
 			}
 			if(symmetricalAntiDiagonal && !pawns.stream().anyMatch(p -> p.position.x + pawn.position.y == 10 && p.position.y + pawn.position.x == 10 && p.bw==pawn.bw  && p.king==pawn.king)) {
-				symmetricalDiagonal = false;
+				symmetricalAntiDiagonal = false;
 			}
 			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth || symmetricalAntiDiagonal)){
 				break;

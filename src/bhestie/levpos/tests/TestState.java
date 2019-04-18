@@ -198,14 +198,14 @@ public class TestState {
 		pawns.add(new Pawn(false, 9, 3, false));
 		pawns.add(new Pawn(false, 6, 6, false));
 		
-		long a = System.nanoTime();/*
+
 		boolean xsy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getX)).values().stream().parallel().allMatch((e) -> {
 			if(e.size() != 2){
 				return false;
 			}else{
 				return e.get(0).getY() + e.get(1).getY() == 10;
 			}
-		});*/
+		});
 		boolean symmetricalDiagonal = true;
 		for (Pawn pawn : pawns) {
 			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.position.x + pawn.position.y == 10 
@@ -216,19 +216,15 @@ public class TestState {
 				symmetricalDiagonal = false;
 			}
 		}
-		long b = System.nanoTime();
 		assertTrue(symmetricalDiagonal);
 		
-		long c = System.nanoTime();
 		for (Pawn pawn : pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
 			if (!pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
 				break;
 			}
 		}
-		long d = System.nanoTime();
 		
-		System.out.println(b - a);
-		System.out.println(d - c);
+
 		boolean ysy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getY)).values().stream().allMatch((e) -> {
 			if(e.size() != 2){
 				return false;
@@ -236,7 +232,8 @@ public class TestState {
 				return e.get(0).getX() + e.get(1).getX() == 10;
 			}
 		});
-//		assertTrue(ysy);
+		assertFalse(ysy);
+		assertFalse(xsy);
 	}
 
 }
