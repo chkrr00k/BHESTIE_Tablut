@@ -153,17 +153,10 @@ public class State {
 			if (symmetricalDiagonal && !this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && p.bw==pawn.bw && p.king==pawn.king)) {
 				symmetricalDiagonal = false;
 			}
-			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth)){
-				break;
+			if(symmetricalAntiDiagonal && !pawns.stream().anyMatch(p -> p.position.x + pawn.position.y == 10 && p.position.y + pawn.position.x == 10 && p.bw==pawn.bw  && p.king==pawn.king)) {
+				symmetricalDiagonal = false;
 			}
-		}
-
-		// Check the simmetrical Anti-Diagonal
-		
-		for (Pawn pawn : this.pawns.stream()/*.filter(p -> p.position.x <= p.position.y)*/.collect(Collectors.toList())) {
-			final int difference = (pawn.position.x+pawn.position.y>10 ? pawn.position.y - pawn.position.x : -pawn.position.y - pawn.position.x);
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==(pawn.position.x-difference) && p.position.y==(pawn.position.y-difference) && p.bw==pawn.bw && p.king==pawn.king)) {
-				symmetricalAntiDiagonal = false;
+			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth || symmetricalAntiDiagonal)){
 				break;
 			}
 		}
