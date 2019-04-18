@@ -131,7 +131,7 @@ public class State {
 
 		// Check the simmetrical North-South
 		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y < 5).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y==10-pawn.position.y && !p.king)) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y==10-pawn.position.y && p.bw==pawn.bw && !p.king)) {
 				simmetricalNorthSouth = false;
 				break;
 			}
@@ -139,7 +139,7 @@ public class State {
 
 		// Check the simmetrical East-West
 		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x < 5).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==10-pawn.position.x && p.position.y==pawn.position.y && !p.king)) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==10-pawn.position.x && p.position.y==pawn.position.y && p.bw==pawn.bw && !p.king)) {
 				simmetricalEastWest = false;
 				break;
 			}
@@ -147,7 +147,7 @@ public class State {
 
 		// Check the simmetrical Diagonal
 		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.y <= p.position.x).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && !p.king)) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x==pawn.position.y && p.position.y==pawn.position.x && p.bw==pawn.bw && !p.king)) {
 				simmetricalDiagonal = false;
 				break;
 			}
@@ -155,7 +155,7 @@ public class State {
 
 		// Check the simmetrical Anti-Diagonal
 		for (Pawn pawn : this.pawns.stream().filter(p -> p.position.x <= p.position.y).collect(Collectors.toList())) {
-			if (!this.pawns.stream().anyMatch(p -> p.position.x+pawn.position.y>=10 && !p.king)) {
+			if (!this.pawns.stream().anyMatch(p -> p.position.x+pawn.position.y>=10 && p.bw==pawn.bw && !p.king)) {
 				simmetricalAntiDiagonal = false;
 				break;
 			}
@@ -177,7 +177,8 @@ public class State {
 		boolean checkOnlyXPosition = (simmetricalEastWest && simmetricalNorthSouth && simmetricalDiagonal && simmetricalAntiDiagonal); // if this -> it's simmetrical and I can check only the X assis
 		for (Pawn currentPawn : pawnToScan) {
 
-			final int stopDecrementX = (simmetricalEastWest && simmetricalNorthSouth && currentPawn.position.x==5 ? 5 : 1); // If it's complete simmetrical and the currentPawn is in the simmetrical-assis I can stop watching with X=5
+			final int stopDecrementX = (simmetricalEastWest && currentPawn.position.x==5 ? 5 : 1);
+			final int stopDecrementY = (simmetricalNorthSouth && currentPawn.position.y==5 ? 5 : 1);
 
 			for (int i = currentPawn.position.x + 1; i <= 9; i++) {
 				if (!this.checkXY(i, currentPawn.position.y, actions, currentPawn))
@@ -197,7 +198,7 @@ public class State {
 					break;
 			}
 
-			for (int i = currentPawn.position.y - 1; i >= 1; i--) {
+			for (int i = currentPawn.position.y - 1; i >= stopDecrementY; i--) {
 				if(!this.checkXY(currentPawn.position.x, i, actions, currentPawn))
 					break;
 			}
