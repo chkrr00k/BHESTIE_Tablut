@@ -118,13 +118,13 @@ public class State {
 	 * @param historyStorage The history storage
 	 * @param parent The parent
 	 */
-	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent){
+	public State(List<Pawn> pawns, final boolean turn, HistoryStorage historyStorage, State parent){
 		this.turn = turn;
-		this.pawns = new LinkedList<>(pawns);
+		this.pawns = new LinkedList<Pawn>(pawns);
 		this.historyStorage = historyStorage;
 		this.parent = parent;
 	}
-	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent, boolean drawCase){
+	public State(List<Pawn> pawns, final boolean turn, HistoryStorage historyStorage, State parent, boolean drawCase){
 		this(pawns, turn, historyStorage, parent);
 		this.drawCase = drawCase;
 	}
@@ -140,7 +140,6 @@ public class State {
 		boolean symmetricalEastWest = true;
 		boolean symmetricalDiagonal = true;
 		boolean symmetricalAntiDiagonal = true;
-
 
 		// Check the symmetries
 		for (Pawn pawn : this.pawns) {
@@ -208,7 +207,6 @@ public class State {
 				}
 			}
 		}
-
 		return actions;
 	}
 
@@ -354,8 +352,9 @@ public class State {
 	public double getUtility() {
 		if (this.isTerminal()) {
 			// TODO Dire se ho vinto o perso (o pareggiato)
-			if (drawCase)
+			if (drawCase){
 				return 0; // Draw
+			}
 		} else {
 			System.err.println("Non ci devo andare");
 		}
