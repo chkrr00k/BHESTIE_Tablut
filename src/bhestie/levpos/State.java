@@ -1,10 +1,6 @@
 package bhestie.levpos;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import bhestie.levpos.utils.HistoryStorage;
@@ -300,4 +296,23 @@ public class State {
 	public String toString() {
 		return this.printBoard();
 	}
+
+	public char[][] getBoard() {
+		char[] printedBoard = printBoard().toCharArray();
+		char[][] boardChar = new char[9][9];
+		int count = 0;
+		for(int y = 0; y < 9; y++){
+			for(int x = 0; x < 9; x++) {
+				boardChar[x][y] = printedBoard[count];
+				count++;
+			}
+		}
+		return boardChar;
+	}
+
+	public char getPawn(int x, int y){
+		return getBoard()[x][y];
+	}
+
+
 }
