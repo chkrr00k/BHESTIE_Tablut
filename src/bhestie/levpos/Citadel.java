@@ -18,7 +18,7 @@ public class Citadel {
 	 * @return if a Pawn is inside this citadel
 	 */
 	public boolean isPawnInCitadel(Pawn pawn) {
-		return (this.citadelPositions.indexOf(pawn.position) >= 0);
+		return (this.citadelPositions.indexOf(pawn.getPosition()) >= 0);
 	}
 	/**
 	 * Checks if a Position is inside this citadel

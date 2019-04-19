@@ -106,11 +106,11 @@ public final class HistoryStorage implements Collection<String>, Cloneable{
 	private static final Comparator<Pawn> pawnparator = new Comparator<Pawn>(){
 		@Override
 		public int compare(Pawn p1, Pawn p2) {
-			final int dx = p1.position.x - p2.position.x;
+			final int dx = p1.getPosition().x - p2.getPosition().x;
 			if(dx != 0){
 				return dx;
 			}else{
-				return p1.position.y - p2.position.y;
+				return p1.getPosition().y - p2.getPosition().y;
 			}
 		}
 	};

@@ -6,15 +6,15 @@ public class Pawn {
 	/**
 	 * TRUE=Black, FALSE=White
 	 */
-	public final boolean bw;
+	private final boolean bw;
 	/**
 	 * The Pawn position
 	 */
-	public final Position position;
+	private final Position position;
 	/**
 	 * If the Pawn is a king
 	 */
-	public final boolean king; // true if is a King
+	private final boolean king; // true if is a King
 
 	/**
 	 * Pawn constructor.
@@ -34,11 +34,32 @@ public class Pawn {
 
 	public boolean filterByTurn(boolean turn) {
 		if (turn) { // black
-			return bw;
+			return isBlack();
 		} else { // white
-			return !bw;
+			return !isBlack();
 		}
 	}
+	/**
+	 * @return the position
+	 */
+	public Position getPosition() {
+		return this.position;
+	}
+
+	/**
+	 * @return the king
+	 */
+	public boolean isKing() {
+		return this.king;
+	}
+
+	/**
+	 * @return the bw
+	 */
+	public boolean isBlack() {
+		return this.bw;
+	}
+
 	public final int getX(){
 		return this.position.x;
 	}
@@ -51,7 +72,7 @@ public class Pawn {
 		StringBuilder result = new StringBuilder();
 		result.append(this.position.x);
 		result.append(this.position.y);
-		result.append(this.bw ? 'B' : (this.king ? 'K' : 'W'));
+		result.append(this.isBlack() ? 'B' : (this.king ? 'K' : 'W'));
 		return result.toString();
 	}
 	
@@ -59,7 +80,7 @@ public class Pawn {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (bw ? 1231 : 1237);
+		result = prime * result + (isBlack() ? 1231 : 1237);
 		result = prime * result + (king ? 1231 : 1237);
 		result = prime * result + ((position == null) ? 0 : position.hashCode());
 		return result;
@@ -77,11 +98,11 @@ public class Pawn {
 			return false;
 		}
 		Pawn pawn = (Pawn) obj;
-		return (this.bw==pawn.bw && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
+		return (this.isBlack()==pawn.isBlack() && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
 	}
 	
 	public boolean equals(Pawn pawn) {
-		return (this.bw==pawn.bw && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
+		return (this.isBlack()==pawn.isBlack() && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
 	}
 	
 	private static final ArrayList<Pawn> flightweightPawns = new ArrayList<>();
@@ -96,7 +117,7 @@ public class Pawn {
 	 */
 	public static Pawn of(final boolean bw, final int x, final int y, final boolean king) throws IllegalArgumentException {
 		for (Pawn pawn : flightweightPawns) {
-			if (bw==pawn.bw && x==pawn.position.x && y==pawn.position.y && king==pawn.king)
+			if (bw==pawn.isBlack() && x==pawn.position.x && y==pawn.position.y && king==pawn.king)
 				return pawn;
 		}
 		Pawn pawn = new Pawn(bw, x, y, king);

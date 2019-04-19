@@ -71,7 +71,7 @@ public class Main {
         boolean end = true;
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
-        	System.out.println("Turno " + (statoCorrente.turn ? "Black" : "White"));
+        	System.out.println("Turno " + (statoCorrente.isTurn() ? "Black" : "White"));
         	System.out.println(statoCorrente.printBoard());
         	
         	//System.out.println(Minimax.alphaBeth(statoCorrente, 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
@@ -80,7 +80,7 @@ public class Main {
             if (statoCorrente.isTerminal()){
                 end = true;
                 System.out.println(statoCorrente.printBoard());
-                System.out.println("Ha vinto: " + (statoCorrente.turn ? "Black" : "White"));
+                System.out.println("Ha vinto: " + (statoCorrente.isTurn() ? "Black" : "White"));
                 System.out.println("Game over");
             }
             Thread.sleep(1000 * 5);
