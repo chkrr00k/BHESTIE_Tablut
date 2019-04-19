@@ -67,7 +67,7 @@ public class Main {
 		System.out.println("Total invocation time: " + (c - a) + "\n\t(which is " + TimeUnit.MILLISECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"ms)");
 		System.out.println("\t\t(which is " + TimeUnit.SECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"s)");
 		System.out.println("Explored " + Minimax.nodeExplored + " nodes.");
-	    
+/*	    
         boolean end = true;
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
@@ -84,7 +84,7 @@ public class Main {
                 System.out.println("Game over");
             }
             Thread.sleep(1000 * 5);
-        }
+        }*/
     }
 	
 }
