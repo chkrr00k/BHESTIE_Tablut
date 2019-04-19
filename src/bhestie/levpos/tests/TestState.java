@@ -164,7 +164,7 @@ public class TestState {
 	}
 	
 	@Test
-	public void testSimmetricsGeneratingChildStates() {
+	public void testSymmetricsGeneratingChildStates() {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 3, false));
@@ -175,7 +175,7 @@ public class TestState {
 	}
 	
 	@Test
-	public void test2SimmetricsGeneratingChildStates() {
+	public void test2SymmetricsGeneratingChildStates() {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 3, false));
@@ -236,4 +236,42 @@ public class TestState {
 		assertFalse(xsy);
 	}
 
+	@Test
+	public void testSymmetries() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		State s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // one pawn generates 16 successors
+		
+		pawns.add(new Pawn(false, 7, 3, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because x symmetry
+	
+		pawns.clear();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because y symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because diagonal symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because antidiagonal symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(5, s.getActions().size()); // two pawn generates 5 successors in this configuration because all the symmetries
+
+	}
 }
