@@ -30,16 +30,16 @@ public class Main {
 			int fy = 0;
 			int tx = 0;
 			int ty = 0;
-			for (Pawn pawn : currentState.pawns) {
-				if (!oldState.pawns.contains(pawn) && pawn.bw == false) {
-					tx = pawn.position.x;
-					ty = pawn.position.y;
+			for (Pawn pawn : currentState.getPawns()) {
+				if (!oldState.getPawns().contains(pawn) && pawn.isBlack() == false) {
+					tx = pawn.getX();
+					ty = pawn.getY();
 				}
 			}
-			for (Pawn pawn : oldState.pawns) {
-				if (!currentState.pawns.contains(pawn) && pawn.bw == false) {
-					fx = pawn.position.x;
-					fy = pawn.position.y;
+			for (Pawn pawn : oldState.getPawns()) {
+				if (!currentState.getPawns().contains(pawn) && pawn.isBlack() == false) {
+					fx = pawn.getX();
+					fy = pawn.getY();
 				}
 			}
 			Action aa = new Action(fx, fy, tx, ty, "W");
