@@ -51,14 +51,24 @@ public class Main {
 	    System.out.println("Max Memory    : " + Runtime.getRuntime().maxMemory() + " bytes");
 		
 	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+	    
+	    boolean whitePlayer = false;
+	    boolean blackPlayer = !whitePlayer;
+	    
+	    Minimax.player = whitePlayer; // White player
+	    
+	    State currentState = new State(initialState, Minimax.player);
+	    
 		long a = System.nanoTime();
-		System.out.println(Minimax.alphaBeth(new State(initialState, false), 6, -Double.MAX_VALUE, Double.MAX_VALUE, true));
+		//System.out.println(Minimax.alphaBeth(currentState, 2, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player));
+		double result = Minimax.alphaBethInit(currentState, 100);
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
 			List<State> unfold = s.unfold();
-			System.out.println(unfold);
+			//System.out.println(unfold);
 		}
 		long c = System.nanoTime();
+		System.out.println("alphaBeth result = " + result);
 		System.out.println("Completed:");
 		System.out.println("Started at " + a + " time stamp");
 		System.out.println("Generated the tree in " + (b - a) + "ns\n\t(which is: " + TimeUnit.MILLISECONDS.convert((b - a), TimeUnit.NANOSECONDS) +"ms)");

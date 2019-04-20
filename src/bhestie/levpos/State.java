@@ -145,6 +145,7 @@ public class State {
 				}
 			}
 		}
+		
 		return actions;
 	}
 
@@ -252,9 +253,9 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
+		return (this.turn ? this.getHeuristicBlack() : -this.getHeuristicWhite());
+		/*
 		double result = 0;
-		
-		// XXX ottimizzare gli if sotto
 		if (this.turn) { // Black turn
 			result = this.getHeuristicBlack();
 		} else { // White turn
@@ -265,6 +266,7 @@ public class State {
 			result = -result;
 		
 		return result;
+		*/
 	}
 	
 	/**
@@ -274,7 +276,19 @@ public class State {
 	private double getHeuristicBlack() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
-		return 0;
+		double result = 0;
+		
+		long numeroMangiati = 0;
+		
+		State tmp = this.parent;
+		while (tmp != null) {
+			result--;
+			numeroMangiati = tmp.pawns.stream().filter(p -> p.isWhite()).count() - this.pawns.stream().filter(p -> p.isWhite()).count();
+			result += numeroMangiati * 10;
+			tmp = tmp.parent;
+		}
+		
+		return result;
 	}
 	
 	/**
@@ -284,7 +298,19 @@ public class State {
 	private double getHeuristicWhite() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il bianco
-		return 0;
+		double result = 0;
+		
+		long numeroMangiati = 0;
+		
+		State tmp = this.parent;
+		while (tmp != null) {
+			result--;
+			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
+			result += numeroMangiati * 10;
+			tmp = tmp.parent;
+		}
+		
+		return result;
 	}
 
 	/**
@@ -294,7 +320,7 @@ public class State {
 	public boolean isTerminal() {
 		if (this.drawCase)
 			return true;
-		if (!this.getPawns().stream().anyMatch(p -> p.isBlack() == true /*is black*/)) // No more black pawns -> white wins
+		if (!this.getPawns().stream().anyMatch(p -> p.isBlack())) // No more black pawns -> white wins
 			return true;
 		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
 		// XXX comprimere gli if di sotto
@@ -321,14 +347,13 @@ public class State {
 			if (drawCase){
 				return 0; // Draw
 			}
-			Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
-			if (!king.isPresent()) { // Black wins
+			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 				result = getUtilityBlack();
 			} else { // Is terminal and black not win -> White wins
 				result = getUtilityWhite();
 			}
 		} else {
-			System.err.println("Non ci devo andare");
+			return this.getHeuristic(); // In case you ask getUtility and it's not a terminalState -> returns the getHeuristic value 
 		}
 		
 		if (!this.turn)
@@ -344,7 +369,7 @@ public class State {
 	private double getUtilityBlack() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
-		return 0;
+		return Double.MAX_VALUE;
 	}
 	
 	/**
@@ -354,7 +379,7 @@ public class State {
 	private double getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
-		return 0;
+		return Double.MAX_VALUE;
 	}
 
 	/**

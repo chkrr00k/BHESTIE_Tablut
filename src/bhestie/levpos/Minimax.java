@@ -1,12 +1,13 @@
 package bhestie.levpos;
-import java.time.Duration;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class Minimax {
+	
+	private static final int TIMEOUT = 30;
+	
+	private static Thread interrupterThread = new Thread(new Interrupter(TIMEOUT), "Interrupter");
+	
 	private Minimax() {}
 
 	/**
@@ -14,99 +15,63 @@ public final class Minimax {
 	 */
 	public static boolean player = false; // White default
 	
-	private static final int TIMEOUT = 10;
-	public static final Duration timeout = Duration.ofSeconds(TIMEOUT);
-	private static int esplorati = 0;
 	private static boolean signal = false;
 
-	private static final ComparatoreEuristica comparatore = new ComparatoreEuristica();
-
-	public static State minimaxDecision(State state) {
-		esplorati = 0;
-		signal = false;
-		Stream<State> stream = state.getActions().stream().parallel();
-		List<State> lista = stream.collect(Collectors.toList());
-		Thread t = new Thread(new Run(timeout.getSeconds()));
-		t.start();
-		State result = lista.stream().max(Comparator.comparing(Minimax::minValue)).get();
-		t.interrupt();
-		System.out.println("Esplorati = " + esplorati);
-		return result;
-	}
-
-	private static double maxValue(State state) {
-		esplorati++;
-		if(signal)
-			return 0;
-		if(state.isTerminal()){
-			return state.getUtility();
-		}
-		return state.getActions().stream().parallel()
-				//.sorted(comparatore).limit(1)
-				.map(Minimax::minValue)
-				.max(Comparator.comparing(Double::valueOf)).get();
-	}
-
-	private static double minValue(State state) {
-		esplorati++;
-		if(signal)
-			return 0;
-		if(state.isTerminal()){
-			return state.getUtility();
-		}
-		return state.getActions().stream().parallel()
-				//.sorted(comparatore).limit(1)
-				.map(Minimax::maxValue)
-				.min(Comparator.comparing(Double::valueOf)).get();
-	}
-	
-	private static long lastRun = 0;
-	private static final void clean(){
-		long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-//		System.out.println(used);
-		if(used > 100000000 && lastRun + 10000 < System.currentTimeMillis()){
-			System.out.println("GC running");
-			lastRun = System.currentTimeMillis();
-			System.gc();
-		}
-	}
-	public static List<State> stack;
+	public final static List<State> stack;
 	static{
 		stack = new LinkedList<State>();
 	}
+	
+	/**
+	 * 
+	 * @param n
+	 * @param depth
+	 * @param alpha
+	 * @param beth
+	 * @param player
+	 * @return
+	 */
+	public static final double alphaBethInit(final State state, final int depth) {
+		Minimax.signal = false;
+		interrupterThread.start();
+		double alphaBethResult = alphaBeth(state, depth, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player);
+		interrupterThread.interrupt();
+		return alphaBethResult;
+	}
+	
 	private static double maxHeuFound = -Double.MAX_VALUE;
 	public static long nodeExplored = 0;
-	public static final double alphaBeth(final State n, final int depth, double alpha, double beth, final boolean max){
+	private static final double alphaBeth(final State s, final int depth, double alpha, double beth, final boolean max){
 		nodeExplored++;
 		double v = 0;
-		if(n.isTerminal()){
-			final double utility = n.getUtility();
+		if(s.isTerminal()){
+			final double utility = s.getUtility();
 			if (max) {
 				if (utility > maxHeuFound) {
 					stack.clear();
 					maxHeuFound = utility;
-					stack.add(n);
+					stack.add(s);
 				} else if (utility == maxHeuFound) {
-					stack.add(n);
+					stack.add(s);
 				}
 			}
 			return utility;
-		} else if(depth == 0) {
-			final double heuristic = n.getHeuristic();
+		} else if(depth == 0 || signal) {
+			final double heuristic = s.getHeuristic();
 			if (heuristic > maxHeuFound) {
 				stack.clear();
 				maxHeuFound = heuristic;
-				stack.add(n);
+				stack.add(s);
 			} else if (heuristic == maxHeuFound) {
-				stack.add(n);
+				stack.add(s);
 			}
 			return heuristic;
 		} else if(max){
 			v = -Double.MAX_VALUE;
-			for(State c : n.getActions()){
+			for(State c : s.getActions()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
-				if(beth <= alpha){
+				if(beth <= alpha || signal){
 					//clean();
 					break;
 				}
@@ -114,10 +79,10 @@ public final class Minimax {
 			return v;
 		}else{
 			v = Double.MAX_VALUE;
-			for(State c : n.getActions()){
+			for(State c : s.getActions()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
-				if(beth <= alpha){
+				if(beth <= alpha || signal){
 					break;
 				}
 			}
@@ -128,19 +93,24 @@ public final class Minimax {
 	public static synchronized void interrupt() {
 		Minimax.signal = true;
 	}
-
-}
-
-class ComparatoreEuristica implements Comparator<State> {
-	@Override
-	public int compare(State o1, State o2) {
-		return (int) (o1.getHeuristic() - o2.getHeuristic());
+	
+	private static long lastRun = 0;
+	@SuppressWarnings("unused")
+	private static final void clean(){
+		long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+//		System.out.println(used);
+		if(used > 100000000 && lastRun + 10000 < System.currentTimeMillis()){
+			System.out.println("GC running");
+			lastRun = System.currentTimeMillis();
+			System.gc();
+		}
 	}
+
 }
 
-class Run implements Runnable {
-	private long secs;
-	public Run(long l) {
+class Interrupter implements Runnable {
+	private final long secs;
+	public Interrupter(long l) {
 		this.secs = l;
 	}
 
@@ -150,7 +120,7 @@ class Run implements Runnable {
 			Thread.sleep(1000 * secs);
 			//LockSupport.parkNanos(Minimax.timeout.getNano());
 			Minimax.interrupt();
-			System.out.println("Segnalato");
+			System.out.println("Signaled");
 		} catch (Exception e) {
 			return;
 		}
