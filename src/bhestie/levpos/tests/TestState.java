@@ -171,7 +171,7 @@ public class TestState {
 		pawns.add(new Pawn(false, 3, 7, false));
 		pawns.add(new Pawn(false, 7, 7, false));
 		State s = new State(pawns, false); // White turn
-		assertEquals(5, s.getActions().size()); // Dubbio se essere 5 o 10
+		assertEquals(5, s.getActions().size());
 	}
 	
 	@Test
@@ -208,10 +208,10 @@ public class TestState {
 		});
 		boolean symmetricalDiagonal = true;
 		for (Pawn pawn : pawns) {
-			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.getPosition().x + pawn.getPosition().y == 10 
-						&& p.getPosition().y + pawn.getPosition().x  == 10
+			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.getX() + pawn.getY() == 10 
+						&& p.getY() + pawn.getY()  == 10
 						&& p.isBlack()==pawn.isBlack() 
-						&& p.isKing()==pawn.isKing()))
+						&& p.king==pawn.king))
 					 {
 				symmetricalDiagonal = false;
 			}
@@ -219,7 +219,7 @@ public class TestState {
 		assertTrue(symmetricalDiagonal);
 		
 		for (Pawn pawn : pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
-			if (!pawns.stream().anyMatch(p -> p.getPosition().x==pawn.getPosition().x && p.getPosition().y+pawn.getPosition().y==10 && p.isBlack()==pawn.isBlack() && p.isKing()==pawn.isKing())) {
+			if (!pawns.stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY()+pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
 				break;
 			}
 		}

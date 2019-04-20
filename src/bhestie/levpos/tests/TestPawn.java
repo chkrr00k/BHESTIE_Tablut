@@ -13,8 +13,8 @@ public class TestPawn {
 	@Test
 	public void testCreatingPawn() {
 		Pawn pawn = new Pawn(true, 1, 2, false); // create black in (1,1)
-		assertEquals(1, pawn.getPosition().x);
-		assertEquals(2, pawn.getPosition().y);
+		assertEquals(1, pawn.getX());
+		assertEquals(2, pawn.getY());
 	}
 
 	@Test
@@ -34,8 +34,8 @@ public class TestPawn {
 		b.setBoard(exampleBoard);
 		b.convert();
 		List<Pawn> pawns = b.get();
-		assertEquals(2, pawns.get(0).getPosition().x);
-		assertEquals(1, pawns.get(0).getPosition().y);
+		assertEquals(2, pawns.get(0).getX());
+		assertEquals(1, pawns.get(0).getY());
 	}
 
 }

@@ -13,7 +13,7 @@ import bhestie.levpos.utils.HistoryStorage;
 
 public class State {
 	private final State parent;
-	private boolean drawCase = false;
+	private final boolean drawCase;
 	/**
 	 * History storage. Storage of all mosses done.
 	 */
@@ -43,14 +43,14 @@ public class State {
 	 * @param historyStorage The history storage
 	 * @param parent The parent
 	 */
-	public State(List<Pawn> pawns, final boolean turn, HistoryStorage historyStorage, State parent){
+	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent){
+		this(pawns, turn, historyStorage, parent, false);
+	}
+	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent, boolean drawCase){
 		this.turn = turn;
 		this.pawns = new LinkedList<Pawn>(pawns);
 		this.historyStorage = historyStorage;
 		this.parent = parent;
-	}
-	public State(List<Pawn> pawns, final boolean turn, HistoryStorage historyStorage, State parent, boolean drawCase){
-		this(pawns, turn, historyStorage, parent);
 		this.drawCase = drawCase;
 	}
 
@@ -82,16 +82,16 @@ public class State {
 
 		// Check the symmetries
 		for (Pawn pawn : this.getPawns()) {
-			if (symmetricalNorthSouth && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.isKing()==pawn.isKing())) {
+			if (symmetricalNorthSouth && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
 				symmetricalNorthSouth = false;
 			}
-			if (symmetricalEastWest && !this.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.isKing()==pawn.isKing())) {
+			if (symmetricalEastWest && !this.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
 				symmetricalEastWest = false;
 			}
-			if (symmetricalDiagonal && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.isKing()==pawn.isKing())) {
+			if (symmetricalDiagonal && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
 				symmetricalDiagonal = false;
 			}
-			if(symmetricalAntiDiagonal && !getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.isKing()==pawn.isKing())) {
+			if(symmetricalAntiDiagonal && !getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.king==pawn.king)) {
 				symmetricalAntiDiagonal = false;
 			}
 			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth || symmetricalAntiDiagonal)){
@@ -177,7 +177,7 @@ public class State {
 		if (haveToAddThePawn) {
 			List<Pawn> newPawns = new LinkedList<>(this.getPawns());
 			newPawns.remove(currentPawn);
-			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.isKing());
+			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
 			final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
 			newPawns.add(newPawn);
 			HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : this.historyStorage.clone()); // if eaten -> new storage
@@ -218,7 +218,7 @@ public class State {
 					(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
 					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
 
-			if (haveToEat && pawn.isKing() && protectedKingPositions.contains(pawn.getPosition())) { // Special case for king
+			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
 				final int partnerPositionX_2 = pawn.getX() + (deltaY > 0 ? 1 : 0);
 				final int partnerPositionY_2 = pawn.getY() + (deltaX > 0 ? 1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
@@ -269,7 +269,7 @@ public class State {
 			return true;
 		if (!this.getPawns().stream().anyMatch(p -> p.isBlack() == true /*is black*/)) // No more black pawns
 			return true;
-		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.isKing()).findAny();
+		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
 		// XXX comprimere gli if di sotto
 		if (!king.isPresent()) { // Se non c'è il re -> nero vince
 			return true;
@@ -281,7 +281,7 @@ public class State {
 
 	// XXX rimuovere ed evitare la chiamata a funzione
 	private boolean kingEscaped(Pawn king) {
-		return (escapePositions.contains(king.getPosition())); // Se il re è nella posizione di una via di fuga
+		return (escapePositions.contains(king.position)); // Se il re è nella posizione di una via di fuga
 	}
 
 	/**
@@ -316,7 +316,7 @@ public class State {
 				int y = i;
 				Optional<Pawn> pawn = this.getPawns().stream().filter(p -> p.getX() == x && p.getY() == y).findAny();
 				if(pawn.isPresent()) {
-					result.append((pawn.get().isBlack() ? 'B' : (pawn.get().isKing()) ? 'K' : 'W'));
+					result.append((pawn.get().isBlack() ? 'B' : (pawn.get().king) ? 'K' : 'W'));
 				} else {
 					result.append('0');
 				}

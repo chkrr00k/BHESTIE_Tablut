@@ -1,9 +1,6 @@
 package bhestie.zizcom.tests;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
 import bhestie.zizcom.Action;

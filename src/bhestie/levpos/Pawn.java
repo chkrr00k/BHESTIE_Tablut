@@ -10,11 +10,11 @@ public class Pawn {
 	/**
 	 * The Pawn position
 	 */
-	private final Position position;
+	public final Position position;
 	/**
 	 * If the Pawn is a king
 	 */
-	private final boolean king; // true if is a King
+	public final boolean king; // true if is a King
 
 	/**
 	 * Pawn constructor.
@@ -39,30 +39,34 @@ public class Pawn {
 			return !isBlack();
 		}
 	}
+	
 	/**
-	 * @return the position
-	 */
-	public Position getPosition() {
-		return this.position;
-	}
-
-	/**
-	 * @return the king
-	 */
-	public boolean isKing() {
-		return this.king;
-	}
-
-	/**
-	 * @return the bw
+	 * @return If is Black
 	 */
 	public boolean isBlack() {
 		return this.bw;
 	}
+	
+	/**
+	 * 
+	 * @return If is White
+	 */
+	public boolean isWhite() {
+		return !this.bw;
+	}
 
+	/**
+	 * 
+	 * @return The X coord
+	 */
 	public final int getX(){
 		return this.position.x;
 	}
+	
+	/**
+	 * 
+	 * @return The Y coord
+	 */
 	public final int getY() {
 		return this.position.y;
 	}
