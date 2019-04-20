@@ -33,7 +33,8 @@ public abstract class Background extends JFrame {
 	}
 	
 	@Override
-	public void paint( Graphics g ) { 
+	public void paint( Graphics g ) {
+	    /*
 	    super.paint(g);
 	    g.drawImage(background, 10, 30, null);
 	    for(int i=0;i<this.aState.getBoard().length;i++)
@@ -61,6 +62,7 @@ public abstract class Background extends JFrame {
 	    	}
 	    }
 	    g.dispose();
+	    */
 	}
 
 }

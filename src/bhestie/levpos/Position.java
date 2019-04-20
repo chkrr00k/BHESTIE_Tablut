@@ -1,6 +1,6 @@
 package bhestie.levpos;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Position {
 	/**
@@ -45,12 +45,22 @@ public class Position {
 	public boolean equals(Position position) {
 		return (this.x==position.x && this.y==position.y);
 	}
+
+	public boolean equalsAny(List<Position> listPosition) {
+		for(Position position : listPosition){
+			if(this.x == position.x && this.y == position.y)
+				return true;
+		}
+		return false;
+
+	}
+
 	@Override
 	public String toString() {
 		return "[" + x + ";" + y + "]";
 	}
 	
-	private static final ArrayList<Position> flightweightPositions = new ArrayList<>(81); // Can't have more than 81 elements
+	private static final Position[][] flightweightPositions = new Position[11][11]; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
 	/**
 	 * Flightweight of position. It returns a Position.
 	 * @param x The X position.
@@ -58,12 +68,17 @@ public class Position {
 	 * @return A position of (X, Y)
 	 */
 	public static Position of(final int x, final int y) {
-		for (Position position : flightweightPositions) {
-			if (position.x==x && position.y==y)
-				return position;
+		Position result;
+		try {
+			result = flightweightPositions[x][y];
+		} catch(IndexOutOfBoundsException e) {
+			System.out.println("Non ottimizzato");
+			return new Position(x, y);
 		}
-		Position result = new Position(x, y);
-		flightweightPositions.add(result);
+		if (result == null) {
+			result = new Position(x, y);
+			flightweightPositions[x][y] = result;
+		}
 		return result;
 	}
 }

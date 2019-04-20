@@ -65,12 +65,14 @@ public final class Minimax {
 			System.gc();
 		}
 	}
-	private static List<State> stack;
+	public static List<State> stack;
 	static{
 		stack = new LinkedList<State>();
 	}
-	private static double maxHeuFound = Double.MIN_VALUE;
+	private static double maxHeuFound = -Double.MAX_VALUE;
+	public static long nodeExplored = 0;
 	public static final double alphaBeth(final State n, final int depth, double alpha, double beth, final boolean max){
+		nodeExplored++;
 		double v = 0;
 		if(n.isTerminal()){
 			final double utility = n.getUtility();
@@ -95,7 +97,7 @@ public final class Minimax {
 			}
 			return heuristic;
 		} else if(max){
-			v = Double.MIN_VALUE;
+			v = -Double.MAX_VALUE;
 			for(State c : n.getActions()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
@@ -148,5 +150,4 @@ class Run implements Runnable {
 			return;
 		}
 	}
-
 }

@@ -1,6 +1,7 @@
 package bhestie.levpos;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Pawn {
 	/**
@@ -28,7 +29,7 @@ public class Pawn {
 		if (king && bw)
 			throw new IllegalArgumentException("Can't exist a Black King.");
 		this.bw = bw;
-		this.position = new Position(x, y);
+		this.position = Position.of(x, y);
 		this.king = king;
 	}
 
@@ -38,6 +39,12 @@ public class Pawn {
 		} else { // white
 			return !bw;
 		}
+	}
+	public final int getX(){
+		return this.position.x;
+	}
+	public final int getY() {
+		return this.position.y;
 	}
 	
 	@Override
@@ -97,4 +104,6 @@ public class Pawn {
 		flightweightPawns.add(pawn);
 		return pawn;
 	}
+
+
 }

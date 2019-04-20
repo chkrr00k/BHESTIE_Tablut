@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
@@ -160,6 +161,79 @@ public class TestState {
 		Collection<State> afterState = currentState.getActions();
 
 		assertTrue(afterState.stream().allMatch(s -> s.pawns.size() == initialPawnState.size()));
+	}
+	
+	@Test
+	public void testSimmetricsGeneratingChildStates() {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		State s = new State(pawns, false); // White turn
+		assertEquals(0, s.getActions().size() % 5); // Dubbio se essere 5 o 10
+	}
+	
+	@Test
+	public void test2SimmetricsGeneratingChildStates() {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		
+		pawns.add(new Pawn(false, 2, 3, false));
+		pawns.add(new Pawn(false, 2, 7, false));
+		pawns.add(new Pawn(false, 8, 3, false));
+		pawns.add(new Pawn(false, 8, 7, false));
+		
+		State s = new State(pawns, false); // White turn
+		assertEquals(12, s.getActions().size());
+	}
+	@Test
+	public void testDiagonalSystem() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 4, 4, false));
+		pawns.add(new Pawn(false, 7, 1, false));
+		pawns.add(new Pawn(false, 9, 3, false));
+		pawns.add(new Pawn(false, 6, 6, false));
+		
+
+		boolean xsy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getX)).values().stream().parallel().allMatch((e) -> {
+			if(e.size() != 2){
+				return false;
+			}else{
+				return e.get(0).getY() + e.get(1).getY() == 10;
+			}
+		});
+		boolean symmetricalDiagonal = true;
+		for (Pawn pawn : pawns) {
+			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.position.x + pawn.position.y == 10 
+						&& p.position.y + pawn.position.x  == 10
+						&& p.bw==pawn.bw 
+						&& p.king==pawn.king))
+					 {
+				symmetricalDiagonal = false;
+			}
+		}
+		assertTrue(symmetricalDiagonal);
+		
+		for (Pawn pawn : pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
+			if (!pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
+				break;
+			}
+		}
+		
+
+		boolean ysy = pawns.stream().collect(Collectors.groupingByConcurrent(Pawn::getY)).values().stream().allMatch((e) -> {
+			if(e.size() != 2){
+				return false;
+			}else{
+				return e.get(0).getX() + e.get(1).getX() == 10;
+			}
+		});
+		assertFalse(ysy);
+		assertFalse(xsy);
 	}
 
 }

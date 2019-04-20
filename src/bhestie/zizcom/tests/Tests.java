@@ -43,8 +43,8 @@ public class Tests {
 		Board b = new Board();
 		String board = "{\"board\":[[\"WHITE\",\"EMPTY\",\"EMPTY\"],[\"EMPTY\",\"EMPTY\",\"EMPTY\"],[\"EMPTY\",\"EMPTY\",\"EMPTY\"]]}";
 		b = new Gson().fromJson(board, Board.class);
-		b.convert();
-		assertTrue("Board size from json", b.get().size() == 1);
+//		b.convert();
+		assertTrue("Board size from json", b.convert().get().size() == 1);
 		assertTrue("Pawn's x form json", b.get().get(0).position.x == 1);
 		assertTrue("Pawn's y form json", b.get().get(0).position.y == 1);
 		assertTrue("Pawn's type form json", !b.get().get(0).bw);
