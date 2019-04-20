@@ -102,6 +102,8 @@ public class State {
 		protectedKingPositions.add(Position.of(6, 5));
 	}
 
+	public static final int WHITE_PAWNS_VALUE = 10;
+	public static final int BLACK_PAWNS_VALUE = 10;
 	public static final int THREATEN_POSITION_HEURISTIC_VALUE = 10;
 
 	/**
@@ -316,7 +318,7 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
-		// TODO da fare
+		int value = 0;
 		if(turn) {//black heuristic
 			Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
 			if(isTerminal()) {
@@ -327,7 +329,6 @@ public class State {
 				}
 			}
 			else{//euristica non temrinale
-				int value = 0;
 				value -= threatenKing(king.get()) * THREATEN_POSITION_HEURISTIC_VALUE;
 			}
 		}
@@ -340,17 +341,23 @@ public class State {
 					return Double.MAX_VALUE;
 				}
 			}
+
 			else{//euristica non terminale
-				int value = 0;
+				//the more black pawns in game, the wrost this situation is...
+				//for white is good to eat and to be eaten
+				value -= pawns.stream().filter(pawn -> pawn.bw).count() * BLACK_PAWNS_VALUE;
+				value -= pawns.stream().filter(pawn -> pawn.bw).count() * WHITE_PAWNS_VALUE;
 				value += threatenKing(king.get()) * THREATEN_POSITION_HEURISTIC_VALUE;
 			}
-
 		}
+		return value;
 
+		/*
 		double result = new Random().nextDouble();
 		if (new Random().nextInt() % 100000 == 1324)
 			return 1000 * (this.turn ? 1 : -1);
 		return Math.floor(result * 6 * (new Random().nextBoolean() ? 1 : -1));
+		*/
 	}
 
 	/**
@@ -387,6 +394,7 @@ public class State {
 
 		return startingValue - count;
 	}
+
 
 	/**
 	 * Checks if the board is in a terminal position.
