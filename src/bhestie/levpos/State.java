@@ -261,7 +261,7 @@ public class State {
 			result = this.getHeuristicWhite();
 		}
 		
-		if (this.turn)
+		if (!this.turn)
 			result = -result;
 		
 		return result;
@@ -331,7 +331,7 @@ public class State {
 			System.err.println("Non ci devo andare");
 		}
 		
-		if (this.turn)
+		if (!this.turn)
 			result = -result;
 		
 		return result;
