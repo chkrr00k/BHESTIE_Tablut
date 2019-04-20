@@ -9,6 +9,11 @@ import java.util.stream.Stream;
 public final class Minimax {
 	private Minimax() {}
 
+	/**
+	 * TRUE=Black, FALSE=White
+	 */
+	public static boolean player = false; // White default
+	
 	private static final int TIMEOUT = 10;
 	public static final Duration timeout = Duration.ofSeconds(TIMEOUT);
 	private static int esplorati = 0;

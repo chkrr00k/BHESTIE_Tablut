@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -253,11 +252,39 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
-		// TODO da fare
-		double result = new Random().nextDouble();
-		if (new Random().nextInt() % 100000 == 1324)
-			return 1000 * (this.turn ? 1 : -1);
-		return Math.floor(result * 6 * (new Random().nextBoolean() ? 1 : -1));
+		double result = 0;
+		
+		// XXX ottimizzare gli if sotto
+		if (this.turn) { // Black turn
+			result = this.getHeuristicBlack();
+		} else { // White turn
+			result = this.getHeuristicWhite();
+		}
+		
+		if (this.turn)
+			result = -result;
+		
+		return result;
+	}
+	
+	/**
+	 * The biggest value the more "good" is the board
+	 * @return A number that stimates the "goodness" of the board 
+	 */
+	private double getHeuristicBlack() {
+		// TODO da scrivere.
+		// Più è alto il valore più la mossa è bella per il nero
+		return 0;
+	}
+	
+	/**
+	 * The biggest value the more "good" is the board
+	 * @return A number that stimates the "goodness" of the board 
+	 */
+	private double getHeuristicWhite() {
+		// TODO da scrivere.
+		// Più è alto il valore più la mossa è bella per il bianco
+		return 0;
 	}
 
 	/**
@@ -267,13 +294,13 @@ public class State {
 	public boolean isTerminal() {
 		if (this.drawCase)
 			return true;
-		if (!this.getPawns().stream().anyMatch(p -> p.isBlack() == true /*is black*/)) // No more black pawns
+		if (!this.getPawns().stream().anyMatch(p -> p.isBlack() == true /*is black*/)) // No more black pawns -> white wins
 			return true;
 		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
 		// XXX comprimere gli if di sotto
-		if (!king.isPresent()) { // Se non c'è il re -> nero vince
+		if (!king.isPresent()) { // No king -> black wins
 			return true;
-		} else if (kingEscaped(king.get())) { // Il re scappa -> bianco vince
+		} else if (kingEscaped(king.get())) { // Re runs away -> white wins
 			return true;
 		}
 		return false;
@@ -289,19 +316,45 @@ public class State {
 	 * @return A value that stimate the "goodness" of a terminal state of the game.
 	 */
 	public double getUtility() {
+		double result = 0;
 		if (this.isTerminal()) {
-			// TODO Dire se ho vinto o perso (o pareggiato)
 			if (drawCase){
 				return 0; // Draw
+			}
+			Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
+			if (!king.isPresent()) { // Black wins
+				result = getUtilityBlack();
+			} else { // Is terminal and black not win -> White wins
+				result = getUtilityWhite();
 			}
 		} else {
 			System.err.println("Non ci devo andare");
 		}
-		return Math.random();
-		/*if(firstPlayer)
-			return Double.MIN_VALUE;
-		else
-			return Double.MAX_VALUE;*/
+		
+		if (this.turn)
+			result = -result;
+		
+		return result;
+	}
+	
+	/**
+	 * The biggest value the more "good" is the board
+	 * @return A number that says if the board is a winning or losing board
+	 */
+	private double getUtilityBlack() {
+		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
+		// Valore alto = la mossa è migliore per il nero
+		return 0;
+	}
+	
+	/**
+	 * The biggest value the more "good" is the board
+	 * @return A number that says if the board is a winning or losing board
+	 */
+	private double getUtilityWhite() {
+		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
+		// Valore alto = la mossa è migliore per il bianco
+		return 0;
 	}
 
 	/**
