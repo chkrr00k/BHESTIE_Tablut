@@ -381,13 +381,11 @@ public class State {
 		threatenPositions.add(new Position(king.getX(), king.getY() - 1));
 
 			Stream<Pawn> found =
-					this.pawns.stream().filter(position -> position.position.equalsAny(threatenPositions));
+					this.pawns.stream().filter(pawn -> pawn.bw)
+                            .filter(pawn -> pawn.position.equalsAny(threatenPositions));
 		int count = (int) found.count();
 
 		return startingValue - count;
-
-
-
 	}
 
 	/**
