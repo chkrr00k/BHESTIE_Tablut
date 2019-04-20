@@ -11,7 +11,15 @@ import javax.swing.*;
  *
  */
 public class Gui {
-	
+
+	private static Gui instance = null;
+
+	public static Gui getInstance(){
+		if(instance == null)
+			instance = new Gui(4);
+		return instance;
+	}
+
 	Background frame;
 	private int game;
 	

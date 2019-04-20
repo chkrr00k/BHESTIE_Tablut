@@ -1,4 +1,4 @@
-package bhestie.levpos.utils.test;
+package bhestie.levpos.tests;
 
 import static org.junit.Assert.*;
 import org.junit.Test;

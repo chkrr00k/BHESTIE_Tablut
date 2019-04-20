@@ -41,7 +41,7 @@ public class TestState {
 		
 		boolean found = false;
 		for (State state : afterState) {
-			found = ((state.pawns.size() == initialPawnState.size() - 2));
+			found = ((state.getPawns().size() == initialPawnState.size() - 2));
 			if (found)
 				break;
 		}
@@ -67,7 +67,7 @@ public class TestState {
 		
 		boolean found = false;
 		for (State state : afterState) {
-			found = ((state.pawns.size() == initialPawnState.size() - 3));
+			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
 		}
@@ -93,7 +93,7 @@ public class TestState {
 		
 		boolean found = false;
 		for (State state : afterState) {
-			found = ((state.pawns.size() == initialPawnState.size() - 3));
+			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
 		}
@@ -116,7 +116,7 @@ public class TestState {
 		
 		boolean found = false;
 		for (State state : afterState) {
-			found = ((state.pawns.size() == initialPawnState.size() - 1));
+			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
 		}
@@ -139,7 +139,7 @@ public class TestState {
 		
 		boolean found = false;
 		for (State state : afterState) {
-			found = ((state.pawns.size() == initialPawnState.size() - 1));
+			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
 		}
@@ -160,11 +160,11 @@ public class TestState {
 		
 		Collection<State> afterState = currentState.getActions();
 
-		assertTrue(afterState.stream().allMatch(s -> s.pawns.size() == initialPawnState.size()));
+		assertTrue(afterState.stream().allMatch(s -> s.getPawns().size() == initialPawnState.size()));
 	}
 	
 	@Test
-	public void testSimmetricsGeneratingChildStates() {
+	public void testSymmetricsGeneratingChildStates() {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 3, false));
@@ -175,7 +175,7 @@ public class TestState {
 	}
 	
 	@Test
-	public void test2SimmetricsGeneratingChildStates() {
+	public void test2SymmetricsGeneratingChildStates() {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 3, false));
@@ -208,10 +208,10 @@ public class TestState {
 		});
 		boolean symmetricalDiagonal = true;
 		for (Pawn pawn : pawns) {
-			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.position.x + pawn.position.y == 10 
-						&& p.position.y + pawn.position.x  == 10
-						&& p.bw==pawn.bw 
-						&& p.king==pawn.king))
+			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.getPosition().x + pawn.getPosition().y == 10 
+						&& p.getPosition().y + pawn.getPosition().x  == 10
+						&& p.isBlack()==pawn.isBlack() 
+						&& p.isKing()==pawn.isKing()))
 					 {
 				symmetricalDiagonal = false;
 			}
@@ -219,7 +219,7 @@ public class TestState {
 		assertTrue(symmetricalDiagonal);
 		
 		for (Pawn pawn : pawns.stream()/*.filter(p -> p.position.y < 5)*/.collect(Collectors.toList())) {
-			if (!pawns.stream().anyMatch(p -> p.position.x==pawn.position.x && p.position.y+pawn.position.y==10 && p.bw==pawn.bw && p.king==pawn.king)) {
+			if (!pawns.stream().anyMatch(p -> p.getPosition().x==pawn.getPosition().x && p.getPosition().y+pawn.getPosition().y==10 && p.isBlack()==pawn.isBlack() && p.isKing()==pawn.isKing())) {
 				break;
 			}
 		}
@@ -236,4 +236,42 @@ public class TestState {
 		assertFalse(xsy);
 	}
 
+	@Test
+	public void testSymmetries() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		State s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // one pawn generates 16 successors
+		
+		pawns.add(new Pawn(false, 7, 3, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because x symmetry
+	
+		pawns.clear();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because y symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because diagonal symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because antidiagonal symmetry
+		
+		pawns.clear();
+		pawns.add(new Pawn(false, 7, 3, false));
+		pawns.add(new Pawn(false, 3, 7, false));
+		pawns.add(new Pawn(false, 3, 3, false));
+		pawns.add(new Pawn(false, 7, 7, false));
+		s = new State(pawns, false); // White turn
+		assertEquals(5, s.getActions().size()); // two pawn generates 5 successors in this configuration because all the symmetries
+
+	}
 }

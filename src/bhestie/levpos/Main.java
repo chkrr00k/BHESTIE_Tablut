@@ -1,5 +1,8 @@
 package bhestie.levpos;
 
+import bhestie.levpos.gui.Gui;
+import bhestie.zizcom.Connector;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +63,8 @@ public class Main {
 
 	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 		long a = System.nanoTime();
-		System.out.println(Minimax.alphaBeth(new State(initialState, /*default false*/player), 6, -Double.MAX_VALUE, Double.MAX_VALUE, true));
+
+		System.out.println(Minimax.alphaBeth(new State(initialState, /*default false*/player), 4, -Double.MAX_VALUE, Double.MAX_VALUE, true));
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
 			List<State> unfold = s.unfold();
@@ -75,11 +79,11 @@ public class Main {
 		System.out.println("Total invocation time: " + (c - a) + "\n\t(which is " + TimeUnit.MILLISECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"ms)");
 		System.out.println("\t\t(which is " + TimeUnit.SECONDS.convert((c - a), TimeUnit.NANOSECONDS) +"s)");
 		System.out.println("Explored " + Minimax.nodeExplored + " nodes.");
-	    
+/*	    
         boolean end = true;
         State statoCorrente = new State(initialState , false); // Turno white iniziale
         while(!end) {
-        	System.out.println("Turno " + (statoCorrente.turn ? "Black" : "White"));
+        	System.out.println("Turno " + (statoCorrente.isTurn() ? "Black" : "White"));
         	System.out.println(statoCorrente.printBoard());
         	
         	//System.out.println(Minimax.alphaBeth(statoCorrente, 4, Double.MIN_VALUE, Double.MAX_VALUE, true));
@@ -88,11 +92,11 @@ public class Main {
             if (statoCorrente.isTerminal()){
                 end = true;
                 System.out.println(statoCorrente.printBoard());
-                System.out.println("Ha vinto: " + (statoCorrente.turn ? "Black" : "White"));
+                System.out.println("Ha vinto: " + (statoCorrente.isTurn() ? "Black" : "White"));
                 System.out.println("Game over");
             }
             Thread.sleep(1000 * 5);
-        }
+        }*/
     }
 	
 }
