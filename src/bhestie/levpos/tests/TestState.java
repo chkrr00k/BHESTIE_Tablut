@@ -209,7 +209,7 @@ public class TestState {
 		boolean symmetricalDiagonal = true;
 		for (Pawn pawn : pawns) {
 			if(symmetricalDiagonal && !pawns.stream().anyMatch(p -> p.getX() + pawn.getY() == 10 
-						&& p.getY() + pawn.getY()  == 10
+						&& p.getY() + pawn.getX()  == 10
 						&& p.isBlack()==pawn.isBlack() 
 						&& p.king==pawn.king))
 					 {
