@@ -44,7 +44,7 @@ public class Main {
 		
 		State currentState = new State(b.get(), Minimax.player);
 		while(true) {
-			double result = Minimax.alphaBethInit(currentState, 3);
+			double result = Minimax.alphaBethInit(currentState, 1);
 			System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 			State oldState = currentState;
 			

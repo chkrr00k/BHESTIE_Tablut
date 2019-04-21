@@ -24,12 +24,9 @@ public final class Minimax {
 	
 	/**
 	 * 
-	 * @param n
-	 * @param depth
-	 * @param alpha
-	 * @param beth
-	 * @param player
-	 * @return
+	 * @param state Stato where find next best solution
+	 * @param depth Max depth
+	 * @return The alphabeth value
 	 */
 	public static final double alphaBethInit(final State state, final int depth) {
 ;		maxHeuFound = -Double.MAX_VALUE;

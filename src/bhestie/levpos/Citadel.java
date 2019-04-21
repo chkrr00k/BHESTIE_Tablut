@@ -7,7 +7,7 @@ public class Citadel {
 	/**
 	 * Citadel constructor.
 	 * Important: the first element of the ArrayList MUST be the internal citadel
-	 * @param ArrayList of citadel positions
+	 * @param positions of citadel positions
 	 */
 	public Citadel(ArrayList<Position> positions) {
 		this.citadelPositions = positions;
