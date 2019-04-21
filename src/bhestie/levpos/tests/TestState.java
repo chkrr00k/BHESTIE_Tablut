@@ -9,11 +9,84 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
+import bhestie.levpos.utils.HistoryStorage;
 
 public class TestState {
 
+	private static final boolean whitePlayer = false;
+    private static final boolean blackPlayer = !whitePlayer;
+    
+    @Test
+    public void testDrawBlackTurn() {
+    	Minimax.player = blackPlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(true, 2, 2, false));
+		State s = new State(pawns, true, new HistoryStorage(), null, true);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertEquals(0, utility, 0.01);
+    }
+    
+    @Test
+    public void testDrawWhiteTurn() {
+    	Minimax.player = whitePlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(true, 2, 2, false));
+		State s = new State(pawns, true, new HistoryStorage(), null, true);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertEquals(0, utility, 0.01);
+    }
+    
+	@Test
+	public void testGetUtilityBlackWinsWhiteTurn() {
+		Minimax.player = whitePlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(true, 2, 2, false));
+		State s = new State(pawns, false);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertTrue(utility < 0);
+	}
+	
+	@Test
+	public void testGetUtilityBlackWinsBlackTurn() {
+		Minimax.player = blackPlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(true, 2, 2, false));
+		State s = new State(pawns, true);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertTrue(utility > 0);
+	}
+	
+	@Test
+	public void testGetUtilityWhiteWinsWhiteTurn() {
+		Minimax.player = whitePlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 1, 2, true));
+		pawns.add(new Pawn(true, 1, 1, false));
+		State s = new State(pawns, false);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertTrue(utility > 0);
+	}
+	
+	@Test
+	public void testGetUtilityWhiteWinsBlackTurn() {
+		Minimax.player = blackPlayer;
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 1, 2, true));
+		pawns.add(new Pawn(true, 1, 1, false));
+		State s = new State(pawns, true);
+		assertTrue(s.isTerminal());
+		double utility = s.getUtility();
+		assertTrue(utility < 0);
+	}
+	
 	@Test
 	public void testPrintBoard() {
 		List<Pawn> pawns = new LinkedList<>();
@@ -112,6 +185,27 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
+		Collection<State> afterState = currentState.getActions();
+		
+		boolean found = false;
+		for (State state : afterState) {
+			found = ((state.getPawns().size() == initialPawnState.size() - 1));
+			if (found)
+				break;
+		}
+		assertFalse(found);
+	}
+	
+	@Test
+	public void testNotEatKingInTrone() {
+		List<Pawn> initialPawnState = new LinkedList<>();
+		initialPawnState.add(new Pawn(false, 5, 5, true)); // King
+		
+		initialPawnState.add(new Pawn(true, 4, 5, false)); // Moving pawn
+		
+		initialPawnState.add(new Pawn(true, 7, 5, false));
+		
+		State currentState = new State(initialPawnState, true); // Black turn
 		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
