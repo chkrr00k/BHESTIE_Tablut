@@ -32,12 +32,13 @@ public class Pawn {
 		this.king = king;
 	}
 
+	/**
+	 * Function that says if this pawn can move on the turn
+	 * @param turn Current turn (TRUE=Black, FALSE=White)
+	 * @return True if the pawn can move in the turn passed
+	 */
 	public boolean filterByTurn(boolean turn) {
-		if (turn) { // black
-			return isBlack();
-		} else { // white
-			return !isBlack();
-		}
+		return (this.bw == turn);
 	}
 	
 	/**
@@ -76,7 +77,7 @@ public class Pawn {
 		StringBuilder result = new StringBuilder();
 		result.append(this.position.x);
 		result.append(this.position.y);
-		result.append(this.isBlack() ? 'B' : (this.king ? 'K' : 'W'));
+		result.append(this.bw ? 'B' : (this.king ? 'K' : 'W'));
 		return result.toString();
 	}
 	
@@ -84,7 +85,7 @@ public class Pawn {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (isBlack() ? 1231 : 1237);
+		result = prime * result + (bw ? 1231 : 1237);
 		result = prime * result + (king ? 1231 : 1237);
 		result = prime * result + ((position == null) ? 0 : position.hashCode());
 		return result;
@@ -102,11 +103,11 @@ public class Pawn {
 			return false;
 		}
 		Pawn pawn = (Pawn) obj;
-		return (this.isBlack()==pawn.isBlack() && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
+		return (this.bw==pawn.bw && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
 	}
 	
 	public boolean equals(Pawn pawn) {
-		return (this.isBlack()==pawn.isBlack() && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
+		return (this.bw==pawn.bw && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
 	}
 	
 	private static final ArrayList<Pawn> flightweightPawns = new ArrayList<>();
@@ -121,7 +122,7 @@ public class Pawn {
 	 */
 	public static Pawn of(final boolean bw, final int x, final int y, final boolean king) throws IllegalArgumentException {
 		for (Pawn pawn : flightweightPawns) {
-			if (bw==pawn.isBlack() && x==pawn.position.x && y==pawn.position.y && king==pawn.king)
+			if (bw==pawn.bw && x==pawn.position.x && y==pawn.position.y && king==pawn.king)
 				return pawn;
 		}
 		Pawn pawn = new Pawn(bw, x, y, king);

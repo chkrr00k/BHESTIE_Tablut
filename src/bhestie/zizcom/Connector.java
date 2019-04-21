@@ -110,7 +110,6 @@ public class Connector {
 			byte[] rB = new byte[len];
 			this.dis.readFully(rB, 0, len);
 			String result = new String(rB, StandardCharsets.UTF_8);
-			System.out.println(result);
 			return result;
 		}catch(IOException e){
 			this.error = true;

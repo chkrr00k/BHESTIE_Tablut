@@ -16,7 +16,7 @@ public class State {
 	/**
 	 * History storage. Storage of all mosses done.
 	 */
-	private final HistoryStorage historyStorage;
+	public final HistoryStorage historyStorage;
 	/**
 	 * Turn. TRUE=Black, FALSE=White
 	 */
@@ -219,13 +219,13 @@ public class State {
 					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
 
 			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
-				final int partnerPositionX_2 = pawn.getX() + (deltaY > 0 ? 1 : 0);
-				final int partnerPositionY_2 = pawn.getY() + (deltaX > 0 ? 1 : 0);
+				final int partnerPositionX_2 = pawn.getX() + (deltaY != 0 ? 1 : 0);
+				final int partnerPositionY_2 = pawn.getY() + (deltaX != 0 ? 1 : 0);
 				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
 						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
-				final int partnerPositionX_3 = pawn.getX() + (deltaY > 0 ? -1 : 0);
-				final int partnerPositionY_3 = pawn.getY() + (deltaX > 0 ? -1 : 0);
-				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
+				final int partnerPositionX_3 = pawn.getX() + (deltaY != 0 ? -1 : 0);
+				final int partnerPositionY_3 = pawn.getY() + (deltaX != 0 ? -1 : 0);
+				haveToEat = haveToEat && newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
 						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
 			}
 
@@ -253,20 +253,18 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
-		return (this.turn ? this.getHeuristicBlack() : -this.getHeuristicWhite());
-		/*
 		double result = 0;
-		if (this.turn) { // Black turn
+		if (!this.turn) { // Black turn
 			result = this.getHeuristicBlack();
+			if (!Minimax.player)
+				result = -result;
 		} else { // White turn
 			result = this.getHeuristicWhite();
+			if (Minimax.player)
+				result = -result;
 		}
 		
-		if (!this.turn)
-			result = -result;
-		
 		return result;
-		*/
 	}
 	
 	/**
@@ -276,17 +274,24 @@ public class State {
 	private double getHeuristicBlack() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
-		double result = 0;
+		double result = -1;
 		
 		long numeroMangiati = 0;
+		int numeroPassi = 0;
 		
 		State tmp = this.parent;
 		while (tmp != null) {
-			result--;
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isWhite()).count() - this.pawns.stream().filter(p -> p.isWhite()).count();
-			result += numeroMangiati * 10;
+			result += numeroMangiati * 50;
+			//result -= tmp.getHeuristicWhite();
+			//numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
+			//result -= numeroMangiati * 50;
+			numeroPassi++;
 			tmp = tmp.parent;
 		}
+		
+		while (numeroPassi-- >= 0)
+			result *= 0.5;
 		
 		return result;
 	}
@@ -298,17 +303,22 @@ public class State {
 	private double getHeuristicWhite() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il bianco
-		double result = 0;
+		double result = -1;
 		
 		long numeroMangiati = 0;
+		int numeroPassi = 0;
 		
 		State tmp = this.parent;
 		while (tmp != null) {
-			result--;
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			result += numeroMangiati * 10;
+			result += numeroMangiati * 50;
+			//result -= tmp.getHeuristicBlack();
+			numeroPassi++;
 			tmp = tmp.parent;
 		}
+		
+		while (numeroPassi-- >= 0)
+			result *= 0.5;
 		
 		return result;
 	}
@@ -349,15 +359,18 @@ public class State {
 			}
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 				result = getUtilityBlack();
+				if (!Minimax.player) { // White player
+					result = -result;
+				}
 			} else { // Is terminal and black not win -> White wins
 				result = getUtilityWhite();
+				if (Minimax.player) { // Black player
+					result = -result;
+				}
 			}
 		} else {
 			return this.getHeuristic(); // In case you ask getUtility and it's not a terminalState -> returns the getHeuristic value 
 		}
-		
-		if (!this.turn)
-			result = -result;
 		
 		return result;
 	}
@@ -369,7 +382,16 @@ public class State {
 	private double getUtilityBlack() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
-		return Double.MAX_VALUE;
+		
+		double result = 10000;
+		
+		State tmp = this.parent;
+		while (tmp != null) {
+			result--;
+			tmp = tmp.parent;
+		}
+		
+		return result;
 	}
 	
 	/**
@@ -379,7 +401,15 @@ public class State {
 	private double getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
-		return Double.MAX_VALUE;
+		
+		double result = 10000;
+		State tmp = this.parent;
+		while (tmp != null) {
+			result--;
+			tmp = tmp.parent;
+		}
+		
+		return result;
 	}
 
 	/**

@@ -55,16 +55,17 @@ public class Main {
 	    boolean whitePlayer = false;
 	    boolean blackPlayer = !whitePlayer;
 	    
-	    Minimax.player = whitePlayer; // White player
+	    Minimax.player = blackPlayer;
 	    
 	    State currentState = new State(initialState, Minimax.player);
 	    
 		long a = System.nanoTime();
 		//System.out.println(Minimax.alphaBeth(currentState, 2, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player));
-		double result = Minimax.alphaBethInit(currentState, 100);
+		double result = Minimax.alphaBethInit(currentState, 13);
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
-			List<State> unfold = s.unfold();
+			LinkedList<State> unfold = (LinkedList)s.unfold();
+			System.out.println("S=" + s.getHeuristic() + "\tUnfold=" + unfold.pollLast().getHeuristic());
 			//System.out.println(unfold);
 		}
 		long c = System.nanoTime();

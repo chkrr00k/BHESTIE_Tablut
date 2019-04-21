@@ -4,9 +4,9 @@ import java.util.List;
 
 public final class Minimax {
 	
-	private static final int TIMEOUT = 30;
+	private static final int TIMEOUT = 20;
 	
-	private static Thread interrupterThread = new Thread(new Interrupter(TIMEOUT), "Interrupter");
+	private static Interrupter interrupter = new Interrupter(TIMEOUT);
 	
 	private Minimax() {}
 
@@ -32,9 +32,11 @@ public final class Minimax {
 	 * @return
 	 */
 	public static final double alphaBethInit(final State state, final int depth) {
+;		maxHeuFound = -Double.MAX_VALUE;
 		Minimax.signal = false;
+		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.start();
-		double alphaBethResult = alphaBeth(state, depth, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player);
+		double alphaBethResult = alphaBeth(state, depth, -Double.MAX_VALUE, Double.MAX_VALUE, true);
 		interrupterThread.interrupt();
 		return alphaBethResult;
 	}
@@ -46,14 +48,12 @@ public final class Minimax {
 		double v = 0;
 		if(s.isTerminal()){
 			final double utility = s.getUtility();
-			if (max) {
-				if (utility > maxHeuFound) {
-					stack.clear();
-					maxHeuFound = utility;
-					stack.add(s);
-				} else if (utility == maxHeuFound) {
-					stack.add(s);
-				}
+			if (utility > maxHeuFound) {
+				stack.clear();
+				maxHeuFound = utility;
+				stack.add(s);
+			} else if (utility == maxHeuFound) {
+				stack.add(s);
 			}
 			return utility;
 		} else if(depth == 0 || signal) {
@@ -71,18 +71,17 @@ public final class Minimax {
 			for(State c : s.getActions()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
-				if(beth <= alpha || signal){
+				if(beth <= alpha){
 					//clean();
 					break;
 				}
 			}
-			return v;
 		}else{
 			v = Double.MAX_VALUE;
 			for(State c : s.getActions()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
-				if(beth <= alpha || signal){
+				if(beth <= alpha){
 					break;
 				}
 			}
