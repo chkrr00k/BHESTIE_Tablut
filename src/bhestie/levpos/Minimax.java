@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 public final class Minimax {
 	private Minimax() {}
 
-	private static final int TIMEOUT = 10;
+	private static final int TIMEOUT = 59;
 	public static final Duration timeout = Duration.ofSeconds(TIMEOUT);
 	private static int esplorati = 0;
 	private static boolean signal = false;

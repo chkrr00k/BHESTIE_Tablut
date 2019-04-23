@@ -251,6 +251,16 @@ public class State {
 		//result.add(tmp);
 		return result;
 	}
+
+	public State getInitialState(){
+		State action = this;
+		State tmp = this;
+		while(tmp.parent != null){
+			action = tmp;
+			tmp = tmp.parent;
+		}
+		return action;
+	}
 	
 	/**
 	 * Returns a value that stimate the "goodness" of the pawns in the board.
@@ -270,8 +280,7 @@ public class State {
 			else{//euristica non temrinale
 				value -= threatenKing(king.get()) * THREATEN_POSITION_HEURISTIC_VALUE;
 			}
-		}
-		else{//white heuristic
+		}else{//white heuristic
 			Optional<Pawn> king = this.pawns.stream().filter(p -> p.isKing()).findAny();
 			if(isTerminal()) {
 				if (!king.isPresent()) { // Se non c'è il re -> nero vince
@@ -279,15 +288,14 @@ public class State {
 				} else if (kingEscaped(king.get())) { // Il re scappa -> bianco vince
 					return Double.MAX_VALUE;
 				}
-			}
-
-			else{//euristica non terminale
+			}else{//euristica non terminale
 				//the more black pawns in game, the wrost this situation is...
 				//for white is good to eat and to be eaten
 				value -= pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE;
 				value -= pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE;
 				value += threatenKing(king.get()) * THREATEN_POSITION_HEURISTIC_VALUE;
 			}
+
 		}
 		return value;
 
@@ -365,10 +373,15 @@ public class State {
 	 */
 	public double getUtility() {
 		if (this.isTerminal()) {
-			// TODO Dire se ho vinto o perso (o pareggiato)
 			if (drawCase){
 				return 0; // Draw
 			}
+
+			if(this.isTurn())
+				return Double.MIN_VALUE;
+			else
+				return Double.MAX_VALUE;
+
 		} else {
 			System.err.println("Non ci devo andare");
 		}

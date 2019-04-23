@@ -5,7 +5,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
+import bhestie.levpos.Pawn;
+import bhestie.levpos.State;
 import com.google.gson.Gson;
 
 public class Connector {
@@ -76,6 +79,12 @@ public class Connector {
 	 * Finalized and close the socket
 	 * @return if the disposal succeed
 	 */
+
+	public String readCode() throws IOException{
+		return this.read();
+	}
+
+
 	public boolean dispose(){
 		try{
 			this.dis.close();
@@ -104,6 +113,35 @@ public class Connector {
 		this.write(this.gson.toJson(move));
 
 	}
+
+	public void writeAction(State statoCorrente, State statoDestinazione) throws IOException{
+		List<Pawn> pedoniStatoCorrente = statoCorrente.getPawns();
+		List<Pawn> pedoniStatoDestinazione = statoDestinazione.getPawns();
+		Pawn pedoneDestinazione = null;
+		Pawn pedoneCorrente = null;
+
+
+
+		for (Pawn pawnDestinazioneIterante : pedoniStatoDestinazione) {
+			if (!pedoniStatoCorrente.contains(pawnDestinazioneIterante)) {
+				pedoneDestinazione = pawnDestinazioneIterante;
+			}
+		}
+
+		for (Pawn pawnCorrenteIterante : pedoniStatoCorrente) {
+			if (!pedoniStatoDestinazione.contains(pawnCorrenteIterante)) {
+				pedoneCorrente = pawnCorrenteIterante;
+			}
+		}
+
+		Action action = new Action(pedoneCorrente.getX(),
+				pedoneCorrente.getY(),
+				pedoneDestinazione.getX(),
+				pedoneDestinazione.getY(), statoCorrente.toString());
+		writeAction(action);
+	}
+
+
 	private String read() throws IOException{
 		try{
 			int len = this.dis.readInt();

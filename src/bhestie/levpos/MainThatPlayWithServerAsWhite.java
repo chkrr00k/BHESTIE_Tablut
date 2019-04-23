@@ -56,20 +56,38 @@ public class MainThatPlayWithServerAsWhite {
 			connector.present();
 
 			boolean end = false;
-			State statoCorrente = new State(connector.readBoard().get(), false);
+			State statoCorrente = new State(connector.readBoard().convert().get(), false);
 			//State statoCorrente = new State(initialState , false); // Turno white iniziale
 
 			while(!end){
-				statoCorrente = Minimax.minimaxDecision(statoCorrente);
-				if (statoCorrente.isTerminal()){
-					end = true;
-					System.out.println(statoCorrente.printBoard());
-					System.out.println("Ha vinto: " + (statoCorrente.isTurn() ? "Black" : "White"));
-					System.out.println("Game over");
-				}else{
-					//TODO connector.sendMovement
+
+				Minimax.alphaBeth(statoCorrente, 3, -Double.MAX_VALUE, Double.MAX_VALUE, true);
+				List<State> miniMaxStack = Minimax.stack;
+				State statoDestinazione = Minimax.stack.get(0).getInitialState();
+
+				/*
+				for(State s : miniMaxStack){
+					if(!s.getInitialState().equals(nextState)) {
+						nextState = s.getInitialState();
+						System.out.println(nextState);
+					}
+
+					//List<State> unfold = s.unfold();
+					//System.out.println(unfold);
 				}
+				*/
+
+				if (statoDestinazione.isTerminal()){
+					end = true;
+					System.out.println(statoDestinazione.printBoard());
+					System.out.println("Ha vinto: " + (statoDestinazione.isTurn() ? "Black" : "White"));
+					System.out.println("Game over");
+				}
+				connector.writeAction(statoCorrente, statoDestinazione);
+
 				Thread.sleep(1000 * 5);
+				String serviceMessage = connector.readCode();
+
 				statoCorrente = new State(connector.readBoard().get(), false);
 			}
 		}catch(IOException e){
