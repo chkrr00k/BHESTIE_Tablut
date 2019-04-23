@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -415,5 +416,32 @@ public class TestState {
 			}
 		}
 		assertTrue(found);
+	}
+	
+	@Test
+	public void testROI() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		State s = new State(pawns, false);
+		assertTrue(s.checkROI(3, 2, 3, 4, p -> true));
+		assertFalse(s.checkROI(2, 2, 2, 4, p -> true));
+		
+		assertFalse(s.checkROI(3, 2, 3, 4, p -> p.isBlack()));
+		
+		assertEquals(1, s.checkROIQuantity(3, 2, 3, 4, p -> true));
+		assertEquals(0, s.checkROIQuantity(2, 2, 2, 4, p -> true));
+	}
+	@Test
+	public void testholedROI() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		State s = new State(pawns, false);
+		assertTrue(s.checkROI(3, 2, 5, 6, State.holedROIPredicateFactory(3, 3, 4, 6)));
+		assertFalse(s.checkROI(2, 2, 6, 4, State.holedROIPredicateFactory(2, 3, 4, 6)));
+		
+		assertFalse(s.checkROI(3, 2, 3, 4, State.holedROIPredicateFactory(3, 3, 4, 6).and(p -> p.isBlack())));
+		
+		assertEquals(1, s.checkROIQuantity(3, 2, 3, 4, State.holedROIPredicateFactory(3, 3, 4, 6)));
+		assertEquals(0, s.checkROIQuantity(2, 2, 2, 4, State.holedROIPredicateFactory(3, 3, 4, 6)));
 	}
 }

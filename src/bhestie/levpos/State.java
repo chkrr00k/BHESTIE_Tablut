@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -451,6 +452,49 @@ public class State {
 			return p.filterByTurn(this.parent.turn) && !this.parent.pawns.contains(p);
 		}).findFirst().get();
 		return new Action(from.getX(), from.getY(), to.getX(), to.getY(), this.parent.turn ? "B" : "W");
+	}
+	
+	/**
+	 * 
+	 * @param stx the top left starting point x
+	 * @param sty the top left starting point y
+	 * @param enx the bottom right ending point x
+	 * @param eny the bottom right ending point y
+	 * @param pr the condition the Pawn in the row must verify
+	 * @return if there are any selected pawns there
+	 */
+	public boolean checkROI(int stx, int sty, int enx, int eny, Predicate<Pawn> pr){
+		return this.checkROIQuantity(stx, sty, enx, eny, pr) > 0;
+	}
+	/**
+	 * 
+	 * @param stx the top left starting point x
+	 * @param sty the top left starting point y
+	 * @param enx the bottom right ending point x
+	 * @param eny the bottom right ending point y
+	 * @param pr the condition the Pawn in the row must verify
+	 * @return the number of selected pawns there
+	 */
+	public long checkROIQuantity(int stx, int sty, int enx, int eny, Predicate<Pawn> pr){
+		return this.pawns.stream().filter((p)->{
+			return (p.getX() >= stx && p.getX() <= enx) // X check
+					&& (p.getY() >= sty && p.getY() <= eny) // Y check
+					&& pr.test(p); // predicate to costum check
+		}).count();
+	}
+	/**
+	 * Generates a predicate to check squared holed ROIs
+	 * @param istx the top left starting point x of the hole
+	 * @param isty the top left starting point y of the hole
+	 * @param ienx the bottom right ending point x of the hole
+	 * @param ieny the bottom right ending point y of the hole
+	 * @return the new predicate just created ofr the occasion
+	 */
+	public static Predicate<Pawn> holedROIPredicateFactory(int istx, int isty, int ienx, int ieny){
+		return (p) -> {
+			return (p.getX() <= istx || p.getX() >= ienx)
+					&& (p.getY() <= isty || p.getY() >= ieny);
+		};
 	}
 
 	/**
