@@ -120,8 +120,6 @@ public class Connector {
 		Pawn pedoneDestinazione = null;
 		Pawn pedoneCorrente = null;
 
-
-
 		for (Pawn pawnDestinazioneIterante : pedoniStatoDestinazione) {
 			if (!pedoniStatoCorrente.contains(pawnDestinazioneIterante)) {
 				pedoneDestinazione = pawnDestinazioneIterante;
