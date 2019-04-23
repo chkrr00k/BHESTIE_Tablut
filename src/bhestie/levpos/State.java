@@ -274,7 +274,9 @@ public class State {
 	private double getHeuristicBlack() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
-		return 0;
+		//return 0;
+		BlackHeuristic bh = new BlackHeuristic(this);
+		return bh.calculateMoveGoodness();
 	}
 	
 	/**
