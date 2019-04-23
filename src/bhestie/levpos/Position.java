@@ -1,5 +1,7 @@
 package bhestie.levpos;
 
+import java.util.List;
+
 public class Position {
 	/**
 	 * The X position
@@ -40,6 +42,16 @@ public class Position {
 		Position position = (Position) obj;
 		return (this.x==position.x && this.y==position.y);
 	}
+
+	public boolean equalsAny(List<Position> listPosition) {
+		for(Position position : listPosition){
+			if(this.equals(position))
+				return true;
+		}
+		return false;
+
+	}
+
 	public boolean equals(Position position) {
 		return (this.x==position.x && this.y==position.y);
 	}
