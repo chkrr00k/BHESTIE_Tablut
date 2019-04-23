@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
+import bhestie.zizcom.Action;
 
 public class State {
 	private final State parent;
@@ -437,6 +438,19 @@ public class State {
 	@Override
 	public String toString() {
 		return this.printBoard();
+	}
+	
+	/**
+	 * @return the action between the old status and the new status just created.
+	 */
+	public Action getAction(){
+		Pawn from = this.parent.pawns.stream().filter((p) -> {
+			return p.filterByTurn(this.parent.turn) && !this.pawns.contains(p);
+		}).findFirst().get();
+		Pawn to = this.pawns.stream().filter((p) -> {
+			return p.filterByTurn(this.parent.turn) && !this.parent.pawns.contains(p);
+		}).findFirst().get();
+		return new Action(from.getX(), from.getY(), to.getX(), to.getY(), this.parent.turn ? "B" : "W");
 	}
 
 	/**

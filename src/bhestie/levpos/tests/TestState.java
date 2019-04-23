@@ -13,6 +13,7 @@ import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
 import bhestie.levpos.utils.HistoryStorage;
+import bhestie.zizcom.Action;
 
 public class TestState {
 
@@ -367,5 +368,52 @@ public class TestState {
 		s = new State(pawns, false); // White turn
 		assertEquals(5, s.getActions().size()); // two pawn generates 5 successors in this configuration because all the symmetries
 
+	}
+	@Test
+	public void testGetAction() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, false));
+		State s = new State(pawns, false);
+		try{
+			s.getAction();
+			fail("It should throw exception");
+		}catch(NullPointerException e){
+			;
+		}
+		Action a = s.getActions().stream().findFirst().get().getAction();
+		assertEquals("d3", a.getTo());
+		assertEquals("c3", a.getFrom());
+		assertEquals("W", a.getState());
+	}
+	
+	@Test
+	public void testGetActionOnEat() throws Exception {
+		List<Pawn> initialPawnState = new LinkedList<>();
+		initialPawnState.add(new Pawn(false, 1, 1, true)); // King, to be sure is in the board
+		
+		initialPawnState.add(new Pawn(true, 1, 4, false)); // Pawn to move that eats pawns in (7,3) and (7,5)
+		
+		initialPawnState.add(new Pawn(false, 8, 4, false));
+		initialPawnState.add(new Pawn(false, 7, 3, false));
+		initialPawnState.add(new Pawn(true, 7, 2, false));
+		initialPawnState.add(new Pawn(false, 7, 5, false));
+		initialPawnState.add(new Pawn(true, 7, 6, false));
+		
+		State currentState = new State(initialPawnState, true); // Black turn
+		
+		Collection<State> afterState = currentState.getActions();
+		
+		boolean found = false;
+		for (State state : afterState) {
+			found = ((state.getPawns().size() == initialPawnState.size() - 3));
+			if (found){
+				Action a = state.getAction();
+				assertEquals("g4", a.getTo());
+				assertEquals("a4", a.getFrom());
+				assertEquals("B", a.getState());
+				break;
+			}
+		}
+		assertTrue(found);
 	}
 }
