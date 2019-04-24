@@ -10,9 +10,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
+
 import bhestie.zizcom.Action;
+import jdk.nashorn.internal.runtime.options.Option;
+
 
 public class State {
+	private final int THREATEN_KING_HEURISTIC_VALUE = 20;
+	private final int EATEN_PAWN_HEURISTIC_VALUE = 50;
+	private final int DISTANCE_FROM_ESCAPE = 70;
 	private final State parent;
 	private final boolean drawCase;
 	/**
@@ -249,6 +255,80 @@ public class State {
 		//result.add(tmp);
 		return result;
 	}
+
+	/**
+	 * Checks if the king is threaten (minacciato) from other black pawns.
+	 * in particular calculates the remaining pawns that has to be put near the king for make it caught
+	 *rules: if the king is in the central position, 4 pawn have to be near him.
+	 * if the king is near the central position: 3
+	 * other positions = 2
+	 */
+	private int threatenKing(){
+		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
+		if(!kingS.isPresent())
+			return 0;
+		else {
+			Pawn king = kingS.get();
+
+			int startingValue;
+			if(king.getX() == 5 && king.getY() == 5)
+				startingValue = 3;
+			else if(king.getX() == 4 && king.getY() == 5)
+				startingValue = 3;
+			else if(king.getX() == 5 && king.getY() == 4)
+				startingValue = 3;
+			else if(king.getX() == 6 && king.getY() == 5)
+				startingValue = 3;
+			else if(king.getX() == 5 && king.getY() == 6)
+				startingValue = 3;
+			else startingValue = 2;
+
+			List<Position> threatenPositions = new ArrayList<Position>();
+			threatenPositions.add(Position.of(king.getX() + 1, king.getY()));
+			threatenPositions.add(Position.of(king.getX(), king.getY() + 1));
+			threatenPositions.add(Position.of(king.getX() - 1, king.getY()));
+			threatenPositions.add(Position.of(king.getX(), king.getY() - 1));
+
+			Stream<Pawn> found =
+					this.pawns.stream().filter(pawn -> pawn.isBlack())
+							.filter(pawn -> pawn.position.equalsAny(threatenPositions));
+			int count = (int) found.count();
+
+			return startingValue - count;
+		}
+	}
+
+	/*
+	evaluate the minimum movements for making the king reach a position
+	the black's movements are ignored
+	 */
+
+
+	/*
+	this evaluation should make the heuristinc going to an escape way instead staying in a static situation
+	it calculates the distance between the king and the nearest escape
+	it must be modified for taking care of the rest of the table situation
+	(black's pawn have closed the escape way)
+	 */
+	private int rawDistanceFromEscape(){
+		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
+		if(!kingS.isPresent())
+			return 0;
+		else {
+			Pawn king = kingS.get();
+			int x = king.getX();
+			int y = king.getY();
+
+			int distanceRecord = 6;//maximum distance
+			for(Position position : escapePositions){
+				int distance = Math.abs(position.x - x);
+				distance += Math.abs(position.y - y);
+				if(distance < distanceRecord)
+					distanceRecord = distance;
+			}
+			return distanceRecord;
+		}
+	}
 	
 	/**
 	 * Returns a value that stimate the "goodness" of the pawns in the board.
@@ -284,16 +364,18 @@ public class State {
 		State tmp = this.parent;
 		while (tmp != null) {
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isWhite()).count() - this.pawns.stream().filter(p -> p.isWhite()).count();
-			result += numeroMangiati * 50;
+			result += numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
 			//result -= tmp.getHeuristicWhite();
 			//numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			//result -= numeroMangiati * 50;
+			//result -= numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
 			numeroPassi++;
 			tmp = tmp.parent;
 		}
 		
 		while (numeroPassi-- >= 0)
 			result *= 0.5;
+
+		result -= threatenKing() * THREATEN_KING_HEURISTIC_VALUE;
 		
 		return result;
 	}
@@ -313,7 +395,7 @@ public class State {
 		State tmp = this.parent;
 		while (tmp != null) {
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			result += numeroMangiati * 50;
+			result += numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
 			//result -= tmp.getHeuristicBlack();
 			numeroPassi++;
 			tmp = tmp.parent;
@@ -321,7 +403,11 @@ public class State {
 		
 		while (numeroPassi-- >= 0)
 			result *= 0.5;
-		
+
+		result += threatenKing() * THREATEN_KING_HEURISTIC_VALUE;
+
+		result -= rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE;
+
 		return result;
 	}
 
