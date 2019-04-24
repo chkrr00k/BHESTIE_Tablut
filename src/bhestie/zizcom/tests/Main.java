@@ -44,11 +44,11 @@ public class Main {
 		
 		State currentState = new State(b.get(), Minimax.player);
 		while(true) {
-			double result = Minimax.alphaBethInit(currentState, 1);
+			double result = Minimax.alphaBethInit(currentState, 4);
 			System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 			State oldState = currentState;
 			
-			currentState = Minimax.stack.get(0);
+			currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
 			List<State> unfold = currentState.unfold();
 			if (unfold.size() > 0)
 				currentState = unfold.get(unfold.size() - 1);

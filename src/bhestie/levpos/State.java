@@ -12,9 +12,26 @@ import bhestie.levpos.utils.HistoryStorage;
 import jdk.nashorn.internal.runtime.options.Option;
 
 public class State {
-	private final int THREATEN_KING_HEURISTIC_VALUE = 20;
-	private final int EATEN_PAWN_HEURISTIC_VALUE = 50;
-	private final int DISTANCE_FROM_ESCAPE = 70;
+	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = -50;
+	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
+
+	//TODO is positive to be eaten for white? change paremeter if it is...
+	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -100;
+	//if a state has less black pawns, it will have a more positive value because the malus
+	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
+	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -400;
+	public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = -100;
+	public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
+
+	//raw distance from nearest escape, the more it is, the more malus we get
+	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -50;
+	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
+
+	//having white pawn on main axis (default position) is a malus
+	private final int WHITE_PAWNS_ON_MAIN_AXIS = -50;
+	private final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
+	private final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
+
 	private final State parent;
 	private final boolean drawCase;
 	/**
@@ -259,7 +276,7 @@ public class State {
 	 * if the king is near the central position: 3
 	 * other positions = 2
 	 */
-	private int threatenKing(){
+	private int remainingPositionForCaptureKing(){
 		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
 		if(!kingS.isPresent())
 			return 0;
@@ -325,7 +342,22 @@ public class State {
 			return distanceRecord;
 		}
 	}
-	
+
+	/**
+	*is positive to have pawn in escape positions for controlling that area
+	 **/
+
+	/**
+	*as in chess heuristic you have to move from default locations for getting table's control
+	*we put a negative heuristic for leaving default position
+	*this combined with king's threatenPositionHeuristic should make the algorithm move the pawn's that are
+	*far away from king
+	 **/
+	private int mainAxisDefaultPosition(){
+		long count = pawns.stream().filter(pawn -> pawn.isWhite()).filter(pawn -> pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
+		return (int) count;
+	}
+
 	/**
 	 * Returns a value that stimate the "goodness" of the pawns in the board.
 	 * @return A value that stimate the "goodness" of the pawns in the board.
@@ -356,23 +388,31 @@ public class State {
 		
 		long numeroMangiati = 0;
 		int numeroPassi = 0;
-		
+
+
+		/*
 		State tmp = this.parent;
 		while (tmp != null) {
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isWhite()).count() - this.pawns.stream().filter(p -> p.isWhite()).count();
-			result += numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
+			result += numeroMangiati * EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC;
 			//result -= tmp.getHeuristicWhite();
 			//numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
 			//result -= numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
 			numeroPassi++;
 			tmp = tmp.parent;
 		}
+		*/
+
 		
 		while (numeroPassi-- >= 0)
 			result *= 0.5;
 
-		result -= threatenKing() * THREATEN_KING_HEURISTIC_VALUE;
-		
+		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC;
+
+		result += pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC;
+
+		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC;
+
 		return result;
 	}
 	
@@ -383,26 +423,33 @@ public class State {
 	private double getHeuristicWhite() {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il bianco
-		double result = -1;
+		double result = 0;
 		
+
+		/*
 		long numeroMangiati = 0;
 		int numeroPassi = 0;
-		
 		State tmp = this.parent;
 		while (tmp != null) {
 			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			result += numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
+			result += numeroMangiati * EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC;
 			//result -= tmp.getHeuristicBlack();
 			numeroPassi++;
 			tmp = tmp.parent;
 		}
-		
 		while (numeroPassi-- >= 0)
 			result *= 0.5;
+		*/
 
-		result += threatenKing() * THREATEN_KING_HEURISTIC_VALUE;
+		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
-		result -= rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE;
+		result += rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
+
+		result += mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
+
+		result += pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+
+		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		return result;
 	}
@@ -524,6 +571,10 @@ public class State {
 	}
 
 	/**
+	 * default white pawns positions
+	 */
+	private static final List<Position> defaultWhitePawnsPosition = new ArrayList<Position>();
+	/**
 	 * List of citadels
 	 */
 	private static final List<Citadel> citadels = new ArrayList<>(4); 
@@ -596,5 +647,15 @@ public class State {
 		protectedKingPositions.add(Position.of(5, 4));
 		protectedKingPositions.add(Position.of(4, 5));
 		protectedKingPositions.add(Position.of(6, 5));
+
+		defaultWhitePawnsPosition.add(Position.of(5,3));
+		defaultWhitePawnsPosition.add(Position.of(5,4));
+		defaultWhitePawnsPosition.add(Position.of(5,6));
+		defaultWhitePawnsPosition.add(Position.of(5,7));
+
+		defaultWhitePawnsPosition.add(Position.of(3,5));
+		defaultWhitePawnsPosition.add(Position.of(4,5));
+		defaultWhitePawnsPosition.add(Position.of(6,5));
+		defaultWhitePawnsPosition.add(Position.of(7,5));
 	}
 }
