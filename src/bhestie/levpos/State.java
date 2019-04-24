@@ -5,11 +5,15 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
+
+import bhestie.zizcom.Action;
 import jdk.nashorn.internal.runtime.options.Option;
+
 
 public class State {
 	private final int THREATEN_KING_HEURISTIC_VALUE = 20;
@@ -521,6 +525,145 @@ public class State {
 	@Override
 	public String toString() {
 		return this.printBoard();
+	}
+	
+	/**
+	 * @return the action between the old status and the new status just created.
+	 */
+	public Action getAction(){
+		Pawn from = this.parent.pawns.stream().filter((p) -> {
+			return p.filterByTurn(this.parent.turn) && !this.pawns.contains(p);
+		}).findFirst().get();
+		Pawn to = this.pawns.stream().filter((p) -> {
+			return p.filterByTurn(this.parent.turn) && !this.parent.pawns.contains(p);
+		}).findFirst().get();
+		return new Action(from.getX(), from.getY(), to.getX(), to.getY(), this.parent.turn ? "B" : "W");
+	}
+	
+	private int kingEscapeX(Pawn k){
+		if(k.getX() == 9 || k.getX() == 1){
+			return 1; // king alreay escaped;
+		}else if(k.getX() <= 6 && k.getX() >=4){
+			return 0; // king can't escape
+		}else if(k.getX() == 7 || k.getX() == 3){ // king could escape in two place;
+			int result = 0;
+			if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+				result++;
+			}
+			if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
+				result++;
+			}
+			return result;
+		}else if(k.getX() == 2 || k.getX() == 8){ // king could escape in one place;
+			int result = 0;
+			if(k.getY() <= 4){
+				// check left side
+				if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+					result++;
+				}
+			}else if(k.getY() >= 6){
+				// check right side
+				if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
+					result++;
+				}
+			}
+			return result;
+		}else{
+			return 0;
+		}
+	}
+	private int kingEscapeY(Pawn k){
+		if(k.getY() == 9 || k.getY() == 1){
+			return 1; // king alreay escaped;
+		}else if(k.getY() <= 6 && k.getY() >=4){
+			return 0; // king can't escape
+		}else if(k.getY() == 7 || k.getY() == 3){ // king could escape in two place;
+			int result = 0;
+			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+				result++;
+			}
+			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
+				result++;
+			}
+			return result;
+		}else if(k.getY() == 2 || k.getY() == 8){ // king could escape in one place;
+			int result = 0;
+			if(k.getX() <= 4){
+				// check left side
+				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+					result++;
+				}
+			}else if(k.getX() >= 6){
+				// check right side
+				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
+					result++;
+				}
+			}
+			return result;
+		}else{
+			return 0;
+		}
+	}
+	/**
+	 * Check if the king pawn can reach any of the goal tiles and if so how many tiles can ot reach in the next move
+	 * @return the number of possible goal tiles reached
+	 */
+	public int kingEscape(){
+		Pawn king = null;
+		for(Pawn p : this.pawns){
+			if(p.king){
+				king = p;
+				break; // for faster performance
+			}
+		}
+		if(king == null){
+			return 0; // no king found (weird!)
+		}else{
+			return this.kingEscapeX(king) + this.kingEscapeY(king);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param stx the top left starting point x
+	 * @param sty the top left starting point y
+	 * @param enx the bottom right ending point x
+	 * @param eny the bottom right ending point y
+	 * @param pr the condition the Pawn in the row must verify
+	 * @return if there are any selected pawns there
+	 */
+	public boolean checkROI(int stx, int sty, int enx, int eny, Predicate<Pawn> pr){
+		return this.checkROIQuantity(stx, sty, enx, eny, pr) > 0;
+	}
+	/**
+	 * 
+	 * @param stx the top left starting point x
+	 * @param sty the top left starting point y
+	 * @param enx the bottom right ending point x
+	 * @param eny the bottom right ending point y
+	 * @param pr the condition the Pawn in the row must verify
+	 * @return the number of selected pawns there
+	 */
+	public long checkROIQuantity(int stx, int sty, int enx, int eny, Predicate<Pawn> pr){
+		return this.pawns.stream().filter((p)->{
+			return (p.getX() >= stx && p.getX() <= enx) // X check
+					&& (p.getY() >= sty && p.getY() <= eny) // Y check
+					&& pr.test(p); // predicate to costum check
+		}).count();
+	}
+	/**
+	 * Generates a predicate to check squared holed ROIs
+	 * @param istx the top left starting point x of the hole
+	 * @param isty the top left starting point y of the hole
+	 * @param ienx the bottom right ending point x of the hole
+	 * @param ieny the bottom right ending point y of the hole
+	 * @return the new predicate just created for the occasion
+	 */
+	public static Predicate<Pawn> holedROIPredicateFactory(int istx, int isty, int ienx, int ieny){
+		return (p) -> {
+			return (p.getX() <= istx || p.getX() >= ienx)
+					&& (p.getY() <= isty || p.getY() >= ieny);
+		};
 	}
 
 	/**
