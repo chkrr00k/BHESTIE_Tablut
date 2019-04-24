@@ -444,4 +444,45 @@ public class TestState {
 		assertEquals(1, s.checkROIQuantity(3, 2, 3, 4, State.holedROIPredicateFactory(3, 3, 4, 6)));
 		assertEquals(0, s.checkROIQuantity(2, 2, 2, 4, State.holedROIPredicateFactory(3, 3, 4, 6)));
 	}
+	@Test
+	public void testKingEscape() throws Exception {
+		List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, true));
+		State s = new State(pawns, false);
+		assertEquals(4, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, true));
+		pawns.add(new Pawn(false, 4, 3, false));
+		s = new State(pawns, false);
+		assertEquals(3, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 3, 3, true));
+		pawns.add(new Pawn(false, 4, 3, false));
+		pawns.add(new Pawn(true, 3, 4, false));
+		s = new State(pawns, false);
+		assertEquals(2, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 7, 2, true));
+		s = new State(pawns, false);
+		assertEquals(3, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 7, 2, true));
+		pawns.add(new Pawn(false, 7, 3, false));
+		s = new State(pawns, false);
+		assertEquals(2, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 4, 6, true));
+		s = new State(pawns, false);
+		assertEquals(0, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 4, 8, true));
+		s = new State(pawns, false);
+		assertEquals(1, s.kingEscape());
+	}
 }

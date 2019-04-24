@@ -454,6 +454,89 @@ public class State {
 		return new Action(from.getX(), from.getY(), to.getX(), to.getY(), this.parent.turn ? "B" : "W");
 	}
 	
+	private int kingEscapeX(Pawn k){
+		if(k.getX() == 9 || k.getX() == 1){
+			return 1; // king alreay escaped;
+		}else if(k.getX() <= 6 && k.getX() >=4){
+			return 0; // king can't escape
+		}else if(k.getX() == 7 || k.getX() == 3){ // king could escape in two place;
+			int result = 0;
+			if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+				result++;
+			}
+			if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
+				result++;
+			}
+			return result;
+		}else if(k.getX() == 2 || k.getX() == 8){ // king could escape in one place;
+			int result = 0;
+			if(k.getY() <= 4){
+				// check left side
+				if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+					result++;
+				}
+			}else if(k.getY() >= 6){
+				// check right side
+				if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
+					result++;
+				}
+			}
+			return result;
+		}else{
+			return 0;
+		}
+	}
+	private int kingEscapeY(Pawn k){
+		if(k.getY() == 9 || k.getY() == 1){
+			return 1; // king alreay escaped;
+		}else if(k.getY() <= 6 && k.getY() >=4){
+			return 0; // king can't escape
+		}else if(k.getY() == 7 || k.getY() == 3){ // king could escape in two place;
+			int result = 0;
+			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+				result++;
+			}
+			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
+				result++;
+			}
+			return result;
+		}else if(k.getY() == 2 || k.getY() == 8){ // king could escape in one place;
+			int result = 0;
+			if(k.getX() <= 4){
+				// check left side
+				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+					result++;
+				}
+			}else if(k.getX() >= 6){
+				// check right side
+				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
+					result++;
+				}
+			}
+			return result;
+		}else{
+			return 0;
+		}
+	}
+	/**
+	 * Check if the king pawn can reach any of the goal tiles and if so how many tiles can ot reach in the next move
+	 * @return the number of possible goal tiles reached
+	 */
+	public int kingEscape(){
+		Pawn king = null;
+		for(Pawn p : this.pawns){
+			if(p.king){
+				king = p;
+				break; // for faster performance
+			}
+		}
+		if(king == null){
+			return 0; // no king found (weird!)
+		}else{
+			return this.kingEscapeX(king) + this.kingEscapeY(king);
+		}
+	}
+	
 	/**
 	 * 
 	 * @param stx the top left starting point x
@@ -488,7 +571,7 @@ public class State {
 	 * @param isty the top left starting point y of the hole
 	 * @param ienx the bottom right ending point x of the hole
 	 * @param ieny the bottom right ending point y of the hole
-	 * @return the new predicate just created ofr the occasion
+	 * @return the new predicate just created for the occasion
 	 */
 	public static Predicate<Pawn> holedROIPredicateFactory(int istx, int isty, int ienx, int ieny){
 		return (p) -> {
