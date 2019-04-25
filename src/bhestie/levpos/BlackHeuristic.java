@@ -36,15 +36,18 @@ public class BlackHeuristic {
 		if (!state.isTurn()) //FALSE=White
 			throw new IllegalArgumentException("It's white turn. Black heuristic isn't supposed to be called");
 		this.state = state;
-		initMap();
+		
+		//if(this.criticalKingPositions == null)
+			initMap();
 	}
 	
 	public boolean isRowBlocked(int fromX, int toX, int y) {
 		boolean result = false;
 		
 		for (int i = fromX; i <= toX; i++) {
+			int x = i;
 			//XXX Perché qui i non lo compila, mentre in isColumnBlocked sotto sì?
-			if (this.state.getPawns().stream().anyMatch(p -> !p.king && p.position.equals(Position.of(i, y)))) {
+			if (this.state.getPawns().stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
 				result = true;
 			}
 		}
@@ -55,7 +58,8 @@ public class BlackHeuristic {
 		boolean result = false;
 		
 		for (int i = fromY; i <= toY; i++) {
-			if (this.state.getPawns().stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, i)))) {
+			int y = i;
+			if (this.state.getPawns().stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
 				result = true;
 			}
 		}
@@ -180,24 +184,50 @@ public class BlackHeuristic {
 	
 	public double calculateMoveGoodness() {
 		Optional<Pawn> king = this.state.getPawns().stream().filter(p -> p.king).findAny();
-		if (!king.isPresent())
-			return Double.MAX_VALUE;
-		/*else if (this.state.isTerminal() && king.isPresent()) {
-			return -Double.MAX_VALUE;
-		}*/
-		//King is outside the "citadel" (throne)
-		if(isKingEscapeBlocked(king.get()))
-			return 10000;
-		//Block Escape routes
 		
+		//Terminal states
+		if (!king.isPresent()) { //Win
+			return Double.MAX_VALUE;
+		}
+		if (this.state.isDrawCase()) { //Draw
+			return 0;
+		} else if (this.state.isTerminal() && king.isPresent() && !this.state.isDrawCase()) { //Lost
+			return -Double.MAX_VALUE;
+		}
+		
+		//King is outside the "citadel" (throne)
+		if(isKingEscapeBlocked(king.get())) {
+			return 10000;
+		} else if(!isKingEscapeBlocked(king.get()))
+			return -10000;
+		
+		//Block Escape routes
 		//TODO C'è un modo per evitare le permutazioni di tutti i casi? (Es. 3 casi -> return 3000, 4 casi -> return 4000)
-		if(isFirstEscapeRouteBlocked() && isSecondEscapeRouteBlocked() && isThirdEscapeRouteBlocked()
-				&& isFourthEscapeRouteBlocked() && isFifthEscapeRouteBlocked() && isSixthEscapeRouteBlocked() && isSeventhEscapeRouteBlocked())
-			return 8000;
-
-
-		//Do a move "at random"
-		return 1;
-		//return 0; //Draw
+		if (isFirstEscapeRouteBlocked() || isSecondEscapeRouteBlocked() || isThirdEscapeRouteBlocked() || isFourthEscapeRouteBlocked()
+				|| isFifthEscapeRouteBlocked() || isSixthEscapeRouteBlocked() || isSeventhEscapeRouteBlocked() || isEighthEscapeRouteBlocked()) {
+			int temp = 0;
+			
+			if (isFirstEscapeRouteBlocked())
+				temp++;
+			if (isSecondEscapeRouteBlocked())
+				temp++;
+			if (isThirdEscapeRouteBlocked())
+				temp++;
+			if (isFourthEscapeRouteBlocked())
+				temp++;
+			if (isFifthEscapeRouteBlocked())
+				temp++;
+			if (isSixthEscapeRouteBlocked())
+				temp++;
+			if (isSeventhEscapeRouteBlocked())
+				temp++;
+			if (isEighthEscapeRouteBlocked())
+				temp++;
+			return temp*1000;
+		}
+		else {
+			//Do a move "at random"
+			return 1;
+		}
 	}
 }

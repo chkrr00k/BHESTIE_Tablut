@@ -59,6 +59,11 @@ public class State {
 	public List<Pawn> getPawns() {
 		return this.pawns;
 	}
+	
+
+	public boolean isDrawCase() {
+		return drawCase;
+	}
 
 	/**
 	 * @return the turn
