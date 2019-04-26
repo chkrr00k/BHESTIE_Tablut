@@ -10,9 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
-
 import bhestie.zizcom.Action;
-import jdk.nashorn.internal.runtime.options.Option;
 
 
 public class State {
@@ -386,12 +384,19 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicBlack() {
+		List<State> unfolded = this.unfold();
+		double result = 1;
+		for (State state : unfolded) {
+			result += state.calculateMoveGoodness();
+			result /= 2;
+		}
+		return result + calculateMoveGoodness();
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
-		double result = -1;
+		/*double result = -1;
 		
 		long numeroMangiati = 0;
-		int numeroPassi = 0;
+		int numeroPassi = 0;*/
 
 
 		/*
@@ -408,7 +413,7 @@ public class State {
 		*/
 
 		
-		while (numeroPassi-- >= 0)
+		/*while (numeroPassi-- >= 0)
 			result *= 0.5;
 
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC;
@@ -417,7 +422,7 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC;
 
-		return result;
+		return result;*/
 	}
 	
 	/**
@@ -455,6 +460,8 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
+		result = 1; // Disabled heuristic
+		
 		return result;
 	}
 
@@ -518,15 +525,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
 		
-		double result = 10000;
-		
-		State tmp = this.parent;
-		while (tmp != null) {
-			result--;
-			tmp = tmp.parent;
-		}
-		
-		return result;
+		return 10000000 - this.unfold().size() + 1;
 	}
 	
 	/**
@@ -537,14 +536,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
 		
-		double result = 10000;
-		State tmp = this.parent;
-		while (tmp != null) {
-			result--;
-			tmp = tmp.parent;
-		}
-		
-		return result;
+		return 10000000 - this.unfold().size() + 1;
 	}
 
 	/**
@@ -712,7 +704,199 @@ public class State {
 					&& (p.getY() <= isty || p.getY() >= ieny);
 		};
 	}
+	
+	
+	
+	
+	
+	
+	private boolean isRowBlocked(int fromX, int toX, int y) {
+		boolean result = false;
+		
+		for (int i = fromX; i <= toX; i++) {
+			int x = i;
+			//XXX Perché qui i non lo compila, mentre in isColumnBlocked sotto sì?
+			if (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
+				result = true;
+			}
+		}
+		return result;
+	}
+	
+	private boolean isColumnBlocked(int x, int fromY, int toY) {
+		boolean result = false;
+		
+		for (int i = fromY; i <= toY; i++) {
+			int y = i;
+			if (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
+				result = true;
+			}
+		}
+		return result;
+	}
+	
+	
+	private boolean isFirstEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(0))));
+	}
+	
+	private boolean isSecondEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(1))));
+	}
+	
+	private boolean isThirdEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(2))));
+	}
+	
+	private boolean isFourthEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(3))));
+	}
+	
+	private boolean isFifthEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(4))));
+	}
+	
+	private boolean isSixthEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(5))));
+	}
+	
+	private boolean isSeventhEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(6))));
+	}
+	
+	private boolean isEighthEscapeRouteBlocked() {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(7))));
+	}
+	
+	private boolean isKingEscapeBlocked(Pawn king) {
+		// NW
+		if (king.position.equals(Position.of(2, 2)))
+			return (this.isColumnBlocked(2, 1, 1) && this.isRowBlocked(1, 1, 2));
+		else if (king.position.equals(Position.of(2, 3)))
+			return (this.isColumnBlocked(2, 1, 2)	&& this.isRowBlocked(1, 3, 3) && this.isRowBlocked(3, 9, 3)); 
+		else if (king.position.equals(Position.of(2, 4)))
+			return (this.isColumnBlocked(2, 1, 3));
+		else if (king.position.equals(Position.of(3, 2)))
+			return (this.isColumnBlocked(3, 1, 1) && this.isRowBlocked(1, 2, 2));
+		else if (king.position.equals(Position.of(3, 3)))
+			return (this.isColumnBlocked(3, 4, 9)) && this.isColumnBlocked(3, 1, 2) && this.isRowBlocked(1, 2, 3) && this.isRowBlocked(3, 9, 3);
+		else if (king.position.equals(Position.of(3, 4)))
+			return (this.isRowBlocked(1, 3, 3) && this.isRowBlocked(5, 9, 3));
+		else if (king.position.equals(Position.of(3, 5)))
+			return (this.isRowBlocked(1, 4, 3) && this.isRowBlocked(6, 9, 3));
+		else if (king.position.equals(Position.of(4, 2)))
+			return (this.isRowBlocked(1, 3, 2));
+		else if (king.position.equals(Position.of(4, 3)))
+			return (this.isRowBlocked(1, 3, 3) && this.isRowBlocked(5, 9, 3));
+		
+		// NE
+		if (king.position.equals(Position.of(6, 2)))
+			return (this.isRowBlocked(7, 9, 2));
+		else if (king.position.equals(Position.of(6, 3)))
+			return (this.isRowBlocked(7, 9, 3));
+		else if (king.position.equals(Position.of(7, 2)))
+			return (this.isRowBlocked(8, 9, 2) && this.isColumnBlocked(7, 1, 1) && this.isColumnBlocked(7, 3, 9));
+		else if (king.position.equals(Position.of(7, 3))) 
+			return (this.isRowBlocked(1, 6, 3) && this.isRowBlocked(8, 9, 3) && this.isColumnBlocked(7, 1, 2) && this.isColumnBlocked(7, 4, 9));
+		else if (king.position.equals(Position.of(7, 4)))
+			return (this.isRowBlocked(8, 9, 4)	&& this.isColumnBlocked(7, 1, 3) && this.isColumnBlocked(7, 5, 9));
+		else if (king.position.equals(Position.of(7, 5)))
+			return (this.isRowBlocked(8, 9, 5)	&& this.isColumnBlocked(7, 1, 4) && this.isColumnBlocked(7, 6, 9));
+		else if (king.position.equals(Position.of(8, 2)))
+			return (this.isRowBlocked(9, 9, 2) && this.isColumnBlocked(8, 1, 1));
+		else if (king.position.equals(Position.of(8, 3)))
+			return (this.isRowBlocked(9, 9, 3) && this.isColumnBlocked(8, 1, 2));
+		else if (king.position.equals(Position.of(8, 4)))
+			return (this.isColumnBlocked(8, 1, 3));
+		
+		// SW
+		if (king.position.equals(Position.of(2, 6))) 
+			return (this.isColumnBlocked(2, 7, 9));
+		else if (king.position.equals(Position.of(2, 7))) 
+			return (this.isColumnBlocked(2, 8, 9));
+		else if (king.position.equals(Position.of(2, 8))) 
+			return (this.isColumnBlocked(2, 9, 9));
+		else if (king.position.equals(Position.of(3, 6)))
+			return (this.isColumnBlocked(3, 1, 5) && this.isColumnBlocked(3, 7, 9));
+		else if (king.position.equals(Position.of(3, 7))) 
+			return (this.isColumnBlocked(3, 1, 6)	&& this.isColumnBlocked(3, 8, 9) && this.isRowBlocked(1, 2, 7) && this.isRowBlocked(4, 9, 7));
+		else if (king.position.equals(Position.of(3, 8))) 
+			return (this.isColumnBlocked(3, 1, 7) && this.isColumnBlocked(3, 9, 9) && this.isRowBlocked(1, 2, 8));
+		else if (king.position.equals(Position.of(4, 7))) 
+			return (this.isRowBlocked(1, 3, 7) && this.isRowBlocked(5, 9, 7));
+		else if (king.position.equals(Position.of(4, 8))) 
+			return (this.isRowBlocked(1, 3, 8));
+		
+		//SE
+		if (king.position.equals(Position.of(6, 7)))
+			return (this.isRowBlocked(1, 5, 7) && this.isRowBlocked(7, 9, 7));
+		else if (king.position.equals(Position.of(6, 8)))
+			return (this.isRowBlocked(7, 9, 8));
+		else if (king.position.equals(Position.of(7, 6)))
+			return (this.isColumnBlocked(7, 1, 5) && this.isColumnBlocked(7, 7, 9));
+		else if (king.position.equals(Position.of(7, 7)))
+			return (this.isColumnBlocked(7, 1, 6) && this.isColumnBlocked(7, 8, 9) && this.isRowBlocked(1, 6, 7) && this.isRowBlocked(8, 9, 7));
+		else if (king.position.equals(Position.of(7, 8)))
+			return (this.isColumnBlocked(7, 1, 6) && this.isColumnBlocked(7, 9, 9));
+		else if (king.position.equals(Position.of(8, 6)))
+			return (this.isColumnBlocked(8, 7, 9));
+		else if (king.position.equals(Position.of(8, 7)))
+			return (this.isColumnBlocked(8, 8, 9) && this.isRowBlocked(1, 7, 7) && this.isRowBlocked(9, 9, 7));
+		else if (king.position.equals(Position.of(8, 8)))
+			return (this.isColumnBlocked(8, 9, 9) && this.isRowBlocked(9, 9, 8));
 
+		return false;
+	}
+	
+	private double calculateMoveGoodness() {
+		if (this.isTerminal())
+			return this.getUtility();
+		Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
+		
+		//King is outside the "citadel" (throne)
+		if(isKingEscapeBlocked(king.get())) {
+			return 10000;
+		} /*else if(!isKingEscapeBlocked(king.get()))
+			return -10000;*/
+		
+		//Block Escape routes
+		//TODO C'è un modo per evitare le permutazioni di tutti i casi? (Es. 3 casi -> return 3000, 4 casi -> return 4000)
+		/*if (isFirstEscapeRouteBlocked() || isSecondEscapeRouteBlocked() || isThirdEscapeRouteBlocked() || isFourthEscapeRouteBlocked()
+				|| isFifthEscapeRouteBlocked() || isSixthEscapeRouteBlocked() || isSeventhEscapeRouteBlocked() || isEighthEscapeRouteBlocked()) {*/
+		int temp = 0;
+		
+		if (isFirstEscapeRouteBlocked())
+			temp++;
+		if (isSecondEscapeRouteBlocked())
+			temp++;
+		if (isThirdEscapeRouteBlocked())
+			temp++;
+		if (isFourthEscapeRouteBlocked())
+			temp++;
+		if (isFifthEscapeRouteBlocked())
+			temp++;
+		if (isSixthEscapeRouteBlocked())
+			temp++;
+		if (isSeventhEscapeRouteBlocked())
+			temp++;
+		if (isEighthEscapeRouteBlocked())
+			temp++;
+		
+		if (temp != 0)
+			return temp*1000;
+		else
+			return 1; // Random move
+		//}
+		//else {
+			//Do a "random" move
+			//return 1;
+		//}
+	}
+
+	
+	
+	
+	
 	/**
 	 * default white pawns positions
 	 */
@@ -733,6 +917,7 @@ public class State {
 	 * List of positions where the king have to be fully surrounded.
 	 */
 	private static final List<Position> protectedKingPositions = new LinkedList<>();
+	private static final List<Position> escapeRouteBlocked = new ArrayList<Position>(8);
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
 		citadelPositions.add(Position.of(5, 1));
@@ -791,6 +976,8 @@ public class State {
 		protectedKingPositions.add(Position.of(4, 5));
 		protectedKingPositions.add(Position.of(6, 5));
 
+		/***** DEFAULT WHITE PAWNS POSITION *****/
+		
 		defaultWhitePawnsPosition.add(Position.of(5,3));
 		defaultWhitePawnsPosition.add(Position.of(5,4));
 		defaultWhitePawnsPosition.add(Position.of(5,6));
@@ -800,5 +987,22 @@ public class State {
 		defaultWhitePawnsPosition.add(Position.of(4,5));
 		defaultWhitePawnsPosition.add(Position.of(6,5));
 		defaultWhitePawnsPosition.add(Position.of(7,5));
+		
+		/***** ESCAPE ROUTE BLOCKED *****/
+		//NW
+		escapeRouteBlocked.add(Position.of(2, 3)); //I
+		escapeRouteBlocked.add(Position.of(3, 2)); //II
+		
+		//NE
+		escapeRouteBlocked.add(Position.of(7, 2)); //III
+		escapeRouteBlocked.add(Position.of(8, 3)); //IV
+		
+		//SW
+		escapeRouteBlocked.add(Position.of(2, 7)); //V
+		escapeRouteBlocked.add(Position.of(8, 3)); //VI
+		
+		//SE
+		escapeRouteBlocked.add(Position.of(7, 8)); //VII
+		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
 	}
 }
