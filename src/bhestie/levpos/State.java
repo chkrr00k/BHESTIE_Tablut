@@ -20,7 +20,7 @@ public class State {
 	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
 
 	//TODO is positive to be eaten for white? change paremeter if it is...
-	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -100;
+	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 0;
 	//if a state has less black pawns, it will have a more positive value because the malus
 	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
 	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -400;
@@ -32,7 +32,7 @@ public class State {
 	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	//having white pawn on main axis (default position) is a malus
-	private final int WHITE_PAWNS_ON_MAIN_AXIS = -50;
+	private final int WHITE_PAWNS_ON_MAIN_AXIS = -500;
 	private final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
 	private final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
 
@@ -289,7 +289,7 @@ public class State {
 
 			int startingValue;
 			if(king.getX() == 5 && king.getY() == 5)
-				startingValue = 3;
+				startingValue = 4;
 			else if(king.getX() == 4 && king.getY() == 5)
 				startingValue = 3;
 			else if(king.getX() == 5 && king.getY() == 4)
@@ -368,7 +368,7 @@ public class State {
 	 */
 	public double getHeuristic() {
 		double result = 0;
-		if (!this.turn) { // Black turn
+		if (this.turn) { // Black turn
 			result = this.getHeuristicBlack();
 			if (!Minimax.player)
 				result = -result;

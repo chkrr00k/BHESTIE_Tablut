@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+import bhestie.levpos.State;
 import org.junit.Test;
 
 import com.google.gson.Gson;
@@ -50,6 +51,32 @@ public class Tests {
 		assertTrue("Pawn's type form json", !b.get().get(0).isBlack());
 		assertTrue("If pawn is king form json", !b.get().get(0).king);
 	}
+
+
+	@Test
+	public void testEvaluationBoard() {
+		Board b = new Board();
+		String board =  "{\"board\":[[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\",\"BLACK\",\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]," +
+									"[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]," +
+									"[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"WHITE\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]," +
+									"[\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"WHITE\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\"]," +
+									"[\"BLACK\",\"BLACK\",\"WHITE\",\"WHITE\",\"KING\",\"WHITE\",\"WHITE\",\"BLACK\",\"BLACK\"]," +
+									"[\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"WHITE\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\"]," +
+									"[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"WHITE\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]," +
+									"[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]," +
+									"[\"EMPTY\",\"EMPTY\",\"EMPTY\",\"BLACK\",\"BLACK\",\"BLACK\",\"EMPTY\",\"EMPTY\",\"EMPTY\"]]}";
+
+		b = new Gson().fromJson(board, Board.class);
+		State state = new State(b.convert().get(), false);
+		assertEquals(0, state.getHeuristic(), 0.1);
+
+		assertTrue("Board size from json", b.convert().get().size() == 1);
+		assertTrue("Pawn's x form json", b.get().get(0).getX() == 1);
+		assertTrue("Pawn's y form json", b.get().get(0).getY() == 1);
+		assertTrue("Pawn's type form json", !b.get().get(0).isBlack());
+		assertTrue("If pawn is king form json", !b.get().get(0).king);
+	}
+
 	
 	@Test
 	public void testConnector() throws IOException{
