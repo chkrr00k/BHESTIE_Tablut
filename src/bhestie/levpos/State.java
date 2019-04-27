@@ -386,10 +386,16 @@ public class State {
 	private double getHeuristicBlack() {
 		List<State> unfolded = this.unfold();
 		double result = 1;
-		for (State state : unfolded) {
-			result += state.calculateMoveGoodness();
+		int size = unfolded.size();
+		for (int i = 0; i < size; i++) {
+			result += unfolded.get(i).parent.getHeuristic();
 			result /= 2;
 		}
+		
+		/*for (State state : unfolded) {
+			result += state.calculateMoveGoodness();
+			result /= 2;
+		}*/
 		return result + calculateMoveGoodness();
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
@@ -715,7 +721,6 @@ public class State {
 		
 		for (int i = fromX; i <= toX; i++) {
 			int x = i;
-			//XXX Perché qui i non lo compila, mentre in isColumnBlocked sotto sì?
 			if (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
 				result = true;
 			}
@@ -736,36 +741,8 @@ public class State {
 	}
 	
 	
-	private boolean isFirstEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(0))));
-	}
-	
-	private boolean isSecondEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(1))));
-	}
-	
-	private boolean isThirdEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(2))));
-	}
-	
-	private boolean isFourthEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(3))));
-	}
-	
-	private boolean isFifthEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(4))));
-	}
-	
-	private boolean isSixthEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(5))));
-	}
-	
-	private boolean isSeventhEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(6))));
-	}
-	
-	private boolean isEighthEscapeRouteBlocked() {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(escapeRouteBlocked.get(7))));
+	private boolean isNthEscapeRouteBlocked(final int nth) {
+		return (this.pawns.stream().anyMatch(p -> !p.king && p.isBlack() && p.position.equals(escapeRouteBlocked.get(nth))));
 	}
 	
 	private boolean isKingEscapeBlocked(Pawn king) {
@@ -788,6 +765,8 @@ public class State {
 			return (this.isRowBlocked(1, 3, 2));
 		else if (king.position.equals(Position.of(4, 3)))
 			return (this.isRowBlocked(1, 3, 3) && this.isRowBlocked(5, 9, 3));
+		else if (king.position.equals(Position.of(5, 3)))
+			return (this.isRowBlocked(1, 4, 3) && this.isRowBlocked(6, 9, 3));
 		
 		// NE
 		if (king.position.equals(Position.of(6, 2)))
@@ -826,6 +805,8 @@ public class State {
 			return (this.isRowBlocked(1, 3, 7) && this.isRowBlocked(5, 9, 7));
 		else if (king.position.equals(Position.of(4, 8))) 
 			return (this.isRowBlocked(1, 3, 8));
+		else if (king.position.equals(Position.of(5, 7)))
+			return (this.isRowBlocked(1, 4, 7) && this.isRowBlocked(6, 9, 7));
 		
 		//SE
 		if (king.position.equals(Position.of(6, 7)))
@@ -853,6 +834,7 @@ public class State {
 			return this.getUtility();
 		Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
 		
+		// TODO sistemare qui perch� se le vie sono bloccate d� 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
 		//King is outside the "citadel" (throne)
 		if(isKingEscapeBlocked(king.get())) {
 			return 10000;
@@ -860,30 +842,13 @@ public class State {
 			return -10000;*/
 		
 		//Block Escape routes
-		//TODO C'è un modo per evitare le permutazioni di tutti i casi? (Es. 3 casi -> return 3000, 4 casi -> return 4000)
-		/*if (isFirstEscapeRouteBlocked() || isSecondEscapeRouteBlocked() || isThirdEscapeRouteBlocked() || isFourthEscapeRouteBlocked()
-				|| isFifthEscapeRouteBlocked() || isSixthEscapeRouteBlocked() || isSeventhEscapeRouteBlocked() || isEighthEscapeRouteBlocked()) {*/
-		int temp = 0;
+		int numRouteBlocked = 0;
+		for (int i = 0; i < 8; i++)
+			if (isNthEscapeRouteBlocked(i))
+				numRouteBlocked++;
 		
-		if (isFirstEscapeRouteBlocked())
-			temp++;
-		if (isSecondEscapeRouteBlocked())
-			temp++;
-		if (isThirdEscapeRouteBlocked())
-			temp++;
-		if (isFourthEscapeRouteBlocked())
-			temp++;
-		if (isFifthEscapeRouteBlocked())
-			temp++;
-		if (isSixthEscapeRouteBlocked())
-			temp++;
-		if (isSeventhEscapeRouteBlocked())
-			temp++;
-		if (isEighthEscapeRouteBlocked())
-			temp++;
-		
-		if (temp != 0)
-			return temp*1000;
+		if (numRouteBlocked != 0)
+			return numRouteBlocked*1000;
 		else
 			return 1; // Random move
 		//}
