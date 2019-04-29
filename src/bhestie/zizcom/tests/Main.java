@@ -3,6 +3,7 @@ package bhestie.zizcom.tests;
 import java.io.IOException;
 import java.util.List;
 
+import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
@@ -18,6 +19,7 @@ public class Main {
 	private static int port;
 	
 	public static void main(String[] args) throws IOException {
+		HeuristicCalculatorGroup.getInstance().addThreads(3);
 		
 		boolean whitePlayer = false;
 	    boolean blackPlayer = !whitePlayer;
@@ -44,7 +46,9 @@ public class Main {
 		
 		State currentState = new State(b.get(), Minimax.player);
 		while(true) {
+			HeuristicCalculatorGroup.getInstance().playAll();
 			double result = Minimax.alphaBethInit(currentState, 3);
+			HeuristicCalculatorGroup.getInstance().pauseAll();
 			System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 			State oldState = currentState;
 			

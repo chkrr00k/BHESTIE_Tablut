@@ -12,10 +12,10 @@ import java.util.stream.Stream;
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
-
+@SuppressWarnings("unused") // TODO remove
 public class State {
-	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = -50;
-	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
+	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = -50;
+	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
 
 	//TODO is positive to be eaten for white? change paremeter if it is...
 	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -100;
@@ -26,14 +26,18 @@ public class State {
 	public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
 
 	//raw distance from nearest escape, the more it is, the more malus we get
-	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -50;
-	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
+	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -50;
+	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	//having white pawn on main axis (default position) is a malus
-	private final int WHITE_PAWNS_ON_MAIN_AXIS = -50;
-	private final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
-	private final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
+	private static final int WHITE_PAWNS_ON_MAIN_AXIS = -50;
+	private static final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
+	private static final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
 
+	
+	private Double heuristicCache = null; // Cached heuristic
+	private Boolean isTerminalCache = null; // Cache isTerminal
+	
 	private final State parent;
 	private final boolean drawCase;
 	/**
@@ -70,7 +74,7 @@ public class State {
 	}
 	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent, boolean drawCase){
 		this.turn = turn;
-		this.pawns = new LinkedList<Pawn>(pawns);
+		this.pawns = new ArrayList<Pawn>(pawns);
 		this.historyStorage = historyStorage;
 		this.parent = parent;
 		this.drawCase = drawCase;
@@ -212,6 +216,7 @@ public class State {
 			}
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
 			actions.add(newState);
+			HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
 			return true;
 		}
 		return false;
@@ -260,6 +265,10 @@ public class State {
 		return haveEaten;
 	}
 
+	/**
+	 * It generates a list with all the parents State of the current State
+	 * @return The list of unfolded State
+	 */
 	public List<State> unfold(){
 		List<State> result = new LinkedList<State>();
 		State tmp = this;
@@ -314,12 +323,6 @@ public class State {
 	}
 
 	/*
-	evaluate the minimum movements for making the king reach a position
-	the black's movements are ignored
-	 */
-
-
-	/*
 	this evaluation should make the heuristinc going to an escape way instead staying in a static situation
 	it calculates the distance between the king and the nearest escape
 	it must be modified for taking care of the rest of the table situation
@@ -365,6 +368,8 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
+		if (this.heuristicCache != null)
+			return this.heuristicCache;
 		double result = 0;
 		if (!this.turn) { // Black turn
 			result = this.getHeuristicBlack();
@@ -375,7 +380,7 @@ public class State {
 			if (Minimax.player)
 				result = -result;
 		}
-		
+		this.heuristicCache = result;
 		return result;
 	}
 	
@@ -476,17 +481,27 @@ public class State {
 	 * @return If the board is in a terminal position.
 	 */
 	public boolean isTerminal() {
-		if (this.drawCase)
+		if (this.isTerminalCache != null)
+			return this.isTerminalCache;
+		
+		if (this.drawCase) {
+			this.isTerminalCache = true;
 			return true;
-		if (!this.getPawns().stream().anyMatch(p -> p.isBlack())) // No more black pawns -> white wins
+		}
+		if (!this.getPawns().stream().anyMatch(p -> p.isBlack())) { // No more black pawns -> white wins
+			this.isTerminalCache = true;
 			return true;
+		}
 		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
 		// XXX comprimere gli if di sotto
 		if (!king.isPresent()) { // No king -> black wins
+			this.isTerminalCache = true;
 			return true;
 		} else if (kingEscaped(king.get())) { // Re runs away -> white wins
+			this.isTerminalCache = true;
 			return true;
 		}
+		this.isTerminalCache = false;
 		return false;
 	}
 
@@ -826,19 +841,20 @@ public class State {
 		else if (king.position.equals(Position.of(8, 8)))
 			return (this.isColumnBlocked(8, 9, 9) && this.isRowBlocked(9, 9, 8));
 
-		return false;
+		return true;
 	}
 	
 	private double calculateMoveGoodness() {
 		if (this.isTerminal())
 			return this.getUtility();
-		Optional<Pawn> king = this.pawns.stream().filter(p -> p.king).findAny();
+		double result = 0;
+		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
 		
-		// TODO sistemare qui perchè se le vie sono bloccate dà 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
+		// TODO sistemare qui perchï¿½ se le vie sono bloccate dï¿½ 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
 		//King is outside the "citadel" (throne)
-		if(isKingEscapeBlocked(king.get())) {
-			return 10000;
-		} /*else if(!isKingEscapeBlocked(king.get()))
+		if(isKingEscapeBlocked(king)) {
+			result += 10000;
+		} else result -= 10000;/*else if(!isKingEscapeBlocked(king.get()))
 			return -10000;*/
 		
 		//Block Escape routes
@@ -848,9 +864,9 @@ public class State {
 				numRouteBlocked++;
 		
 		if (numRouteBlocked != 0)
-			return numRouteBlocked*1000;
+			return numRouteBlocked*1000 + result;
 		else
-			return 1; // Random move
+			return 1 + result; // Random move
 		//}
 		//else {
 			//Do a "random" move
