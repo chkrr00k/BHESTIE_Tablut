@@ -35,6 +35,7 @@ public class HeuristicCalculatorGroup {
 	
 	public void pauseAll() {
 		this.threads.forEach(HeuristicCalculator::pause);
+		statesToCalculateCache.clear();
 	}
 	
 }
