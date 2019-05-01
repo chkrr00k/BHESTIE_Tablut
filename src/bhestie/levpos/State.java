@@ -35,6 +35,8 @@ public class State {
 	private static final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	
+	public static int TURN = 0;
+	
 	private Double heuristicCache = null; // Cached heuristic
 	private Boolean isTerminalCache = null; // Cache isTerminal
 	
@@ -319,7 +321,7 @@ public class State {
 	/*
 	this evaluation should make the heuristic going to an escape way instead staying in a static situation
 	it calculates the distance between the king and the nearest escape
-	it must be modified for taking care of the rest of the table situation
+	it must be modified to take care of the rest of the table situation
 	(black's pawn have closed the escape way)
 	 */
 	private int rawDistanceFromEscape(){
@@ -391,9 +393,9 @@ public class State {
 		int size = unfolded.size();
 		for (int i = 0; i < size; i++) {
 			result += unfolded.get(i).parent.getHeuristic();
-			result /= 2;
+			result /= 19;
 		}
-		return result + calculateMoveGoodness();
+		return result + this.calculateMoveGoodness();
 
 	}
 	
@@ -415,7 +417,7 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		result = 1; // Disabled heuristic
+//		result = 1; // Disabled heuristic
 		
 		return result;
 	}
@@ -462,7 +464,7 @@ public class State {
 		double result = 0;
 		if (this.isTerminal()) {
 			if (drawCase){
-				return 0; // Draw
+				return -10000000/2; // Draw XXX i don't like drawing!
 			}
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 				result = getUtilityBlack();
@@ -672,20 +674,48 @@ public class State {
 	
 	private boolean kingProtrudingNorth(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		return (king.getY() > 5 || this.checkROIQuantity(5, 4, 5, 3, p -> p.isWhite()) < 2); // king is in north sector;
+		return (king.getY() > 5 || this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2); // king is in north sector;
 	}
 	private boolean kingProtrudingSouth(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		return (king.getY() < 5 || this.checkROIQuantity(5, 6, 5, 7, p -> p.isWhite()) < 2); // king is in south sector;
+		return (king.getY() < 5 || this.checkROIQuantity(3, 5, 4, 5, p -> p.isWhite()) < 2); // king is in south sector;
 
 	}
 	private boolean kingProtrudingEast(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		return (king.getX() > 5 || this.checkROIQuantity(4, 5, 3, 5, p -> p.isWhite()) < 2); // king is in east sector;
+		return (king.getX() > 5 || this.checkROIQuantity(5, 6, 5, 7, p -> p.isWhite()) < 2); // king is in east sector;
 	}
 	private boolean kingProtrudingWest(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		return (king.getX() < 5 || this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2); // king is in west sector;
+		return (king.getX() < 5 || this.checkROIQuantity(5, 3, 5, 4, p -> p.isWhite()) < 2); // king is in west sector;
+	}
+	
+	public int routeBlocked(){
+		int result = 0;
+		int modificator = 1; // express if the blocked route is in the right side of the chessboard
+		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast(), south = this.kingProtrudingSouth(), west = this.kingProtrudingWest();
+		for(Position pos : escapeRouteBlocked){
+			if(this.pawns.stream().anyMatch(p -> p.isBlack() && p.position.equals(pos))){
+				result++;
+				
+				//this looks like it's written by an idiot, but don't worry: it is.
+				//if the move has been made in the (eg) NW position of the chessboard 
+				//we want to block on that side because it's the smart thing to do
+				if(north && pos.y > 5){// game is protruding north
+					modificator+=0.01;
+				}
+				if(south && pos.y < 5){// game is protruding south
+					modificator+=0.01;
+				}
+				if(east && pos.x > 5){// game is protruding east
+					modificator+=0.01;
+				}
+				if(west && pos.x < 5){// game is protruding west
+					modificator+=0.01;
+				}
+			}
+		}
+		return result * modificator;
 	}
 	
 	private double calculateMoveGoodness() {
@@ -694,43 +724,50 @@ public class State {
 		}
 		double result = 0;
 		
-		if(this.kingEscape() == 0) {
-			result += 10000;
+		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
+			result = 4000; // result = 7000;
+		}else if(this.kingEscape() == 0) {
+			result = 10000;
 		}else{
-			result -= 10000;
+			result -= 100000;
 		}
 		
-		//Block Escape routes
-		int numRouteBlocked = 0;
-		int modificator = 1; // express if the blocked route is in the right side of the chessboard
-		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast(), south = this.kingProtrudingSouth(), west = this.kingProtrudingWest();
-		for(Position pos : escapeRouteBlocked){
-			if(this.pawns.stream().anyMatch(p -> p.isBlack() && p.position.equals(pos))){
-				numRouteBlocked++;
-				
-				//this looks like it's written by an idiot, but don't worry: it is.
-				//if the move has been made in the (eg) NW position of the chessboard 
-				//we want to block on that side because it's the smart thing to do
-				if(north && pos.y > 5){// game is protruding north
-					modificator++;
-				}
-				if(south && pos.y < 5){// game is protruding south
-					modificator++;
-				}
-				if(east && pos.x > 5){// game is protruding east
-					modificator++;
-				}
-				if(west && pos.x < 5){// game is protruding west
-					modificator++;
-				}
-			}
+		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+			result -= 3000;
+		}
+		
+		//Number of blocked goal tiles
+		int numRouteBlocked = this.routeBlocked();
+		
+		if(State.TURN < 10){// preparation phase
+			//number of black in the corners
+			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
+					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isBlack())
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack());
+			//number of white in the corners
+			long whiteInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isWhite()) 
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite())
+					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isWhite())
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
+			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
+			// here is nice having black too
+			result += 125 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
+			// NOT nice if they are black
+			result -= 250 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
+			// to avoid cycling
+			result -= 125 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
+						&& (p.position.y == 1 || p.position.y == 9) 
+						&& p.isBlack());
 		}
 		
 		if (numRouteBlocked != 0){
-			return (numRouteBlocked * 1000 + modificator) + result;
-		}else{
-			return result;
+			result += (numRouteBlocked * 750);
+			if(numRouteBlocked < this.parent.routeBlocked()){
+				result -= 1000;
+			}
 		}
+		return result;
 	}
 	
 	/**

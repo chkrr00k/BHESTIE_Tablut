@@ -32,7 +32,6 @@ public class Main {
 	    	port = BlackPort;
 		
 		Connector c = new Connector("__BHeStIE__", port);
-		//Action a = new Action("e4", "f4", "W");
 		Board b = null;
 		c.init();
 		c.present();
@@ -43,24 +42,33 @@ public class Main {
 		}
 		
 		State currentState = new State(b.convert().get(), Minimax.player);
-		while(true) {
-			HeuristicCalculatorGroup.getInstance().playAll();
-			double result = Minimax.alphaBethInit(currentState, 3);
-			HeuristicCalculatorGroup.getInstance().pauseAll();
-			System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
+		try{
+			while(true) {
+				HeuristicCalculatorGroup.getInstance().playAll();
+				double result = Minimax.alphaBethInit(currentState, 3);
+				HeuristicCalculatorGroup.getInstance().pauseAll();
+				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 
-			
-			currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
-			List<State> unfold = currentState.unfold();
-			if (unfold.size() > 0)
-				currentState = unfold.get(unfold.size() - 1);
-			c.writeAction(currentState.getAction());
-			Minimax.stack.clear();
-			
-			b = c.readBoard();
-			b = c.readBoard();
-			
-			currentState = new State(b.convert().get(), Minimax.player, currentState.historyStorage, null);
+				
+				currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
+				List<State> unfold = currentState.unfold();
+				if (unfold.size() > 0)
+					currentState = unfold.get(unfold.size() - 1);
+				c.writeAction(currentState.getAction());
+				Minimax.stack.clear();
+				System.gc();
+				
+				b = c.readBoard();
+				b = c.readBoard();
+				
+				currentState = new State(b.convert().get(), Minimax.player, currentState.historyStorage, null);
+				State.TURN++;
+				Thread.yield();
+				
+				System.out.println(State.TURN);
+			}
+		}catch(Exception e){
+			System.exit(0);
 		}
 	}
 
