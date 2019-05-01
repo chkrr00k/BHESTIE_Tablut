@@ -281,7 +281,7 @@ public class State {
 	}
 
 	/**
-	 * Checks if the king is threaten (minacciato) from other black pawns.
+	 * Checks if the king is threaten by other black pawns.
 	 * in particular calculates the remaining pawns that has to be put near the king for make it caught
 	 *rules: if the king is in the central position, 4 pawn have to be near him.
 	 * if the king is near the central position: 3
@@ -289,41 +289,35 @@ public class State {
 	 */
 	private int remainingPositionForCaptureKing(){
 		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
-		if(!kingS.isPresent())
+		if(!kingS.isPresent()){
 			return 0;
-		else {
+		}else {
 			Pawn king = kingS.get();
+			int startingValue = 0;
+			
+			if(king.getX() == 5 && king.getY() == 5){
+				startingValue = 4; //XXX it was 3?
+			}else if(((king.getX() == 4 || king.getX() == 6) && king.getY() == 5)
+					|| (king.getX() == 5 && (king.getY() == 4 || king.getY() == 6))) {
+				startingValue = 3;
+			}else{
+				startingValue = 2;
+			}
 
-			int startingValue;
-			if(king.getX() == 5 && king.getY() == 5)
-				startingValue = 3;
-			else if(king.getX() == 4 && king.getY() == 5)
-				startingValue = 3;
-			else if(king.getX() == 5 && king.getY() == 4)
-				startingValue = 3;
-			else if(king.getX() == 6 && king.getY() == 5)
-				startingValue = 3;
-			else if(king.getX() == 5 && king.getY() == 6)
-				startingValue = 3;
-			else startingValue = 2;
-
-			List<Position> threatenPositions = new ArrayList<Position>();
+			List<Position> threatenPositions = new ArrayList<Position>(4);
 			threatenPositions.add(Position.of(king.getX() + 1, king.getY()));
 			threatenPositions.add(Position.of(king.getX(), king.getY() + 1));
 			threatenPositions.add(Position.of(king.getX() - 1, king.getY()));
 			threatenPositions.add(Position.of(king.getX(), king.getY() - 1));
 
-			Stream<Pawn> found =
-					this.pawns.stream().filter(pawn -> pawn.isBlack())
-							.filter(pawn -> pawn.position.equalsAny(threatenPositions));
-			int count = (int) found.count();
+			int count =	(int) this.pawns.stream().filter(pawn -> pawn.isBlack() && pawn.position.equalsAny(threatenPositions)).count();
 
 			return startingValue - count;
 		}
 	}
 
 	/*
-	this evaluation should make the heuristinc going to an escape way instead staying in a static situation
+	this evaluation should make the heuristic going to an escape way instead staying in a static situation
 	it calculates the distance between the king and the nearest escape
 	it must be modified for taking care of the rest of the table situation
 	(black's pawn have closed the escape way)
@@ -359,8 +353,7 @@ public class State {
 	*far away from king
 	 **/
 	private int mainAxisDefaultPosition(){
-		long count = pawns.stream().filter(pawn -> pawn.isWhite()).filter(pawn -> pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
-		return (int) count;
+		return (int) pawns.stream().filter(pawn -> pawn.isWhite() && pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
 	}
 
 	/**
@@ -368,17 +361,20 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public double getHeuristic() {
-		if (this.heuristicCache != null)
+		if (this.heuristicCache != null){
 			return this.heuristicCache;
+		}
 		double result = 0;
 		if (!this.turn) { // Black turn
 			result = this.getHeuristicBlack();
-			if (!Minimax.player)
+			if (!Minimax.player){
 				result = -result;
+			}
 		} else { // White turn
 			result = this.getHeuristicWhite();
-			if (Minimax.player)
+			if (Minimax.player){
 				result = -result;
+			}
 		}
 		this.heuristicCache = result;
 		return result;
@@ -730,7 +726,7 @@ public class State {
 	
 	
 	
-	
+	/*
 	private boolean isRowBlocked(int fromX, int toX, int y) {
 		boolean result = false;
 		
@@ -754,13 +750,18 @@ public class State {
 		}
 		return result;
 	}
-	
+	*/
 	
 	private boolean isNthEscapeRouteBlocked(final int nth) {
 		return (this.pawns.stream().anyMatch(p -> !p.king && p.isBlack() && p.position.equals(escapeRouteBlocked.get(nth))));
 	}
 	
-	private boolean isKingEscapeBlocked(Pawn king) {
+	
+	private boolean isKingEscapeBlocked(Pawn king) {		
+		return this.kingEscape() == 0;
+
+//this is madness
+/*		
 		// NW
 		if (king.position.equals(Position.of(2, 2)))
 			return (this.isColumnBlocked(2, 1, 1) && this.isRowBlocked(1, 1, 2));
@@ -842,6 +843,7 @@ public class State {
 			return (this.isColumnBlocked(8, 9, 9) && this.isRowBlocked(9, 9, 8));
 
 		return true;
+		*/
 	}
 	
 	private double calculateMoveGoodness() {
