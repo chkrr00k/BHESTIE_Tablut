@@ -17,21 +17,28 @@ public class State {
 	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = -50;
 	private final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
 
-	//TODO is positive to be eaten for white? change paremeter if it is...
+
+	//UNUSED
 	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 0;
 	//if a state has less black pawns, it will have a more positive value because the malus
 	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
-	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -400;
-	public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = -100;
-	public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
+	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -500;
+	//public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = -100;
+	//public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
+
 
 	//raw distance from nearest escape, the more it is, the more malus we get
-	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -50;
+	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -75;
 	private final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	//having white pawn on main axis (default position) is a malus
-	private final int WHITE_PAWNS_ON_MAIN_AXIS = -500;
-	private final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
+	private final int WHITE_PAWNS_ON_MAIN_AXIS = -250;
+	private final int EATEN_WHITE_PAWN_VALUE_FOR_WHITE_HEURISTIC = 500;
+	//TODO must not be considered for uncoverable cases
+	private final int FREE_ESCAPE_WAYS_AVAILABLE_WHITE_HEURISTIC_VALUE = 10000;
+
+	//TODO is positive to be eaten for white? change paremeter if it is...
+	private final int EATEN_BLACK_PAWN_VALUE_FOR_WHITE_HEURISTIC = -100;
 	private final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	private final State parent;
@@ -384,12 +391,14 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicBlack() {
+
 		List<State> unfolded = this.unfold();
 		double result = 1;
 		for (State state : unfolded) {
 			result += state.calculateMoveGoodness();
 			result /= 2;
 		}
+		result = 0;
 		return result + calculateMoveGoodness();
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il nero
@@ -433,34 +442,100 @@ public class State {
 		// TODO da scrivere.
 		// Più è alto il valore più la mossa è bella per il bianco
 		double result = 0;
-		
 
-		/*
-		long numeroMangiati = 0;
+
+		long heuristicOccurrence = 0;
 		int numeroPassi = 0;
 		State tmp = this.parent;
+		/*
 		while (tmp != null) {
-			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			result += numeroMangiati * EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC;
+			heuristicOccurrence = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
+			result += heuristicOccurrence * EATEN_WHITE_PAWN_VALUE_FOR_WHITE_HEURISTIC;
 			//result -= tmp.getHeuristicBlack();
 			numeroPassi++;
 			tmp = tmp.parent;
 		}
 		while (numeroPassi-- >= 0)
 			result *= 0.5;
-		*/
 
+
+		numeroPassi = 0;
+		heuristicOccurrence = 0;
+		double remainingPositionForCaptureKingVal = 0;
+		tmp = this.parent;
+		while (tmp != null) {
+			heuristicOccurrence = remainingPositionForCaptureKing();
+			remainingPositionForCaptureKingVal += heuristicOccurrence * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+			//result -= tmp.getHeuristicBlack();
+			numeroPassi++;
+			tmp = tmp.parent;
+		}
+		while (numeroPassi-- >= 0)
+			remainingPositionForCaptureKingVal *= 0.5;
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
+
+		numeroPassi = 0;
+		heuristicOccurrence = 0;
+		double rawDistanceFromEscapeVal = 0;
+		tmp = this.parent;
+		while (tmp != null) {
+			heuristicOccurrence = rawDistanceFromEscape();
+			rawDistanceFromEscapeVal += heuristicOccurrence * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
+			//result -= tmp.getHeuristicBlack();
+			numeroPassi++;
+			tmp = tmp.parent;
+		}
+		while (numeroPassi-- >= 0)
+			rawDistanceFromEscapeVal *= 0.5;
+		result += rawDistanceFromEscapeVal;
+
+
+		numeroPassi = 0;
+		heuristicOccurrence = 0;
+		double mainAxisDefaultPositionVal = 0;
+		tmp = this.parent;
+		while (tmp != null) {
+			heuristicOccurrence = mainAxisDefaultPosition();
+			mainAxisDefaultPositionVal += heuristicOccurrence * WHITE_PAWNS_ON_MAIN_AXIS;
+			//result -= tmp.getHeuristicBlack();
+			numeroPassi++;
+			tmp = tmp.parent;
+		}
+		while (numeroPassi-- >= 0)
+			mainAxisDefaultPositionVal *= 0.5;
+		result += mainAxisDefaultPositionVal;
+		*/
+
+		/*
+		double escapeVal = kingEscape() * FREE_ESCAPE_WAYS_AVAILABLE_WHITE_HEURISTIC_VALUE;
+		tmp = this.parent;
+		while (tmp != null) {
+			numeroPassi++;
+			tmp = tmp.parent;
+		}
+		while (numeroPassi-- >= 0) {
+			//TODO calculate coverable escape ways in numeroPassi turns
+			escapeVal -= FREE_ESCAPE_WAYS_AVAILABLE_WHITE_HEURISTIC_VALUE / 2;
+		}
+		if(escapeVal > 0)
+			System.out.println("breakpoint debug!");
+		if(escapeVal < 0)
+			escapeVal = 0;
+
+		result += escapeVal;
+		*/
+
+		//step indipendent heuristic
+		//the heuristic is calculated just on the final state
+		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 		result += rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
 
 		result += mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
-
 		result += pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-
-		result = 1; // Disabled heuristic
+		result += kingEscape() * FREE_ESCAPE_WAYS_AVAILABLE_WHITE_HEURISTIC_VALUE;
+		//result = 1; // Disabled heuristic
 		
 		return result;
 	}
