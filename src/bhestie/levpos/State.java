@@ -385,6 +385,7 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicBlack() {
+
 		List<State> unfolded = this.unfold();
 		double result = 1;
 		int size = unfolded.size();
@@ -392,44 +393,8 @@ public class State {
 			result += unfolded.get(i).parent.getHeuristic();
 			result /= 2;
 		}
-		
-		/*for (State state : unfolded) {
-			result += state.calculateMoveGoodness();
-			result /= 2;
-		}*/
 		return result + calculateMoveGoodness();
-		// TODO da scrivere.
-		// Più è alto il valore più la mossa è bella per il nero
-		/*double result = -1;
-		
-		long numeroMangiati = 0;
-		int numeroPassi = 0;*/
 
-
-		/*
-		State tmp = this.parent;
-		while (tmp != null) {
-			numeroMangiati = tmp.pawns.stream().filter(p -> p.isWhite()).count() - this.pawns.stream().filter(p -> p.isWhite()).count();
-			result += numeroMangiati * EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC;
-			//result -= tmp.getHeuristicWhite();
-			//numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			//result -= numeroMangiati * EATEN_PAWN_HEURISTIC_VALUE;
-			numeroPassi++;
-			tmp = tmp.parent;
-		}
-		*/
-
-		
-		/*while (numeroPassi-- >= 0)
-			result *= 0.5;
-
-		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC;
-
-		result += pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC;
-
-		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC;
-
-		return result;*/
 	}
 	
 	/**
@@ -437,25 +402,8 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicWhite() {
-		// TODO da scrivere.
-		// Più è alto il valore più la mossa è bella per il bianco
 		double result = 0;
-		
 
-		/*
-		long numeroMangiati = 0;
-		int numeroPassi = 0;
-		State tmp = this.parent;
-		while (tmp != null) {
-			numeroMangiati = tmp.pawns.stream().filter(p -> p.isBlack()).count() - this.pawns.stream().filter(p -> p.isBlack()).count();
-			result += numeroMangiati * EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC;
-			//result -= tmp.getHeuristicBlack();
-			numeroPassi++;
-			tmp = tmp.parent;
-		}
-		while (numeroPassi-- >= 0)
-			result *= 0.5;
-		*/
 
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
@@ -722,13 +670,35 @@ public class State {
 		};
 	}
 	
-	private boolean isNthEscapeRouteBlocked(final int nth) {
-		return (this.pawns.stream().anyMatch(p -> !p.king && p.isBlack() && p.position.equals(escapeRouteBlocked.get(nth))));
+	private boolean kingProtrudingNorth(){
+		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
+		if(king.getY() > 5){ // king is in north sector;
+			return true;
+		}else if(king.getY() < 5){ // king is in south sector;
+			return false;
+		}else{
+			if(this.checkROIQuantity(5, 4, 5, 3, p -> p.isWhite()) < 2){ // a north pawn has been moved
+				return true;
+			}else if(this.checkROIQuantity(5, 6, 5, 7, p -> p.isWhite()) < 2){ // a south pawn has been moved
+				return false;
+			}
+		}
+		return false;
 	}
-	
-	
-	private boolean isKingEscapeBlocked() {		
-		return this.kingEscape() == 0;
+	private boolean kingProtrudingEast(){
+		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
+		if(king.getX() > 5){ // king is in east sector;
+			return true;
+		}else if(king.getX() < 5){ // king is in west sector;
+			return false;
+		}else{
+			if(this.checkROIQuantity(4, 5, 3, 5, p -> p.isWhite()) < 2){ // an east pawn has been moved
+				return true;
+			}else if(this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2){ // a west pawn has been moved
+				return false;
+			}
+		}
+		return false;
 	}
 	
 	private double calculateMoveGoodness() {
@@ -738,21 +708,41 @@ public class State {
 		
 		// TODO sistemare qui perch� se le vie sono bloccate d� 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
 		//King is outside the "citadel" (throne)
-		if(isKingEscapeBlocked()) {
+		if(this.kingEscape() == 0) {
 			result += 10000;
-		} else result -= 10000;/*else if(!isKingEscapeBlocked(king.get()))
-			return -10000;*/
+		}else{
+			result -= 10000;
+		}
 		
 		//Block Escape routes
 		int numRouteBlocked = 0;
-		for (int i = 0; i < 8; i++)
-			if (isNthEscapeRouteBlocked(i))
+		int modificator = 1; // express if the blocked route is in the right side of the chessboard
+		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast();
+		for(Position pos : escapeRouteBlocked){
+			if(this.pawns.stream().anyMatch(p -> p.isBlack() && p.position.equals(pos))){
 				numRouteBlocked++;
+				
+				//this looks like it's written by an idiot, but don't worry: it is.
+				//if the move has been made in the (eg) NW position of the chessboard 
+				//we want to block on that side because it's the smart thing to do
+				if(north && pos.y > 5){// game is protruding north
+					modificator++;
+				}else if(!north && pos.y < 5){// game is protruding south
+					modificator++;
+				}
+				if(east && pos.x > 5){// game is protruding east
+					modificator++;
+				}else if(!east && pos.x < 5){// game is protruding west
+					modificator++;
+				}
+			}
+		}
 		
-		if (numRouteBlocked != 0)
-			return numRouteBlocked*1000 + result;
-		else
-			return 1 + result; // Random move
+		if (numRouteBlocked != 0){
+			return (numRouteBlocked * 1000 + modificator) + result;
+		}else{
+			return result; // Random move
+		}
 	}
 
 	
