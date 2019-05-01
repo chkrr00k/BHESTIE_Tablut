@@ -50,32 +50,13 @@ public class Main {
 			double result = Minimax.alphaBethInit(currentState, 3);
 			HeuristicCalculatorGroup.getInstance().pauseAll();
 			System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
-			State oldState = currentState;
+
 			
 			currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
 			List<State> unfold = currentState.unfold();
 			if (unfold.size() > 0)
 				currentState = unfold.get(unfold.size() - 1);
-			
-			int fx = 0;
-			int fy = 0;
-			int tx = 0;
-			int ty = 0;
-			for (Pawn pawn : currentState.getPawns()) {
-				if (!oldState.getPawns().contains(pawn) && pawn.filterByTurn(Minimax.player)) {
-					tx = pawn.getX();
-					ty = pawn.getY();
-				}
-			}
-			for (Pawn pawn : oldState.getPawns()) {
-				if (!currentState.getPawns().contains(pawn) && pawn.filterByTurn(Minimax.player)) {
-					fx = pawn.getX();
-					fy = pawn.getY();
-				}
-			}
-			Action aa = new Action(fx, fy, tx, ty, Minimax.player == whitePlayer ? "W" : "B");
-			c.writeAction(aa);
-			
+			c.writeAction(currentState.getAction());
 			Minimax.stack.clear();
 			
 			b = c.readBoard();
@@ -85,14 +66,6 @@ public class Main {
 			
 			currentState = new State(b.get(), Minimax.player, currentState.historyStorage, null);
 		}
-		/*
-		c.writeAction(a);
-
-		b.convert();
-		System.out.println(b);
-		b = c.readBoard();
-		b.convert();
-		System.out.println(b);*/
 	}
 
 }
