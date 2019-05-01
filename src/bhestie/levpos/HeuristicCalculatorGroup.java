@@ -1,13 +1,17 @@
 package bhestie.levpos;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 public class HeuristicCalculatorGroup {
 	public static final Queue<State> statesToCalculateCache = new LinkedBlockingQueue<>();
 	
-	private LinkedList<HeuristicCalculator> threads = new LinkedList<>();
+	public static final Semaphore semaphoreStatesToBeCalculated = new Semaphore(0);
+	
+	private List<HeuristicCalculator> threads = new ArrayList<>(5);
 	private ThreadGroup threadGroup = new ThreadGroup("Heuristic Calculator Group");
 	
 	private HeuristicCalculatorGroup() {}
@@ -29,12 +33,25 @@ public class HeuristicCalculatorGroup {
 			t.start();
 	}
 	
+	public void killAll() {
+		for (HeuristicCalculator thread : this.threads) {
+			thread.kill();
+		}
+		semaphoreStatesToBeCalculated.drainPermits();
+		statesToCalculateCache.clear();
+	}
+	
 	public void playAll() {
-		this.threads.forEach(HeuristicCalculator::play);
+		for (HeuristicCalculator thread : this.threads) {
+			thread.play();
+		}
 	}
 	
 	public void pauseAll() {
-		this.threads.forEach(HeuristicCalculator::pause);
+		for (HeuristicCalculator thread : this.threads) {
+			thread.pause();
+		}
+		semaphoreStatesToBeCalculated.drainPermits();
 		statesToCalculateCache.clear();
 	}
 	

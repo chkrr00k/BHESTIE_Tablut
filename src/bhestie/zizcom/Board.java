@@ -63,11 +63,11 @@ public class Board implements Serializable{
 	public List<Pawn> get(){
 		return this.pawns;
 	}
-	@Deprecated
 	/**
 	 * @see convert()
 	 * @return the converted list
 	 */
+	@Deprecated
 	public List<Pawn> getConvert(){
 		if(this.pawns == null){
 			this.convert();
@@ -93,7 +93,7 @@ public class Board implements Serializable{
 		StringBuilder builder = new StringBuilder();
 		builder.append("Board [pawns=");
 		builder.append(pawns);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

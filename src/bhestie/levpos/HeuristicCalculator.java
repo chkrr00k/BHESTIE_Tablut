@@ -17,21 +17,20 @@ public class HeuristicCalculator extends Thread {
 		bhestie.levpos.State current = null;
 		while (this.alive) {
 			while (this.running) {
+				HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.acquireUninterruptibly();
 				current = HeuristicCalculatorGroup.statesToCalculateCache.poll();
 				if (current != null) { // Call to cache values
 					current.isTerminal();
 					current.getHeuristic();
 				}
 			}
-			try {
-				this.semaphore.acquire();
-			} catch (InterruptedException e) {}
+			this.semaphore.acquireUninterruptibly();
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	public synchronized void kill() {
-		this.alive = false;
-		this.running = false;
+		this.stop();
 	}
 	
 	public synchronized void play() {

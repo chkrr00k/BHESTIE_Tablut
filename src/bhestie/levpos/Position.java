@@ -57,10 +57,23 @@ public class Position {
 	}
 	@Override
 	public String toString() {
-		return "[" + x + ";" + y + "]";
+		StringBuilder result = new StringBuilder();
+		result.append('[');
+		result.append(x);
+		result.append(';');
+		result.append(y);
+		result.append(']');
+		return result.toString();
 	}
 	
-	private static final Position[][] flightweightPositions = new Position[11][11]; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
+	static {
+		int size = 11;
+		flightweightPositions = new Position[size][size];
+		for (int i = 1; i <= 9; i++)
+			for (int j = 1; j <= 9; j++)
+				Position.of(i, j); // Cache all board values (not the perimetral)
+	}
+	private static final Position[][] flightweightPositions; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
 	/**
 	 * Flightweight of position. It returns a Position.
 	 * @param x The X position.

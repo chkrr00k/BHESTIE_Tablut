@@ -39,7 +39,7 @@ public final class Minimax {
 	}
 	
 	private static double maxHeuFound = -Double.MAX_VALUE;
-	public static long nodeExplored = 0;
+	public static long nodeExplored = 0; // TODO remove in the last commit
 	private static final double alphaBeth(final State s, final int depth, double alpha, double beth, final boolean max){
 		nodeExplored++;
 		double v = 0;
@@ -106,7 +106,7 @@ public final class Minimax {
 
 class Interrupter implements Runnable {
 	private final long secs;
-	public Interrupter(long l) {
+	public Interrupter(final long l) {
 		this.secs = l;
 	}
 
@@ -116,7 +116,7 @@ class Interrupter implements Runnable {
 			Thread.sleep(1000 * secs);
 			//LockSupport.parkNanos(Minimax.timeout.getNano());
 			Minimax.interrupt();
-			System.out.println("Signaled");
+			System.out.println("Signaled"); // TODO remove in the last commit
 		} catch (Exception e) {
 			return;
 		}
