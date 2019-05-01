@@ -722,139 +722,23 @@ public class State {
 		};
 	}
 	
-	
-	
-	
-	
-	/*
-	private boolean isRowBlocked(int fromX, int toX, int y) {
-		boolean result = false;
-		
-		for (int i = fromX; i <= toX; i++) {
-			int x = i;
-			if (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
-				result = true;
-			}
-		}
-		return result;
-	}
-	
-	private boolean isColumnBlocked(int x, int fromY, int toY) {
-		boolean result = false;
-		
-		for (int i = fromY; i <= toY; i++) {
-			int y = i;
-			if (this.pawns.stream().anyMatch(p -> !p.king && p.position.equals(Position.of(x, y)))) {
-				result = true;
-			}
-		}
-		return result;
-	}
-	*/
-	
 	private boolean isNthEscapeRouteBlocked(final int nth) {
 		return (this.pawns.stream().anyMatch(p -> !p.king && p.isBlack() && p.position.equals(escapeRouteBlocked.get(nth))));
 	}
 	
 	
-	private boolean isKingEscapeBlocked(Pawn king) {		
+	private boolean isKingEscapeBlocked() {		
 		return this.kingEscape() == 0;
-
-//this is madness
-/*		
-		// NW
-		if (king.position.equals(Position.of(2, 2)))
-			return (this.isColumnBlocked(2, 1, 1) && this.isRowBlocked(1, 1, 2));
-		else if (king.position.equals(Position.of(2, 3)))
-			return (this.isColumnBlocked(2, 1, 2)	&& this.isRowBlocked(1, 3, 3) && this.isRowBlocked(3, 9, 3)); 
-		else if (king.position.equals(Position.of(2, 4)))
-			return (this.isColumnBlocked(2, 1, 3));
-		else if (king.position.equals(Position.of(3, 2)))
-			return (this.isColumnBlocked(3, 1, 1) && this.isRowBlocked(1, 2, 2));
-		else if (king.position.equals(Position.of(3, 3)))
-			return (this.isColumnBlocked(3, 4, 9)) && this.isColumnBlocked(3, 1, 2) && this.isRowBlocked(1, 2, 3) && this.isRowBlocked(3, 9, 3);
-		else if (king.position.equals(Position.of(3, 4)))
-			return (this.isRowBlocked(1, 3, 3) && this.isRowBlocked(5, 9, 3));
-		else if (king.position.equals(Position.of(3, 5)))
-			return (this.isRowBlocked(1, 4, 3) && this.isRowBlocked(6, 9, 3));
-		else if (king.position.equals(Position.of(4, 2)))
-			return (this.isRowBlocked(1, 3, 2));
-		else if (king.position.equals(Position.of(4, 3)))
-			return (this.isRowBlocked(1, 3, 3) && this.isRowBlocked(5, 9, 3));
-		else if (king.position.equals(Position.of(5, 3)))
-			return (this.isRowBlocked(1, 4, 3) && this.isRowBlocked(6, 9, 3));
-		
-		// NE
-		if (king.position.equals(Position.of(6, 2)))
-			return (this.isRowBlocked(7, 9, 2));
-		else if (king.position.equals(Position.of(6, 3)))
-			return (this.isRowBlocked(7, 9, 3));
-		else if (king.position.equals(Position.of(7, 2)))
-			return (this.isRowBlocked(8, 9, 2) && this.isColumnBlocked(7, 1, 1) && this.isColumnBlocked(7, 3, 9));
-		else if (king.position.equals(Position.of(7, 3))) 
-			return (this.isRowBlocked(1, 6, 3) && this.isRowBlocked(8, 9, 3) && this.isColumnBlocked(7, 1, 2) && this.isColumnBlocked(7, 4, 9));
-		else if (king.position.equals(Position.of(7, 4)))
-			return (this.isRowBlocked(8, 9, 4)	&& this.isColumnBlocked(7, 1, 3) && this.isColumnBlocked(7, 5, 9));
-		else if (king.position.equals(Position.of(7, 5)))
-			return (this.isRowBlocked(8, 9, 5)	&& this.isColumnBlocked(7, 1, 4) && this.isColumnBlocked(7, 6, 9));
-		else if (king.position.equals(Position.of(8, 2)))
-			return (this.isRowBlocked(9, 9, 2) && this.isColumnBlocked(8, 1, 1));
-		else if (king.position.equals(Position.of(8, 3)))
-			return (this.isRowBlocked(9, 9, 3) && this.isColumnBlocked(8, 1, 2));
-		else if (king.position.equals(Position.of(8, 4)))
-			return (this.isColumnBlocked(8, 1, 3));
-		
-		// SW
-		if (king.position.equals(Position.of(2, 6))) 
-			return (this.isColumnBlocked(2, 7, 9));
-		else if (king.position.equals(Position.of(2, 7))) 
-			return (this.isColumnBlocked(2, 8, 9));
-		else if (king.position.equals(Position.of(2, 8))) 
-			return (this.isColumnBlocked(2, 9, 9));
-		else if (king.position.equals(Position.of(3, 6)))
-			return (this.isColumnBlocked(3, 1, 5) && this.isColumnBlocked(3, 7, 9));
-		else if (king.position.equals(Position.of(3, 7))) 
-			return (this.isColumnBlocked(3, 1, 6)	&& this.isColumnBlocked(3, 8, 9) && this.isRowBlocked(1, 2, 7) && this.isRowBlocked(4, 9, 7));
-		else if (king.position.equals(Position.of(3, 8))) 
-			return (this.isColumnBlocked(3, 1, 7) && this.isColumnBlocked(3, 9, 9) && this.isRowBlocked(1, 2, 8));
-		else if (king.position.equals(Position.of(4, 7))) 
-			return (this.isRowBlocked(1, 3, 7) && this.isRowBlocked(5, 9, 7));
-		else if (king.position.equals(Position.of(4, 8))) 
-			return (this.isRowBlocked(1, 3, 8));
-		else if (king.position.equals(Position.of(5, 7)))
-			return (this.isRowBlocked(1, 4, 7) && this.isRowBlocked(6, 9, 7));
-		
-		//SE
-		if (king.position.equals(Position.of(6, 7)))
-			return (this.isRowBlocked(1, 5, 7) && this.isRowBlocked(7, 9, 7));
-		else if (king.position.equals(Position.of(6, 8)))
-			return (this.isRowBlocked(7, 9, 8));
-		else if (king.position.equals(Position.of(7, 6)))
-			return (this.isColumnBlocked(7, 1, 5) && this.isColumnBlocked(7, 7, 9));
-		else if (king.position.equals(Position.of(7, 7)))
-			return (this.isColumnBlocked(7, 1, 6) && this.isColumnBlocked(7, 8, 9) && this.isRowBlocked(1, 6, 7) && this.isRowBlocked(8, 9, 7));
-		else if (king.position.equals(Position.of(7, 8)))
-			return (this.isColumnBlocked(7, 1, 6) && this.isColumnBlocked(7, 9, 9));
-		else if (king.position.equals(Position.of(8, 6)))
-			return (this.isColumnBlocked(8, 7, 9));
-		else if (king.position.equals(Position.of(8, 7)))
-			return (this.isColumnBlocked(8, 8, 9) && this.isRowBlocked(1, 7, 7) && this.isRowBlocked(9, 9, 7));
-		else if (king.position.equals(Position.of(8, 8)))
-			return (this.isColumnBlocked(8, 9, 9) && this.isRowBlocked(9, 9, 8));
-
-		return true;
-		*/
 	}
 	
 	private double calculateMoveGoodness() {
 		if (this.isTerminal())
 			return this.getUtility();
 		double result = 0;
-		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
 		
 		// TODO sistemare qui perch� se le vie sono bloccate d� 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
 		//King is outside the "citadel" (throne)
-		if(isKingEscapeBlocked(king)) {
+		if(isKingEscapeBlocked()) {
 			result += 10000;
 		} else result -= 10000;/*else if(!isKingEscapeBlocked(king.get()))
 			return -10000;*/
@@ -869,11 +753,6 @@ public class State {
 			return numRouteBlocked*1000 + result;
 		else
 			return 1 + result; // Random move
-		//}
-		//else {
-			//Do a "random" move
-			//return 1;
-		//}
 	}
 
 	
