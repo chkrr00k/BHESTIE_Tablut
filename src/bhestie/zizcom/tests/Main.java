@@ -37,14 +37,12 @@ public class Main {
 		c.init();
 		c.present();
 		b = c.readBoard();
-		b.convert();
 		
 		if (Minimax.player == blackPlayer) {
 			b = c.readBoard();
-			b.convert();
 		}
 		
-		State currentState = new State(b.get(), Minimax.player);
+		State currentState = new State(b.convert().get(), Minimax.player);
 		while(true) {
 			HeuristicCalculatorGroup.getInstance().playAll();
 			double result = Minimax.alphaBethInit(currentState, 3);
@@ -60,11 +58,9 @@ public class Main {
 			Minimax.stack.clear();
 			
 			b = c.readBoard();
-			b.convert();
 			b = c.readBoard();
-			b.convert();
 			
-			currentState = new State(b.get(), Minimax.player, currentState.historyStorage, null);
+			currentState = new State(b.convert().get(), Minimax.player, currentState.historyStorage, null);
 		}
 	}
 

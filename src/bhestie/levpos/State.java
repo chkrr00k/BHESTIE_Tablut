@@ -672,42 +672,28 @@ public class State {
 	
 	private boolean kingProtrudingNorth(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		if(king.getY() > 5){ // king is in north sector;
-			return true;
-		}else if(king.getY() < 5){ // king is in south sector;
-			return false;
-		}else{
-			if(this.checkROIQuantity(5, 4, 5, 3, p -> p.isWhite()) < 2){ // a north pawn has been moved
-				return true;
-			}else if(this.checkROIQuantity(5, 6, 5, 7, p -> p.isWhite()) < 2){ // a south pawn has been moved
-				return false;
-			}
-		}
-		return false;
+		return (king.getY() > 5 || this.checkROIQuantity(5, 4, 5, 3, p -> p.isWhite()) < 2); // king is in north sector;
+	}
+	private boolean kingProtrudingSouth(){
+		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
+		return (king.getY() < 5 || this.checkROIQuantity(5, 6, 5, 7, p -> p.isWhite()) < 2); // king is in south sector;
+
 	}
 	private boolean kingProtrudingEast(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
-		if(king.getX() > 5){ // king is in east sector;
-			return true;
-		}else if(king.getX() < 5){ // king is in west sector;
-			return false;
-		}else{
-			if(this.checkROIQuantity(4, 5, 3, 5, p -> p.isWhite()) < 2){ // an east pawn has been moved
-				return true;
-			}else if(this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2){ // a west pawn has been moved
-				return false;
-			}
-		}
-		return false;
+		return (king.getX() > 5 || this.checkROIQuantity(4, 5, 3, 5, p -> p.isWhite()) < 2); // king is in east sector;
+	}
+	private boolean kingProtrudingWest(){
+		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
+		return (king.getX() < 5 || this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2); // king is in west sector;
 	}
 	
 	private double calculateMoveGoodness() {
-		if (this.isTerminal())
+		if (this.isTerminal()){
 			return this.getUtility();
+		}
 		double result = 0;
 		
-		// TODO sistemare qui perch� se le vie sono bloccate d� 10K che va bene, ma se non sono bloccate devo prevedere un "malus"
-		//King is outside the "citadel" (throne)
 		if(this.kingEscape() == 0) {
 			result += 10000;
 		}else{
@@ -717,7 +703,7 @@ public class State {
 		//Block Escape routes
 		int numRouteBlocked = 0;
 		int modificator = 1; // express if the blocked route is in the right side of the chessboard
-		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast();
+		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast(), south = this.kingProtrudingSouth(), west = this.kingProtrudingWest();
 		for(Position pos : escapeRouteBlocked){
 			if(this.pawns.stream().anyMatch(p -> p.isBlack() && p.position.equals(pos))){
 				numRouteBlocked++;
@@ -727,12 +713,14 @@ public class State {
 				//we want to block on that side because it's the smart thing to do
 				if(north && pos.y > 5){// game is protruding north
 					modificator++;
-				}else if(!north && pos.y < 5){// game is protruding south
+				}
+				if(south && pos.y < 5){// game is protruding south
 					modificator++;
 				}
 				if(east && pos.x > 5){// game is protruding east
 					modificator++;
-				}else if(!east && pos.x < 5){// game is protruding west
+				}
+				if(west && pos.x < 5){// game is protruding west
 					modificator++;
 				}
 			}
@@ -741,13 +729,9 @@ public class State {
 		if (numRouteBlocked != 0){
 			return (numRouteBlocked * 1000 + modificator) + result;
 		}else{
-			return result; // Random move
+			return result;
 		}
 	}
-
-	
-	
-	
 	
 	/**
 	 * default white pawns positions
