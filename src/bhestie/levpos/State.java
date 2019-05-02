@@ -56,6 +56,11 @@ public class State {
 	private final List<Pawn> pawns;
 
 	/**
+	 * Cache of king pawn
+	 */
+	private Pawn king;
+	
+	/**
 	 * Creates a new State
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
@@ -96,6 +101,22 @@ public class State {
 		return this.turn;
 	}
 
+	/**
+	 * Gets the king Pawn, null if none
+	 * @return The king pawn
+	 */
+	private Pawn getKing() {
+		if (this.king == null) {
+			for (Pawn p : this.pawns) {
+				if (p.king) {
+					this.king = p;
+					break; // Performance reason
+				}
+			}
+		}
+		return this.king;
+	}
+	
 	/**
 	 * Get the list of the next possible States.
 	 * @return The list of the next possible States.
@@ -290,11 +311,10 @@ public class State {
 	 * other positions = 2
 	 */
 	private int remainingPositionForCaptureKing(){
-		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
-		if(!kingS.isPresent()){
+		Pawn king = this.getKing();
+		if(king == null){
 			return 0;
 		}else {
-			Pawn king = kingS.get();
 			int startingValue = 0;
 			
 			if(king.getX() == 5 && king.getY() == 5){
@@ -325,11 +345,10 @@ public class State {
 	(black's pawn have closed the escape way)
 	 */
 	private int rawDistanceFromEscape(){
-		Optional<Pawn> kingS = this.pawns.stream().filter(p -> p.king).findAny();
-		if(!kingS.isPresent())
+		Pawn king = this.getKing();
+		if(king == null)
 			return 0;
 		else {
-			Pawn king = kingS.get();
 			int x = king.getX();
 			int y = king.getY();
 
@@ -464,7 +483,7 @@ public class State {
 		double result = 0;
 		if (this.isTerminal()) {
 			if (drawCase){
-				return -10000000/2; // Draw XXX i don't like drawing!
+				return 0;
 			}
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 				result = getUtilityBlack();
@@ -615,13 +634,7 @@ public class State {
 	 * @return the number of possible goal tiles reached
 	 */
 	public int kingEscape(){
-		Pawn king = null;
-		for(Pawn p : this.pawns){
-			if(p.king){
-				king = p;
-				break; // for faster performance
-			}
-		}
+		Pawn king = this.getKing();
 		if(king == null){
 			return 0; // no king found (weird!)
 		}else{
