@@ -240,6 +240,7 @@ public class State {
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
 			actions.add(newState);
 			HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
+			HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 			return true;
 		}
 		return false;
@@ -397,26 +398,90 @@ public class State {
 				result = -result;
 			}
 		}
-		this.heuristicCache = result;
+		
+		// The following code set the percentage in order to set more weight the more the State is near the init State (the State I have to find the best move)
+		double percentage = 1;
+		final int size = this.unfold().size(); // Numbers of parents
+		for (int i = 0; i < size; i++) { // (1/2) ^ size
+			percentage /= 2;
+		}
+		if (percentage < minPercentage)
+			minPercentage = percentage;
+		if (size > 1) { // If the parent is not the initial state calculate the heuristic recursivly
+			result *= percentage;
+			result += this.parent.getHeuristic();
+		} else { // If I don't have parents -> I'm the last one (with percentage 0.5) and I add the minPercentage to my percentage value
+			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
+			result *= percentage;
+		}
+		minPercentage = 1; // Reset the minPercentage for the next getHeuristic call
+		
+		this.heuristicCache = result; // Cache the value
 		return result;
 	}
+	private static double minPercentage = 1; // minPercentage found. default = 1 because is the highest value possible
 	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicBlack() {
-		List<State> unfolded = this.unfold();
-		double percentageLevelDependent = 0.5;
-		double parentLevelHeuristic = 0;
-		int size = unfolded.size() - 1; // Numbers of parents (-1 for avoiding to calculate the initial state)
-		for (int i = 0; i < size; i++) {
-			percentageLevelDependent /= 2;
-			parentLevelHeuristic += unfolded.get(i).parent.getHeuristic() * percentageLevelDependent;
+		if (this.isTerminal()){
+			return this.getUtility();
+		}
+		int kingEscape = this.kingEscape();
+		double result = 0;
+		
+		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
+			result = 10; // result = 7000;
+		}else if(kingEscape == 0) {
+			result = 10000;
+		}else{
+			result -= 100000;
 		}
 		
-		return parentLevelHeuristic + this.calculateMoveGoodnessBlack() * (0.5 + percentageLevelDependent);
-
+		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+			result -= 1500;
+		}
+		
+		//Number of blocked goal tiles
+		int numRouteBlocked = this.routeBlocked();
+		
+		if(State.TURN < 7){// preparation phase
+			//number of black in the corners
+			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
+					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isBlack())
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack());
+			//number of white in the corners
+			long whiteInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isWhite()) 
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite())
+					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isWhite())
+					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
+			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
+			// here is nice having black too
+			result += 125 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
+			// NOT nice if they are black
+			result -= 250 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
+			// to avoid cycling
+			result -= 125 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
+						&& (p.position.y == 1 || p.position.y == 9) 
+						&& p.isBlack());
+		}
+		
+		if (kingEscape > this.parent.kingEscape()) {
+			result += 102000;
+		} else if(kingEscape < this.parent.kingEscape()) {
+			result -= 1800;
+		}
+		
+		//if (numRouteBlocked != 0){
+			result += (numRouteBlocked * 750);
+			if(numRouteBlocked < this.parent.routeBlocked()){
+				result -= 10000;
+			}
+		//}
+		return result;
 	}
 	
 	/**
@@ -436,11 +501,11 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-//		result = 1; // Disabled heuristic
+		result = 1; // Disabled heuristic
 		
 		return result;
 	}
-
+	
 	/**
 	 * Checks if the board is in a terminal position.
 	 * @return If the board is in a terminal position.
@@ -511,7 +576,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
 		
-		return 10000000 - this.unfold().size() + 1;
+		return Double.MAX_VALUE - this.unfold().size() + 1;
 	}
 	
 	/**
@@ -522,7 +587,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
 		
-		return 10000000 - this.unfold().size() + 1;
+		return Double.MAX_VALUE - this.unfold().size() + 1;
 	}
 
 	/**
@@ -732,65 +797,6 @@ public class State {
 			}
 		}
 		return result * modificator;
-	}
-	
-	private double calculateMoveGoodnessBlack() {
-		if (this.isTerminal()){
-			return this.getUtility();
-		}
-		int kingEscape = this.kingEscape();
-		double result = 0;
-		
-		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
-			result = 10; // result = 7000;
-		}else if(kingEscape == 0) {
-			result = 10000;
-		}else{
-			result -= 100000;
-		}
-		
-		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-			result -= 1500;
-		}
-		
-		//Number of blocked goal tiles
-		int numRouteBlocked = this.routeBlocked();
-		
-		if(State.TURN < 7){// preparation phase
-			//number of black in the corners
-			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
-					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isBlack())
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack());
-			//number of white in the corners
-			long whiteInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isWhite()) 
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite())
-					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isWhite())
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
-			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
-			// here is nice having black too
-			result += 125 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
-			// NOT nice if they are black
-			result -= 250 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
-			// to avoid cycling
-			result -= 125 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
-						&& (p.position.y == 1 || p.position.y == 9) 
-						&& p.isBlack());
-		}
-		
-		if (kingEscape > this.parent.kingEscape()) {
-			result += 102000;
-		} else if(kingEscape < this.parent.kingEscape()) {
-			result -= 1800;
-		}
-		
-		//if (numRouteBlocked != 0){
-			result += (numRouteBlocked * 750);
-			if(numRouteBlocked < this.parent.routeBlocked()){
-				result -= 10000;
-			}
-		//}
-		return result;
 	}
 	
 	/**
