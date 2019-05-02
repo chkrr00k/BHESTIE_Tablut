@@ -4,10 +4,14 @@ import java.util.List;
 
 public final class Minimax {
 	
-	public static final int DEPTH = 3;
-	public static final int TIMEOUT = 20;
+	private static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
+	public static int DEPTH = 3;
+	
+	public static final int TIMEOUT = 20; // In seconds
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
+	
+	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
 	
 	private Minimax() {}
 
@@ -29,23 +33,29 @@ public final class Minimax {
 	 * @param depth Max depth
 	 * @return The alphabeth value
 	 */
-	public static final double alphaBethInit(final State state, final int depth) {
-;		maxHeuFound = -Double.MAX_VALUE;
+	public static final long alphaBethInit(final State state) {
+		maxHeuFound = -Long.MAX_VALUE;
 		Minimax.signal = false;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
+		heuristicCalculatorGroup.playAll();
 		interrupterThread.start();
-		double alphaBethResult = alphaBeth(state, depth, -Double.MAX_VALUE, Double.MAX_VALUE, true);
+		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Long.MAX_VALUE, Long.MAX_VALUE, true);
 		interrupterThread.interrupt();
+		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
+			Minimax.DEPTH++;
+			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+		}
+		heuristicCalculatorGroup.pauseAll();
 		return alphaBethResult;
 	}
 	
-	private static double maxHeuFound = -Double.MAX_VALUE;
+	private static long maxHeuFound;
 	public static long nodeExplored = 0; // TODO remove in the last commit
-	private static final double alphaBeth(final State s, final int depth, double alpha, double beth, final boolean max){
+	private static final long alphaBeth(final State s, final int depth, double alpha, double beth, final boolean max){
 		nodeExplored++;
-		double v = 0;
+		long v = 0;
 		if(s.isTerminal()){
-			final double utility = s.getUtility();
+			final long utility = s.getUtility();
 			if (utility > maxHeuFound) {
 				stack.clear();
 				maxHeuFound = utility;
@@ -55,7 +65,7 @@ public final class Minimax {
 			}
 			return utility;
 		} else if(depth == 0 || signal) {
-			final double heuristic = s.getHeuristic();
+			final long heuristic = s.getHeuristic();
 			if (heuristic > maxHeuFound) {
 				stack.clear();
 				maxHeuFound = heuristic;
@@ -65,7 +75,7 @@ public final class Minimax {
 			}
 			return heuristic;
 		} else if(max){
-			v = -Double.MAX_VALUE;
+			v = -Long.MAX_VALUE;
 			for(State c : s.getActions()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
@@ -75,7 +85,7 @@ public final class Minimax {
 				}
 			}
 		}else{
-			v = Double.MAX_VALUE;
+			v = Long.MAX_VALUE;
 			for(State c : s.getActions()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
@@ -89,6 +99,11 @@ public final class Minimax {
 
 	public static synchronized void interrupt() {
 		Minimax.signal = true;
+		if (!Minimax.FIXEDDEPTH) {
+			Minimax.DEPTH--;
+			System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+			Minimax.FIXEDDEPTH = true;
+		}
 	}
 	
 	private static long lastRun = 0;

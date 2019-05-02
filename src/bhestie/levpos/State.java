@@ -37,9 +37,9 @@ public class State {
 	
 	public static int TURN = 0;
 	
-	private Double heuristicCache = null; 	// Cached heuristic
+	private Long heuristicCache = null; 	// Cached heuristic
 	private Boolean isTerminalCache = null;	// Cache isTerminal
-	private Double utilityCache = null;		// Cache utility
+	private Long utilityCache = null;		// Cache utility
 	
 	private final State parent;
 	private final boolean drawCase;
@@ -384,11 +384,11 @@ public class State {
 	 * Returns a value that stimate the "goodness" of the pawns in the board.
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
-	public double getHeuristic() {
+	public long getHeuristic() {
 		if (this.heuristicCache != null){
 			return this.heuristicCache;
 		}
-		double result = 0;
+		long result = 0;
 		if (!this.turn) { // Black turn
 			result = this.getHeuristicBlack();
 			if (!Minimax.player){
@@ -427,12 +427,12 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	private double getHeuristicBlack() {
+	private long getHeuristicBlack() {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
 		int kingEscape = this.kingEscape();
-		double result = 0;
+		long result = 0;
 		
 		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
 			result = 10; // result = 7000;
@@ -490,8 +490,8 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	private double getHeuristicWhite() {
-		double result = 0;
+	private long getHeuristicWhite() {
+		long result = 0;
 
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
@@ -503,9 +503,9 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		result = 1; // Disabled heuristic
+		//result = 1; // Disabled heuristic
 		
-		return result;
+		return -result;
 	}
 	
 	/**
@@ -546,14 +546,14 @@ public class State {
 	 * Returns a value that stimate the "goodness" of a terminal state of the game.
 	 * @return A value that stimate the "goodness" of a terminal state of the game.
 	 */
-	public double getUtility() {
+	public long getUtility() {
 		if (this.utilityCache != null)
 			return this.utilityCache;
 		
-		double result = 0;
+		long result = 0;
 		if (this.isTerminal()) {
 			if (drawCase){
-				this.utilityCache = 0.0;
+				this.utilityCache = 0L;
 				return 0;
 			}
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
@@ -579,22 +579,22 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that says if the board is a winning or losing board
 	 */
-	private double getUtilityBlack() {
+	private long getUtilityBlack() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
 		
-		return Double.MAX_VALUE - this.unfold().size() + 1;
+		return Long.MAX_VALUE - this.unfold().size() + 1;
 	}
 	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that says if the board is a winning or losing board
 	 */
-	private double getUtilityWhite() {
+	private long getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
 		
-		return Double.MAX_VALUE - this.unfold().size() + 1;
+		return Long.MAX_VALUE - this.unfold().size() + 1;
 	}
 
 	/**
@@ -625,7 +625,7 @@ public class State {
 	}
 	
 	/**
-	 * @return the action between the old status and the new status just created.
+	 * @return the action between this State and his parent
 	 */
 	public Action getAction(){
 		Pawn from = this.parent.pawns.stream().filter((p) -> {

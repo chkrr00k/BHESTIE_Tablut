@@ -61,7 +61,7 @@ public class Main {
 	    
 		long a = System.nanoTime();
 		//System.out.println(Minimax.alphaBeth(currentState, 2, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player));
-		double result = Minimax.alphaBethInit(currentState, 13);
+		double result = Minimax.alphaBethInit(currentState);
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
 			LinkedList<State> unfold = (LinkedList)s.unfold();

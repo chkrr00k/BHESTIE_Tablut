@@ -11,6 +11,9 @@ import bhestie.zizcom.Connector;
 
 public class Main {
 
+	private static final boolean whitePlayer = false;
+	private static final boolean blackPlayer = !whitePlayer;
+	
 	private static final int WhitePort = 5800;
 	private static final int BlackPort = 5801;
 	
@@ -18,9 +21,6 @@ public class Main {
 	
 	public static void main(String[] args) throws IOException {
 		HeuristicCalculatorGroup.getInstance().addThreads(3);
-		
-		boolean whitePlayer = false;
-	    boolean blackPlayer = !whitePlayer;
 	    
 	    Minimax.player = blackPlayer;
 	    
@@ -33,39 +33,41 @@ public class Main {
 		Board b = null;
 		c.init();
 		c.present();
-		b = c.readBoard();
+		b = c.readBoard(); // Read the initial board
+		
+		Minimax.DEPTH = 3;
 		
 		if (Minimax.player == blackPlayer) {
-			b = c.readBoard();
+			b = c.readBoard(); // Wait for enemy move
 		}
 		
 		State currentState = new State(b.convert().get(), Minimax.player);
 		try{
 			while(true) {
-				HeuristicCalculatorGroup.getInstance().playAll();
-				double result = Minimax.alphaBethInit(currentState, Minimax.DEPTH);
-				HeuristicCalculatorGroup.getInstance().pauseAll();
+				long result = Minimax.alphaBethInit(currentState);
 				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 
 				
 				currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
 				List<State> unfold = currentState.unfold();
-				if (unfold.size() > 0)
-					currentState = unfold.get(unfold.size() - 1);
-				c.writeAction(currentState.getAction());
+				int unfoldSize = unfold.size();
+				if (unfoldSize > 0)
+					currentState = unfold.get(unfoldSize - 1);
+				c.writeAction(currentState.getAction()); // Sends our move
+				
 				Minimax.stack.clear();
 				System.gc();
+				b = c.readBoard(); // Gets the board after our move
+				Thread.yield(); // Let the enemy "think correctly"
+				b = c.readBoard(); // Gets the board after the enemy move
 				
-				b = c.readBoard();
-				b = c.readBoard();
-				
-				currentState = new State(b.convert().get(), Minimax.player, currentState.historyStorage, null);
 				State.TURN++;
-				Thread.yield();
+				currentState = new State(b.convert().get(), Minimax.player, currentState.historyStorage, null);
 				
 				System.out.println(State.TURN);
 			}
 		}catch(Exception e){
+			HeuristicCalculatorGroup.getInstance().killAll();
 			System.exit(0);
 		}
 	}
