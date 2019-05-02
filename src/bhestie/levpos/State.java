@@ -37,8 +37,9 @@ public class State {
 	
 	public static int TURN = 0;
 	
-	private Double heuristicCache = null; // Cached heuristic
-	private Boolean isTerminalCache = null; // Cache isTerminal
+	private Double heuristicCache = null; 	// Cached heuristic
+	private Boolean isTerminalCache = null;	// Cache isTerminal
+	private Double utilityCache = null;		// Cache utility
 	
 	private final State parent;
 	private final boolean drawCase;
@@ -85,6 +86,9 @@ public class State {
 		this.historyStorage = historyStorage;
 		this.parent = parent;
 		this.drawCase = drawCase;
+		
+		HeuristicCalculatorGroup.statesToCalculateCache.add(this);
+		HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 	}
 
 	/**
@@ -239,8 +243,6 @@ public class State {
 			}
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
 			actions.add(newState);
-			HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
-			HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 			return true;
 		}
 		return false;
@@ -545,9 +547,13 @@ public class State {
 	 * @return A value that stimate the "goodness" of a terminal state of the game.
 	 */
 	public double getUtility() {
+		if (this.utilityCache != null)
+			return this.utilityCache;
+		
 		double result = 0;
 		if (this.isTerminal()) {
 			if (drawCase){
+				this.utilityCache = 0.0;
 				return 0;
 			}
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
@@ -562,9 +568,10 @@ public class State {
 				}
 			}
 		} else {
-			return this.getHeuristic(); // In case you ask getUtility and it's not a terminalState -> returns the getHeuristic value 
+			result = this.getHeuristic(); // In case you ask getUtility and it's not a terminalState -> returns the getHeuristic value
 		}
 		
+		this.utilityCache = result;
 		return result;
 	}
 	

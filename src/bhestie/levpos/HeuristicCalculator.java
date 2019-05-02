@@ -22,6 +22,7 @@ public class HeuristicCalculator extends Thread {
 				if (current != null) { // Call to cache values
 					current.isTerminal();
 					current.getHeuristic();
+					current.getUtility();
 				}
 			}
 			this.semaphore.acquireUninterruptibly();
