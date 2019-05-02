@@ -412,7 +412,7 @@ public class State {
 		int size = unfolded.size();
 		for (int i = 0; i < size; i++) {
 			result += unfolded.get(i).parent.getHeuristic();
-			result /= 19;
+			result *= 1.27;
 		}
 		return result + this.calculateMoveGoodness();
 
@@ -714,17 +714,20 @@ public class State {
 				//this looks like it's written by an idiot, but don't worry: it is.
 				//if the move has been made in the (eg) NW position of the chessboard 
 				//we want to block on that side because it's the smart thing to do
-				if(north && pos.y > 5){// game is protruding north
-					modificator+=0.01;
-				}
-				if(south && pos.y < 5){// game is protruding south
-					modificator+=0.01;
-				}
-				if(east && pos.x > 5){// game is protruding east
-					modificator+=0.01;
-				}
-				if(west && pos.x < 5){// game is protruding west
-					modificator+=0.01;
+				//but only in the first steps
+				if(State.TURN < 6) {
+					if(north && pos.y > 5){// game is protruding north
+						modificator+=0.01;
+					}
+					if(south && pos.y < 5){// game is protruding south
+						modificator+=0.01;
+					}
+					if(east && pos.x > 5){// game is protruding east
+						modificator+=0.01;
+					}
+					if(west && pos.x < 5){// game is protruding west
+						modificator+=0.01;
+					}
 				}
 			}
 		}
@@ -735,24 +738,25 @@ public class State {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
+		int kingEscape = this.kingEscape();
 		double result = 0;
 		
 		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
-			result = 4000; // result = 7000;
-		}else if(this.kingEscape() == 0) {
+			result = 10; // result = 7000;
+		}else if(kingEscape == 0) {
 			result = 10000;
 		}else{
 			result -= 100000;
 		}
 		
 		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-			result -= 3000;
+			result -= 1500;
 		}
 		
 		//Number of blocked goal tiles
 		int numRouteBlocked = this.routeBlocked();
 		
-		if(State.TURN < 10){// preparation phase
+		if(State.TURN < 7){// preparation phase
 			//number of black in the corners
 			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
@@ -774,12 +778,18 @@ public class State {
 						&& p.isBlack());
 		}
 		
-		if (numRouteBlocked != 0){
+		if (kingEscape > this.parent.kingEscape()) {
+			result += 102000;
+		} else if(kingEscape < this.parent.kingEscape()) {
+			result -= 1800;
+		}
+		
+		//if (numRouteBlocked != 0){
 			result += (numRouteBlocked * 750);
 			if(numRouteBlocked < this.parent.routeBlocked()){
-				result -= 1000;
+				result -= 10000;
 			}
-		}
+		//}
 		return result;
 	}
 	

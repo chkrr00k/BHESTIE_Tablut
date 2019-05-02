@@ -5,9 +5,7 @@ import java.util.List;
 
 import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
-import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
-import bhestie.zizcom.Action;
 import bhestie.zizcom.Board;
 import bhestie.zizcom.Connector;
 
