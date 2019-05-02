@@ -43,7 +43,7 @@ public class Main {
 		try{
 			while(true) {
 				HeuristicCalculatorGroup.getInstance().playAll();
-				double result = Minimax.alphaBethInit(currentState, 3);
+				double result = Minimax.alphaBethInit(currentState, Minimax.DEPTH);
 				HeuristicCalculatorGroup.getInstance().pauseAll();
 				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 

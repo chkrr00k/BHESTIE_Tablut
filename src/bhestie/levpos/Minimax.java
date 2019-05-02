@@ -4,7 +4,8 @@ import java.util.List;
 
 public final class Minimax {
 	
-	private static final int TIMEOUT = 20;
+	public static final int DEPTH = 3;
+	public static final int TIMEOUT = 20;
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
 	

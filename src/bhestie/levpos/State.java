@@ -14,23 +14,23 @@ import bhestie.zizcom.Action;
 
 @SuppressWarnings("unused") // TODO remove
 public class State {
-	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = -50;
+	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = 50;
 	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
 
 	//TODO is positive to be eaten for white? change paremeter if it is...
-	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -100;
+	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 100;
 	//if a state has less black pawns, it will have a more positive value because the malus
 	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
-	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -400;
-	public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = -100;
+	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 400;
+	public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 100;
 	public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
 
 	//raw distance from nearest escape, the more it is, the more malus we get
-	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = -50;
+	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 50;
 	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
 
 	//having white pawn on main axis (default position) is a malus
-	private static final int WHITE_PAWNS_ON_MAIN_AXIS = -50;
+	private static final int WHITE_PAWNS_ON_MAIN_AXIS = 50;
 	private static final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
 	private static final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
 
@@ -406,15 +406,16 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private double getHeuristicBlack() {
-
 		List<State> unfolded = this.unfold();
-		double result = 1;
-		int size = unfolded.size();
+		double percentageLevelDependent = 0.5;
+		double parentLevelHeuristic = 0;
+		int size = unfolded.size() - 1; // Numbers of parents (-1 for avoiding to calculate the initial state)
 		for (int i = 0; i < size; i++) {
-			result += unfolded.get(i).parent.getHeuristic();
-			result *= 1.27;
+			percentageLevelDependent /= 2;
+			parentLevelHeuristic += unfolded.get(i).parent.getHeuristic() * percentageLevelDependent;
 		}
-		return result + this.calculateMoveGoodness();
+		
+		return parentLevelHeuristic + this.calculateMoveGoodnessBlack() * (0.5 + percentageLevelDependent);
 
 	}
 	
@@ -424,7 +425,6 @@ public class State {
 	 */
 	private double getHeuristicWhite() {
 		double result = 0;
-
 
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
@@ -734,7 +734,7 @@ public class State {
 		return result * modificator;
 	}
 	
-	private double calculateMoveGoodness() {
+	private double calculateMoveGoodnessBlack() {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
