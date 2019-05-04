@@ -421,14 +421,16 @@ public class State {
 			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
 			result *= percentage;
 		}
-		return result;
+		//return result;
+		
+		return Math.min(result, Minimax.MAXVALUE - 1);
 	}
 	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	protected long getHeuristicBlack() {
+	private long getHeuristicBlack() {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
@@ -474,12 +476,15 @@ public class State {
 		//Number of blocked goal tiles
 		int numRouteBlocked = this.routeBlocked();
 		
-		//if (numRouteBlocked != 0){
-			result += (numRouteBlocked * WHITE_KING_ESCAPES);
-			if(numRouteBlocked < this.parent.routeBlocked()){
-				result -= WHITE_KING_ESCAPES / 2;
-			}
-		//}
+		result += (numRouteBlocked * WHITE_KING_ESCAPES);
+		if(numRouteBlocked < this.parent.routeBlocked()){
+			result -= WHITE_KING_ESCAPES / 2;
+		}
+		
+		if (kingEscape != this.parent.kingEscape()) {
+			result = Minimax.MAXVALUE * 2 * (this.parent.kingEscape() - kingEscape);
+		}
+		
 		return result;
 	}
 	
@@ -487,7 +492,7 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	protected long getHeuristicWhite() {
+	private long getHeuristicWhite() {
 		long result = 370;
 
 		result += this.remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
@@ -599,7 +604,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
 		
-		return Long.MAX_VALUE - this.unfold().size();
+		return Minimax.MAXVALUE - (this.unfold().size() - 1) * 5000;
 	}
 	
 	/**
@@ -609,8 +614,8 @@ public class State {
 	private long getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
-		
-		return Long.MAX_VALUE - this.unfold().size();
+		return this.getUtilityBlack();
+		//return Long.MAX_VALUE - (this.unfold().size() - 1) * 500;
 	}
 
 	/**
@@ -654,27 +659,27 @@ public class State {
 	}
 	
 	private int kingEscapeX(Pawn k){
-		if(k.getX() == 9 || k.getX() == 1){
+		if(k.getY() == 9 || k.getY() == 1){
 			return 1; // king alreay escaped;
-		}else if(k.getX() <= 6 && k.getX() >=4){
+		}else if(k.getY() <= 6 && k.getY() >=4){
 			return 0; // king can't escape
-		}else if(k.getX() == 7 || k.getX() == 3){ // king could escape in two place;
+		}else if(k.getY() == 7 || k.getY() == 3){ // king could escape in two place;
 			int result = 0;
-			if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+			if(!this.checkROI(1, k.getY(), k.getX(), k.getY(), b -> !b.king)){ // check if any pawns on the left
 				result++;
 			}
 			if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
 				result++;
 			}
 			return result;
-		}else if(k.getX() == 2 || k.getX() == 8){ // king could escape in one place;
+		}else if(k.getY() == 2 || k.getY() == 8){ // king could escape in one place;
 			int result = 0;
-			if(k.getY() <= 4){
+			if(k.getX() <= 4){
 				// check left side
-				if(!this.checkROI(k.getX(), k.getY(), 1, k.getY(), b -> !b.king)){ // check if any pawns on the left
+				if(!this.checkROI(1, k.getY(), k.getX(), k.getY(), b -> !b.king)){ // check if any pawns on the left
 					result++;
 				}
-			}else if(k.getY() >= 6){
+			}else if(k.getX() >= 6){
 				// check right side
 				if(!this.checkROI(k.getX(), k.getY(), 9, k.getY(), b -> !b.king)){ //check if any pawns on the right
 					result++;
@@ -686,27 +691,27 @@ public class State {
 		}
 	}
 	private int kingEscapeY(Pawn k){
-		if(k.getY() == 9 || k.getY() == 1){
+		if(k.getX() == 9 || k.getX() == 1){
 			return 1; // king alreay escaped;
-		}else if(k.getY() <= 6 && k.getY() >=4){
+		}else if(k.getX() <= 6 && k.getX() >=4){
 			return 0; // king can't escape
-		}else if(k.getY() == 7 || k.getY() == 3){ // king could escape in two place;
+		}else if(k.getX() == 7 || k.getX() == 3){ // king could escape in two place;
 			int result = 0;
-			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+			if(!this.checkROI(k.getX(), 1, k.getX(), k.getY(), b -> !b.king)){ // check if any pawns on the bottom
 				result++;
 			}
 			if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
 				result++;
 			}
 			return result;
-		}else if(k.getY() == 2 || k.getY() == 8){ // king could escape in one place;
+		}else if(k.getX() == 2 || k.getX() == 8){ // king could escape in one place;
 			int result = 0;
-			if(k.getX() <= 4){
+			if(k.getY() <= 4){
 				// check left side
-				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 1, b -> !b.king)){ // check if any pawns on the bottom
+				if(!this.checkROI(k.getX(), 1, k.getX(), k.getY(), b -> !b.king)){ // check if any pawns on the bottom
 					result++;
 				}
-			}else if(k.getX() >= 6){
+			}else if(k.getY() >= 6){
 				// check right side
 				if(!this.checkROI(k.getX(), k.getY(), k.getX(), 9, b -> !b.king)){ //check if any pawns on the top
 					result++;

@@ -4,12 +4,14 @@ import java.util.List;
 
 public final class Minimax {
 	
-	private static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
+	private static boolean FIXEDDEPTH = true; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
-	public static final int TIMEOUT = 60; // In seconds
+	public static final int TIMEOUT = 50; // In seconds
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
+	
+	public static final long MAXVALUE = 1000000L;
 	
 	//private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
 	
@@ -34,12 +36,12 @@ public final class Minimax {
 	 * @return The alphabeth value
 	 */
 	public static final long alphaBethInit(final State state) {
-		maxHeuFound = -Long.MAX_VALUE;
+		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		//heuristicCalculatorGroup.playAll();
 		interrupterThread.start();
-		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Long.MAX_VALUE, Long.MAX_VALUE, true);
+		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
 			Minimax.DEPTH++;
@@ -75,7 +77,7 @@ public final class Minimax {
 			}
 			return heuristic;
 		} else if(max){
-			v = -Long.MAX_VALUE;
+			v = -Minimax.MAXVALUE;
 			for(State c : s.getActions()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
@@ -85,7 +87,7 @@ public final class Minimax {
 				}
 			}
 		}else{
-			v = Long.MAX_VALUE;
+			v = Minimax.MAXVALUE;
 			for(State c : s.getActions()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);

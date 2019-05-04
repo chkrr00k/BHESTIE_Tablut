@@ -486,5 +486,35 @@ public class TestState {
 		pawns.add(new Pawn(false, 4, 8, true));
 		s = new State(pawns, false);
 		assertEquals(1, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 7, 3, true));
+		s = new State(pawns, false);
+		assertEquals(4, s.kingEscape());
+		
+		pawns.add(new Pawn(false, 7, 9, false));
+		s = new State(pawns, false);
+		assertEquals(3, s.kingEscape());
+		
+		pawns.add(new Pawn(false, 7, 1, false));
+		s = new State(pawns, false);
+		assertEquals(2, s.kingEscape());
+		
+		pawns.add(new Pawn(false, 1, 3, false));
+		s = new State(pawns, false);
+		assertEquals(1, s.kingEscape());
+		
+		pawns.add(new Pawn(false, 9, 3, false));
+		s = new State(pawns, false);
+		assertEquals(0, s.kingEscape());
+		
+		pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 7, 5, true));
+		s = new State(pawns, false);
+		assertEquals(2, s.kingEscape());
+		
+		pawns.add(new Pawn(false, 7, 6, false));
+		s = new State(pawns, false);
+		assertEquals(1, s.kingEscape());
 	}
 }
