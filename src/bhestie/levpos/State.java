@@ -421,7 +421,6 @@ public class State {
 			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
 			result *= percentage;
 		}
-		//return result;
 		
 		return Math.min(result, Minimax.MAXVALUE - 1);
 	}
@@ -810,16 +809,16 @@ public class State {
 				//but only in the first steps
 				if(State.TURN < 6) {
 					if(north && pos.y > 5){// game is protruding north
-						modificator+=0.01;
+						modificator+=0.05;
 					}
 					if(south && pos.y < 5){// game is protruding south
-						modificator+=0.01;
+						modificator+=0.05;
 					}
 					if(east && pos.x > 5){// game is protruding east
-						modificator+=0.01;
+						modificator+=0.05;
 					}
 					if(west && pos.x < 5){// game is protruding west
-						modificator+=0.01;
+						modificator+=0.05;
 					}
 				}
 			}

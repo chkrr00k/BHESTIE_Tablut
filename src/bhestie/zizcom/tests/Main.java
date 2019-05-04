@@ -22,7 +22,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		HeuristicCalculatorGroup.getInstance().addThreads(3);
 		
-	    Minimax.player = whitePlayer;
+	    Minimax.player = blackPlayer;
 	    
 	    if (Minimax.player == whitePlayer)
 	    	port = WhitePort;
