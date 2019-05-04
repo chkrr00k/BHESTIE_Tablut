@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -385,20 +387,26 @@ public class State {
 	 * @return A value that stimate the "goodness" of the pawns in the board.
 	 */
 	public long getHeuristic() {
-		if (this.heuristicCache != null){
-			return this.heuristicCache;
-		}
-		long result = 0;
-		if (!this.turn) { // Black turn
-			result = this.getHeuristicBlack();
-			if (!Minimax.player){
-				result = -result;
+		return this.getHeuristic(1);
+	}
+	
+	private long getHeuristic(double minPercentage) {
+		long result;
+		if (this.heuristicCache == null) {
+			if (!this.turn) { // Black turn
+				result = this.getHeuristicBlack();
+				if (!Minimax.player){
+					result = -result;
+				}
+			} else { // White turn
+				result = this.getHeuristicWhite();
+				if (Minimax.player){
+					result = -result;
+				}
 			}
-		} else { // White turn
-			result = this.getHeuristicWhite();
-			if (Minimax.player){
-				result = -result;
-			}
+			this.heuristicCache = result;
+		} else {
+			result = this.heuristicCache;
 		}
 		
 		// The following code set the percentage in order to set more weight the more the State is near the init State (the State I have to find the best move)
@@ -411,23 +419,19 @@ public class State {
 			minPercentage = percentage;
 		if (size > 1) { // If the parent is not the initial state calculate the heuristic recursivly
 			result *= percentage;
-			result += this.parent.getHeuristic();
+			result += this.parent.getHeuristic(minPercentage);
 		} else { // If I don't have parents -> I'm the last one (with percentage 0.5) and I add the minPercentage to my percentage value
 			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
 			result *= percentage;
 		}
-		minPercentage = 1; // Reset the minPercentage for the next getHeuristic call
-		
-		this.heuristicCache = result; // Cache the value
 		return result;
 	}
-	private static double minPercentage = 1; // minPercentage found. default = 1 because is the highest value possible
 	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	private long getHeuristicBlack() {
+	protected long getHeuristicBlack() {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
@@ -490,7 +494,7 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
-	private long getHeuristicWhite() {
+	protected long getHeuristicWhite() {
 		long result = 0;
 
 		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
@@ -504,7 +508,6 @@ public class State {
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		//result = 1; // Disabled heuristic
-		
 		return -result;
 	}
 	
@@ -583,7 +586,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
 		// Valore alto = la mossa è migliore per il nero
 		
-		return Long.MAX_VALUE - this.unfold().size() + 1;
+		return Long.MAX_VALUE - this.unfold().size();
 	}
 	
 	/**
@@ -594,7 +597,7 @@ public class State {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
 		
-		return Long.MAX_VALUE - this.unfold().size() + 1;
+		return Long.MAX_VALUE - this.unfold().size();
 	}
 
 	/**

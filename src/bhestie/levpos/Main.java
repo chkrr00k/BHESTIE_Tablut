@@ -4,6 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import bhestie.levpos.utils.HistoryStorage;
+
 public class Main {
 	
 	private static List<Pawn> initialState = new LinkedList<>();
@@ -45,10 +47,8 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws InterruptedException{
-		System.out.println("Used Memory   :  " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) + " bytes");
-	    System.out.println("Free Memory   : " + Runtime.getRuntime().freeMemory() + " bytes");
-	    System.out.println("Total Memory  : " + Runtime.getRuntime().totalMemory() + " bytes");
-	    System.out.println("Max Memory    : " + Runtime.getRuntime().maxMemory() + " bytes");
+		Minimax.DEPTH = 4;
+		HeuristicCalculatorGroup.getInstance().addThreads(3);
 		
 	    Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 	    
@@ -60,7 +60,6 @@ public class Main {
 	    State currentState = new State(initialState, Minimax.player);
 	    
 		long a = System.nanoTime();
-		//System.out.println(Minimax.alphaBeth(currentState, 2, -Double.MAX_VALUE, Double.MAX_VALUE, !Minimax.player));
 		double result = Minimax.alphaBethInit(currentState);
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){

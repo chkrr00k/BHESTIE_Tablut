@@ -11,7 +11,7 @@ public final class Minimax {
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
 	
-	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
+	//private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
 	
 	private Minimax() {}
 
@@ -37,7 +37,7 @@ public final class Minimax {
 		maxHeuFound = -Long.MAX_VALUE;
 		Minimax.signal = false;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
-		heuristicCalculatorGroup.playAll();
+		//heuristicCalculatorGroup.playAll();
 		interrupterThread.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Long.MAX_VALUE, Long.MAX_VALUE, true);
 		interrupterThread.interrupt();
@@ -45,7 +45,7 @@ public final class Minimax {
 			Minimax.DEPTH++;
 			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 		}
-		heuristicCalculatorGroup.pauseAll();
+		//heuristicCalculatorGroup.pauseAll();
 		return alphaBethResult;
 	}
 	

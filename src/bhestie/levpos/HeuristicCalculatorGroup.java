@@ -23,6 +23,7 @@ public class HeuristicCalculatorGroup {
 	public void addThreads(int num) {
 		for (int i = 0; i < num; i++) {
 			HeuristicCalculator t = new HeuristicCalculator(this.threadGroup);
+			t.setDaemon(true);
 			this.addThread(t);
 		}
 	}

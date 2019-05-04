@@ -20,9 +20,9 @@ public class HeuristicCalculator extends Thread {
 				HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.acquireUninterruptibly();
 				current = HeuristicCalculatorGroup.statesToCalculateCache.poll();
 				if (current != null) { // Call to cache values
-					current.isTerminal();
+					if (current.isTerminal())
+						current.getUtility();
 					current.getHeuristic();
-					current.getUtility();
 				}
 			}
 			this.semaphore.acquireUninterruptibly();
