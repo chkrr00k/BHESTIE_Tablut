@@ -436,19 +436,16 @@ public class State {
 		long result = 0;
 		
 		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
-			result = 10; // result = 7000;
+			result = 20; // result = 7000;
 		}else if(kingEscape == 0) {
-			result = 10000;
+			result = WHITE_KING_ESCAPES * 4;
 		}else{
-			result -= 100000;
+			result -= WHITE_KING_ESCAPES * kingEscape;
 		}
 		
 		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-			result -= 1500;
+			result -= WHITE_KING_IN_GOOD_POSITION;
 		}
-		
-		//Number of blocked goal tiles
-		int numRouteBlocked = this.routeBlocked();
 		
 		if(State.TURN < 7){// preparation phase
 			//number of black in the corners
@@ -463,25 +460,24 @@ public class State {
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
 			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
 			// here is nice having black too
-			result += 125 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
+			result += 5 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
 			// NOT nice if they are black
-			result -= 250 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
+			result -= 10 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
 			// to avoid cycling
-			result -= 125 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
+			result -= 5 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
 						&& (p.position.y == 1 || p.position.y == 9) 
 						&& p.isBlack());
 		}
 		
-		if (kingEscape > this.parent.kingEscape()) {
-			result += 102000;
-		} else if(kingEscape < this.parent.kingEscape()) {
-			result -= 1800;
-		}
+		result += WHITE_KING_MORE_ESCAPES_THEN_PARENT * (kingEscape - this.parent.kingEscape());
+		
+		//Number of blocked goal tiles
+		int numRouteBlocked = this.routeBlocked();
 		
 		//if (numRouteBlocked != 0){
-			result += (numRouteBlocked * 750);
+			result += (numRouteBlocked * WHITE_KING_ESCAPES);
 			if(numRouteBlocked < this.parent.routeBlocked()){
-				result -= 10000;
+				result -= WHITE_KING_ESCAPES / 2;
 			}
 		//}
 		return result;
@@ -492,7 +488,7 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	protected long getHeuristicWhite() {
-		long result = 0;
+		long result = 370;
 
 		result += this.remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 

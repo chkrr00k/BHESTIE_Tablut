@@ -35,8 +35,6 @@ public class Main {
 		c.present();
 		b = c.readBoard(); // Read the initial board
 		
-		Minimax.DEPTH = 3;
-		
 		if (Minimax.player == blackPlayer) {
 			b = c.readBoard(); // Wait for enemy move
 		}

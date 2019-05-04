@@ -7,7 +7,7 @@ public final class Minimax {
 	private static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
-	public static final int TIMEOUT = 20; // In seconds
+	public static final int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
 	
