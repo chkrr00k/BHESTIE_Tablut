@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,27 +12,25 @@ import java.util.stream.Stream;
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
-@SuppressWarnings("unused") // TODO remove
 public class State {
-	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_BLACK_HEURISTIC = 50;
-	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 50;
+	private static final int MULTIPLICATOR = 10;
+	
+	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 75 * MULTIPLICATOR;
 
 	//TODO is positive to be eaten for white? change paremeter if it is...
-	public static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 100;
+	private static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 30  * MULTIPLICATOR;
 	//if a state has less black pawns, it will have a more positive value because the malus
 	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
-	public static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 400;
-	public static final int WHITE_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 100;
-	public static final int BLACK_PAWNS_VALUE_FOR_BLACK_HEURISTIC = 200;
+	private static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -40 * MULTIPLICATOR;
 
 	//raw distance from nearest escape, the more it is, the more malus we get
-	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 50;
-	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_BLACK_HEURISTIC = 50;
+	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 15 * MULTIPLICATOR;
 
 	//having white pawn on main axis (default position) is a malus
-	private static final int WHITE_PAWNS_ON_MAIN_AXIS = 50;
-	private static final int EATEN_PAWN_VALUE_FOR_WHITE_HEURISTIC = 200;
-	private static final int EATEN_PAWN_VALUE_FOR_BLACK_HEURISTIC = 50;
+	private static final int WHITE_PAWNS_ON_MAIN_AXIS = -10 * MULTIPLICATOR;
+	private static final int WHITE_KING_ESCAPES = 50 * MULTIPLICATOR;
+	private static final int WHITE_KING_MORE_ESCAPES_THEN_PARENT = 10 * MULTIPLICATOR;
+	private static final long WHITE_KING_IN_GOOD_POSITION = 5 * MULTIPLICATOR;
 
 	
 	public static int TURN = 0;
@@ -343,22 +339,23 @@ public class State {
 		}
 	}
 
-	/*
+	/**
 	this evaluation should make the heuristic going to an escape way instead staying in a static situation
 	it calculates the distance between the king and the nearest escape
 	it must be modified to take care of the rest of the table situation
 	(black's pawn have closed the escape way)
 	 */
 	private int rawDistanceFromEscape(){
-		Pawn king = this.getKing();
+		final Pawn king = this.getKing();
 		if(king == null)
 			return 0;
 		else {
-			int x = king.getX();
-			int y = king.getY();
+			final int x = king.getX();
+			final int y = king.getY();
 
+			List<Position> escapes = escapePositions.stream().filter(e -> !this.pawns.stream().anyMatch(p -> p.position.equals(e))).collect(Collectors.toList());
 			int distanceRecord = 6;//maximum distance
-			for(Position position : escapePositions){
+			for(Position position : escapes) {
 				int distance = Math.abs(position.x - x);
 				distance += Math.abs(position.y - y);
 				if(distance < distanceRecord)
@@ -367,7 +364,7 @@ public class State {
 			return distanceRecord;
 		}
 	}
-
+	
 	/**
 	*is positive to have pawn in escape positions for controlling that area
 	 **/
@@ -497,18 +494,38 @@ public class State {
 	protected long getHeuristicWhite() {
 		long result = 0;
 
-		result += remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+		result += this.remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
-		result += rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
+		if (State.TURN > 2 && State.TURN <= 5) {
+			result += this.rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
+		}
 
-		result += mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
+		if (State.TURN < 3) {
+			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
+		} else if (State.TURN == 3) {
+			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS / 2;
+		}
+		
+		if (State.TURN > 2) {
+			int kingEscapes = this.kingEscape();
+			int parentKingEscapes = this.parent.kingEscape();
+			result += kingEscapes * WHITE_KING_ESCAPES;
+			if (kingEscapes > parentKingEscapes) { // more escapes then parent
+				result += (kingEscapes - parentKingEscapes) * WHITE_KING_MORE_ESCAPES_THEN_PARENT;
+			}
+			
+			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+				result += WHITE_KING_IN_GOOD_POSITION;
+			}
+			
+		}
 
-		result += pawns.stream().filter(pawn -> !pawn.isBlack()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+		result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		//result = 1; // Disabled heuristic
-		return -result;
+		return result;
 	}
 	
 	/**
