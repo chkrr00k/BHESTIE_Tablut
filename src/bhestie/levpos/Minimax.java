@@ -4,7 +4,7 @@ import java.util.List;
 
 public final class Minimax {
 	
-	private static boolean FIXEDDEPTH = true; // If true the DEPTH can't be modified
+	public static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
 	public static final int TIMEOUT = 50; // In seconds

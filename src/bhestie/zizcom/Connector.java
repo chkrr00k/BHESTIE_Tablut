@@ -51,6 +51,9 @@ public class Connector {
 			this.dos = new DataOutputStream(this.s.getOutputStream());
 			this.dis = new DataInputStream(this.s.getInputStream());
 			this.host = null; // saves us some bytes;
+			if(this.dis == null|| this.dos == null){
+				throw new IllegalArgumentException("Where is the server?");
+			}
 			return true;
 		}catch(IOException e){
 			this.error = true;
