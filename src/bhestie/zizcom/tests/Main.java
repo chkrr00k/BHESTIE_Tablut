@@ -5,8 +5,6 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.omg.CORBA.TIMEOUT;
-
 import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.State;
@@ -116,9 +114,7 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		
-//	    Minimax.player = blackPlayer;
-	    args = new String[]{"white"};
+	    args = new String[]{"white"}; //FIXME remove this to start it from CLI
 	    
 		parse(args);
 		printLogo();
