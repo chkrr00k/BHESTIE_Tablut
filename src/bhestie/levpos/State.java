@@ -84,9 +84,6 @@ public class State {
 		this.historyStorage = historyStorage;
 		this.parent = parent;
 		this.drawCase = drawCase;
-		
-		HeuristicCalculatorGroup.statesToCalculateCache.add(this);
-		HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 	}
 
 	/**
@@ -241,6 +238,8 @@ public class State {
 			}
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
 			actions.add(newState);
+			HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
+			HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 			return true;
 		}
 		return false;

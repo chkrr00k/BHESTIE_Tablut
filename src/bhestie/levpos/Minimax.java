@@ -7,13 +7,13 @@ public final class Minimax {
 	private static boolean FIXEDDEPTH = true; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
-	public static final int TIMEOUT = 50; // In seconds
+	public static final int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter = new Interrupter(TIMEOUT);
 	
 	public static final long MAXVALUE = 1000000L;
 	
-	//private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
+	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
 	
 	private Minimax() {}
 
@@ -39,7 +39,7 @@ public final class Minimax {
 		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
-		//heuristicCalculatorGroup.playAll();
+		heuristicCalculatorGroup.playAll();
 		interrupterThread.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
@@ -47,7 +47,7 @@ public final class Minimax {
 			Minimax.DEPTH++;
 			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 		}
-		//heuristicCalculatorGroup.pauseAll();
+		heuristicCalculatorGroup.pauseAll();
 		return alphaBethResult;
 	}
 	
@@ -131,7 +131,7 @@ class Interrupter implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(1000 * secs);
+			Thread.sleep(1000 * secs - 500);
 			//LockSupport.parkNanos(Minimax.timeout.getNano());
 			Minimax.interrupt();
 			System.out.println("Signaled"); // TODO remove in the last commit
