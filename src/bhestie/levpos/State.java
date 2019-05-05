@@ -828,7 +828,7 @@ public class State {
 	/**
 	 * default white pawns positions
 	 */
-	private static final List<Position> defaultWhitePawnsPosition = new ArrayList<Position>();
+	private static final List<Position> defaultWhitePawnsPosition = new ArrayList<Position>(8);
 	/**
 	 * List of citadels
 	 */
@@ -844,7 +844,7 @@ public class State {
 	/**
 	 * List of positions where the king have to be fully surrounded.
 	 */
-	private static final List<Position> protectedKingPositions = new LinkedList<>();
+	private static final List<Position> protectedKingPositions = new ArrayList<>(5);
 	private static final List<Position> escapeRouteBlocked = new ArrayList<Position>(8);
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
