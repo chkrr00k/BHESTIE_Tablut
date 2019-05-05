@@ -99,7 +99,7 @@ public class Main {
 				break;
 			case TIMEOUT_FLAG:
 				try{
-					Minimax.DEPTH = Integer.parseInt(args[++i]);
+					Minimax.TIMEOUT = Integer.parseInt(args[++i]);
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the max timeout you want!\n " + TIMEOUT_FLAG + " <number>");
 					System.exit(-4);
@@ -114,7 +114,7 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws IOException {
-	    args = new String[]{"-h"}; //FIXME remove this to start it from CLI
+	    args = new String[]{"white", "-l", "50"}; //FIXME remove this to start it from CLI
 	    
 		parse(args);
 		printLogo();
