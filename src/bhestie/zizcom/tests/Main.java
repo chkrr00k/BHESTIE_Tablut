@@ -126,7 +126,7 @@ public class Main {
 		}
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		try{
 			//args = new String[]{"white", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 			
@@ -164,8 +164,9 @@ public class Main {
 				currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
 				List<State> unfold = currentState.unfold();
 				int unfoldSize = unfold.size();
-				if (unfoldSize > 0)
+				if (unfoldSize > 0){
 					currentState = unfold.get(unfoldSize - 1);
+				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
 				long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
