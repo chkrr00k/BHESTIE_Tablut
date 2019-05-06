@@ -50,9 +50,9 @@ public class Main {
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
-			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can autoscale his depthness (default: true)\n"
-			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: 3)\n"
-			+ "\t" + TIMEOUT_FLAG + " <n>\t\tTHe max timeout time (default: 50)\n\n\n\n";
+			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
+			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
+			+ "\t" + TIMEOUT_FLAG + " <n>\t\tTHe max timeout time (default: " + Minimax.TIMEOUT + ")\n";
 	
 	private static void parse(String[] args){
 		if(args.length < 1){
@@ -114,7 +114,7 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws IOException {
-	    args = new String[]{"white", "-l", "50"}; //FIXME remove this to start it from CLI
+	    //args = new String[]{"white", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 	    
 		parse(args);
 		printLogo();
