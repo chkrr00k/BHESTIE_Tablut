@@ -9,11 +9,15 @@ public final class Minimax {
 	
 	public static int TIMEOUT = 50; // In seconds
 	
-	private static Interrupter interrupter = new Interrupter(TIMEOUT);
+	private static Interrupter interrupter;
 	
 	public static final long MAXVALUE = 1000000L;
 	
 	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
+	
+	public static void init() {
+		interrupter = new Interrupter(TIMEOUT);
+	}
 	
 	private Minimax() {}
 

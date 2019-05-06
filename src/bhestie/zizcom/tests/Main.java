@@ -128,9 +128,11 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		try{
 			//args = new String[]{"white", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-		    
+			
 			parse(args);
 			printLogo();
+			
+			Minimax.init();
 		    
 		    if (Minimax.player == whitePlayer)
 		    	port = WhitePort;
