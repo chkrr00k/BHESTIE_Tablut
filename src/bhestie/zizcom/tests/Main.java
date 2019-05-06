@@ -114,29 +114,31 @@ public class Main {
 	}
 	
 	public static void main(String[] args) throws IOException {
-	    //args = new String[]{"white", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-	    
-		parse(args);
-		printLogo();
-
-	    
-	    if (Minimax.player == whitePlayer)
-	    	port = WhitePort;
-	    else
-	    	port = BlackPort;
-		
-		Connector c = new Connector("__BHeStIE__", port);
-		Board b = null;
-		c.init();
-		c.present();
-		b = c.readBoard(); // Read the initial board
-		
-		if (Minimax.player == blackPlayer) {
-			b = c.readBoard(); // Wait for enemy move
-		}
-		
-		State currentState = new State(b.convert().get(), Minimax.player);
 		try{
+			//args = new String[]{"white", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+		    
+			parse(args);
+			printLogo();
+		    
+		    if (Minimax.player == whitePlayer)
+		    	port = WhitePort;
+		    else
+		    	port = BlackPort;
+			
+			Connector c = new Connector("__BHeStIE__", port);
+			Board b = null;
+			if (!c.init()) {
+				System.err.println("Where's my server?");
+				System.exit(-8);
+			}
+			c.present();
+			b = c.readBoard(); // Read the initial board
+			
+			if (Minimax.player == blackPlayer) {
+				b = c.readBoard(); // Wait for enemy move
+			}
+			
+			State currentState = new State(b.convert().get(), Minimax.player);
 			while(true) {
 				LocalTime before = LocalTime.now();
 				long result = Minimax.alphaBethInit(currentState);
@@ -172,8 +174,9 @@ public class Main {
 				System.out.println(State.TURN);
 			}
 		}catch(Exception e){
+			System.err.println("Something happened.\nSomething happened.");
 			HeuristicCalculatorGroup.getInstance().killAll();
-			System.exit(0);
+			System.exit(-7);
 		}
 	}
 
