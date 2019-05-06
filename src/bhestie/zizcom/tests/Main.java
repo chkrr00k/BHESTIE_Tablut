@@ -21,6 +21,7 @@ public class Main {
 	private static final int BlackPort = 5801;
 	
 	private static int port;
+	private static String host = "localhost";
 	
 	private static final void printLogo(){
 		System.out.println( "BBBBBB  HH    H          SSSSS       II EEEEEE\n" +
@@ -47,11 +48,14 @@ public class Main {
 	private static final String DEPTH_FLAG = "-d";
 	private static final String TIMEOUT_FLAG = "-l";
 	private static final String HELP_FLAG = "-h";
+	private static final String HOST_FLAG = "-H";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
+			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
 			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
+			+ "\t" + HOST_FLAG + " <ip>\t\tThe game server host address you want to connect (default: " + host + ")\n"
 			+ "\t" + TIMEOUT_FLAG + " <n>\t\tTHe max timeout time (default: " + Minimax.TIMEOUT + ")\n";
 	
 	private static void parse(String[] args){
@@ -84,6 +88,14 @@ public class Main {
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
 					System.exit(-2);
+				}
+				break;
+			case HOST_FLAG:
+				try{
+					host = args[++i];
+				}catch(ArrayIndexOutOfBoundsException e){
+					System.err.println("You need to give me the host ip you want to connect!\n " + HOST_FLAG + " <ip>");
+					System.exit(-9);
 				}
 				break;
 			case FIXED_DEPTH_FLAG:
@@ -125,7 +137,7 @@ public class Main {
 		    else
 		    	port = BlackPort;
 			
-			Connector c = new Connector("__BHeStIE__", port);
+			Connector c = new Connector("__BHeStIE__", port, host);
 			Board b = null;
 			if (!c.init()) {
 				System.err.println("Where's my server?");
