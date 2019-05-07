@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Random;
 
 import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
@@ -36,7 +37,7 @@ public class Main {
 							"Fortitudo eius in lumbis eius, et virtus illius in umbilico ventris eius.\n" +
 							"Stringit caudam suam quasi cedrum, nervi testiculorum eius perplexi sunt.\n" +
 							"Ossa eius velut fistulae aeris, cartilago illius quasi laminae ferreae.\n" +
-							"Ipse est principium viarum Dei, qui fecit eum, applicabit gladium eius\n." +
+							"Ipse est principium viarum Dei, qui fecit eum, applicabit gladium eius.\n" +
 							"[...]\n" +
 							"In oculis eius quasi hamo capiet eum, et in sudibus perforabit nares eius.\n");
 	}
@@ -125,7 +126,7 @@ public class Main {
 		}
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		try{
 			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "5", TIMEOUT_FLAG, "300"}; //FIXME remove this to start it from CLI
 			
@@ -151,20 +152,21 @@ public class Main {
 			if (Minimax.player == blackPlayer) {
 				b = c.readBoard(); // Wait for enemy move
 			}
-			
+			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
-			while(true) {
+			for(;;) {
 				LocalTime before = LocalTime.now();
 				long result = Minimax.alphaBethInit(currentState);
 				System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
 				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 
 				
-				currentState = Minimax.stack.get((int) Math.random() * Minimax.stack.size());
+				currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
 				List<State> unfold = currentState.unfold();
 				int unfoldSize = unfold.size();
-				if (unfoldSize > 0)
+				if (unfoldSize > 0){
 					currentState = unfold.get(unfoldSize - 1);
+				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
 				long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;

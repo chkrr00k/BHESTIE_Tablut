@@ -11,17 +11,18 @@ import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
+import com.sun.istack.internal.NotNull;
 
 public class State {
 	private static final int MULTIPLICATOR = 10;
 	
-	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 75 * MULTIPLICATOR;
+	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 85 * MULTIPLICATOR;
 
 	//TODO is positive to be eaten for white? change paremeter if it is...
 	private static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 30  * MULTIPLICATOR;
 	//if a state has less black pawns, it will have a more positive value because the malus
 	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
-	private static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = -40 * MULTIPLICATOR;
+	private static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 40 * MULTIPLICATOR;
 
 	//raw distance from nearest escape, the more it is, the more malus we get
 	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 15 * MULTIPLICATOR;
@@ -211,12 +212,12 @@ public class State {
 		final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
 		boolean haveToAddThePawn = !this.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
 
-		if (currentPawn.isBlack() == false /*is white*/
-				|| (currentPawn.isBlack() == true && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
+		if (currentPawn.isWhite()
+				|| (currentPawn.isBlack() && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
 			haveToAddThePawn = haveToAddThePawn && !citadels.stream().anyMatch(c -> c.isXYInCitadel(x, y));
 		}
 
-		if (currentPawn.isBlack() == true /*is black*/
+		if (currentPawn.isBlack()
 				&& pawnInCitadel) { // pezzo nero e dentro una citadel, allora può muoversi solo dentro la sua citadel, non può andare in un'altra citadel
 			haveToAddThePawn = haveToAddThePawn && !citadels.stream().filter(c -> !c.isPawnInCitadel(currentPawn)).anyMatch(c -> c.isXYInCitadel(x, y));
 		}
@@ -310,7 +311,8 @@ public class State {
 	 * if the king is near the central position: 3
 	 * other positions = 2
 	 */
-	private int remainingPositionForCaptureKing(){
+	//FIXME
+	public int remainingPositionForCaptureKing(){
 		Pawn king = this.getKing();
 		if(king == null){
 			return 0;
@@ -318,11 +320,11 @@ public class State {
 			int startingValue = 0;
 			
 			if(king.getX() == 5 && king.getY() == 5){
-				startingValue = 4; //XXX it was 3?
+				startingValue = 4;
 			}else if(((king.getX() == 4 || king.getX() == 6) && king.getY() == 5)
 					|| (king.getX() == 5 && (king.getY() == 4 || king.getY() == 6))) {
 				startingValue = 3;
-			}else {
+			}else{
 				startingValue = 2;
 			}
 
@@ -332,8 +334,9 @@ public class State {
 			threatenPositions.add(Position.of(king.getX() - 1, king.getY()));
 			threatenPositions.add(Position.of(king.getX(), king.getY() - 1));
 
-			int count =	(int) this.pawns.stream().filter(pawn -> pawn.isBlack() && pawn.position.equalsAny(threatenPositions)).count();
-
+			final Stream<Position> s = Stream.concat(this.pawns.stream().filter(p -> p.isBlack()).map(p -> p.position),
+					citadels.stream().flatMap(c -> c.citadelPositions.stream()));
+			final int count = (int) s.distinct().filter(p -> p.equalsAny(threatenPositions)).count();
 			return startingValue - count;
 		}
 	}
@@ -418,7 +421,7 @@ public class State {
 			result += this.parent.getHeuristic(minPercentage);
 		} else { // If I don't have parents -> I'm the last one (with percentage 0.5) and I add the minPercentage to my percentage value
 			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
-			result *= percentage;
+			result *= Math.min(percentage, 1);
 		}
 		
 		return Math.min(result, Minimax.MAXVALUE - 1);
@@ -486,6 +489,62 @@ public class State {
 		return result;
 	}
 	
+	public boolean veryUglyKingPosition() {
+		Pawn king = this.getKing();
+		final Position toCheck;
+		boolean found = false;
+		Position n = Position.of(king.getX(), king.getY() - 1);
+		Position s = Position.of(king.getX(), king.getY() + 1);
+		Position e = Position.of(king.getX() + 1 , king.getY());
+		Position w = Position.of(king.getX() - 1, king.getY());
+		if (!this.pawns.stream().anyMatch(p -> p.position.equals(n))) {
+			toCheck = n;
+			found = true;
+		} else if (!found && !this.pawns.stream().anyMatch(p -> p.position.equals(s))) {
+			toCheck = s;
+			found = true;
+		} else if (!found && !this.pawns.stream().anyMatch(p -> p.position.equals(e))) {
+			toCheck = e;
+			found = true;
+		} else {
+			toCheck = w;
+			found = true;
+		}
+		for (int i = toCheck.x; i <= 9; i++) {
+			final Position tmp = Position.of(i, toCheck.y);
+			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+				return true;
+			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+				break;
+			}
+		}
+		for (int i = toCheck.x; i >= 1; i--) {
+			final Position tmp = Position.of(i, toCheck.y);
+			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+				return true;
+			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+				break;
+			}
+		}
+		for (int i = toCheck.y; i <= 9; i++) {
+			final Position tmp = Position.of(toCheck.x, i);
+			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+				return true;
+			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+				break;
+			}
+		}
+		for (int i = toCheck.y; i >= 1; i--) {
+			final Position tmp = Position.of(toCheck.x, i);
+			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+				return true;
+			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+				break;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
@@ -493,7 +552,12 @@ public class State {
 	private long getHeuristicWhite() {
 		long result = 370;
 
-		result += this.remainingPositionForCaptureKing() * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+		int remainingPositionForCaputureKing = this.remainingPositionForCaptureKing();
+		result += remainingPositionForCaputureKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+		
+		if (remainingPositionForCaputureKing == 1 && this.veryUglyKingPosition()) {
+			return -Minimax.MAXVALUE*2 + 1;
+		}
 
 		if (State.TURN > 2 && State.TURN <= 5) {
 			result += this.rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
@@ -521,9 +585,8 @@ public class State {
 
 		result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		result += pawns.stream().filter(pawn -> pawn.isBlack()).count() * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		//result = 1; // Disabled heuristic
 		return result;
 	}
 	
@@ -556,7 +619,6 @@ public class State {
 		return false;
 	}
 
-	// XXX rimuovere ed evitare la chiamata a funzione
 	private boolean kingEscaped(Pawn king) {
 		return (escapePositions.contains(king.position)); // Se il re è nella posizione di una via di fuga
 	}
@@ -758,7 +820,7 @@ public class State {
 		return this.pawns.stream().filter((p)->{
 			return (p.getX() >= stx && p.getX() <= enx) // X check
 					&& (p.getY() >= sty && p.getY() <= eny) // Y check
-					&& pr.test(p); // predicate to costum check
+					&& pr.test(p); // predicate to custom check
 		}).count();
 	}
 	/**

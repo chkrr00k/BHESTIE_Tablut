@@ -35,6 +35,21 @@ public class TestState {
     }
     
     @Test
+    public void testKingEatThing() throws Exception {
+    	Minimax.player = whitePlayer;
+    	List<Pawn> p = new LinkedList<Pawn>();
+    	p.add(new Pawn(false, 5, 7, true));
+    	State s = new State(p, !whitePlayer);
+    	assertEquals(1, s.remainingPositionForCaptureKing());
+    	assertFalse(s.veryUglyKingPosition());
+    	// TODO finire test
+    	/*p.add(new Pawn(true, 7, 7, false));
+    	s = new State(p, !whitePlayer);
+    	assertEquals(1, s.remainingPositionForCaptureKing());
+    	assertTrue(s.veryUglyKingPosition());*/
+	}
+    
+    @Test
     public void testDrawWhiteTurn() {
     	Minimax.player = whitePlayer;
 		List<Pawn> pawns = new LinkedList<>();
