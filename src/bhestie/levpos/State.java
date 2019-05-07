@@ -1,10 +1,13 @@
 package bhestie.levpos;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Stack;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -571,6 +574,40 @@ public class State {
 		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		return result;
+	}
+	
+	public int threatenKingRemaining(){
+		final int positionNeeded = 2;
+		Pawn k = this.getKing();
+		
+		Position[] tp = new Position[]{
+			Position.of(k.getX() + 1, k.getY()), //e
+			Position.of(k.getX(), k.getY() + 1), //s
+			Position.of(k.getX() - 1, k.getY()), //w
+			Position.of(k.getX(), k.getY() - 1)  //n
+		};
+		
+		// here are all the pawns surrounding the king
+		List<Position> l = Stream.concat(this.pawns.stream()
+					.filter(p -> p.isBlack())
+					.map(p -> p.position),
+				citadels.stream()
+					.flatMap(c -> c.citadelPositions.stream())
+				).distinct()
+				.filter(p -> p.equalsAny(tp))
+				.collect(Collectors.toList());
+		
+		if(tronePosition.equalsAny(tp)){
+			l.add(tronePosition);
+		}
+
+		if(l.size() <= 1){
+			return positionNeeded - l.size();
+		}else if(l.contains(tp[0]) && l.contains(tp[2]) || l.contains(tp[1]) && l.contains(tp[3])){
+			return 0;
+		}else{
+			return positionNeeded - 1;
+		}
 	}
 	
 	/**
