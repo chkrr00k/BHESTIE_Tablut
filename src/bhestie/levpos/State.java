@@ -322,7 +322,7 @@ public class State {
 			}else if(((king.getX() == 4 || king.getX() == 6) && king.getY() == 5)
 					|| (king.getX() == 5 && (king.getY() == 4 || king.getY() == 6))) {
 				startingValue = 3;
-			}else{
+			}else {
 				startingValue = 2;
 			}
 
