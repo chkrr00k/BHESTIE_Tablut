@@ -593,6 +593,7 @@ public class State {
 					.flatMap(c -> c.citadelPositions.stream())
 				).distinct()
 				.filter(p -> p.equalsAny(tp))
+				.limit(4)
 				.collect(Collectors.toList());
 		
 		if(tronePosition.equalsAny(tp)){
