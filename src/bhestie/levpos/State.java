@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
+import jdk.nashorn.internal.ir.ThrowNode;
 
 public class State {
 	private static final int MULTIPLICATOR = 10;
@@ -574,8 +575,8 @@ public class State {
 	}
 	
 	public int threatenKingRemaining(){
-		final int positionNeeded = 2;
 		Pawn k = this.getKing();
+		final int positionNeeded = tronePosition.equals(k.position) || protectedKingPositions.contains(k.position) ? 4 : 2;
 		
 		Position[] tp = new Position[]{
 			Position.of(k.getX() + 1, k.getY()), //e
@@ -600,10 +601,11 @@ public class State {
 
 		if(l.size() <= 1){
 			return positionNeeded - l.size();
-		}else if(l.contains(tp[0]) && l.contains(tp[2]) || l.contains(tp[1]) && l.contains(tp[3])){
+		}else if((positionNeeded == 2 && (l.contains(tp[0]) && l.contains(tp[2]) || l.contains(tp[1]) && l.contains(tp[3]))) 
+				|| (positionNeeded == 4 && (l.contains(tp[0]) && l.contains(tp[2]) && l.contains(tp[1]) && l.contains(tp[3])))){
 			return 0;
 		}else{
-			return positionNeeded - 1;
+			return positionNeeded - (positionNeeded == 4 ? l.size() : 1);
 		}
 	}
 	
