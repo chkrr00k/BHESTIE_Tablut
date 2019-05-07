@@ -38,15 +38,28 @@ public class TestState {
     public void testKingEatThing() throws Exception {
     	Minimax.player = whitePlayer;
     	List<Pawn> p = new LinkedList<Pawn>();
-    	p.add(new Pawn(false, 5, 7, true));
+    	p.add(new Pawn(false, 5, 3, true));
     	State s = new State(p, !whitePlayer);
-    	assertEquals(1, s.remainingPositionForCaptureKing());
+    	assertEquals(3, s.remainingPositionForSurroundingKing());
     	assertFalse(s.veryUglyKingPosition());
-    	// TODO finire test
-    	/*p.add(new Pawn(true, 7, 7, false));
+    	p.add(new Pawn(true, 6, 3, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(1, s.remainingPositionForCaptureKing());
-    	assertTrue(s.veryUglyKingPosition());*/
+    	assertEquals(2, s.remainingPositionForSurroundingKing());
+    	assertFalse(s.veryUglyKingPosition());
+    	p.clear();
+    	p.add(new Pawn(false, 5, 4, true));
+    	p.add(new Pawn(true, 6, 4, false));
+    	s = new State(p, !whitePlayer);
+    	assertEquals(2, s.remainingPositionForSurroundingKing());
+    	assertFalse(s.veryUglyKingPosition());
+    	p.add(new Pawn(true, 4, 4, false));
+    	s = new State(p, !whitePlayer);
+    	assertEquals(1, s.remainingPositionForSurroundingKing());
+    	assertFalse(s.veryUglyKingPosition());
+    	p.add(new Pawn(true, 1, 3, false));
+    	s = new State(p, !whitePlayer);
+    	assertEquals(1, s.remainingPositionForSurroundingKing());
+    	assertTrue(s.veryUglyKingPosition());
 	}
     
     @Test

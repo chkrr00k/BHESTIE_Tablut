@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
-import com.sun.istack.internal.NotNull;
 
 public class State {
 	private static final int MULTIPLICATOR = 10;
@@ -311,23 +310,11 @@ public class State {
 	 * if the king is near the central position: 3
 	 * other positions = 2
 	 */
-	//FIXME
-	public int remainingPositionForCaptureKing(){
-		Pawn king = this.getKing();
+	public int remainingPositionForSurroundingKing(){
+		final Pawn king = this.getKing();
 		if(king == null){
 			return 0;
 		}else {
-			int startingValue = 0;
-			
-			if(king.getX() == 5 && king.getY() == 5){
-				startingValue = 4;
-			}else if(((king.getX() == 4 || king.getX() == 6) && king.getY() == 5)
-					|| (king.getX() == 5 && (king.getY() == 4 || king.getY() == 6))) {
-				startingValue = 3;
-			}else{
-				startingValue = 2;
-			}
-
 			List<Position> threatenPositions = new ArrayList<Position>(4);
 			threatenPositions.add(Position.of(king.getX() + 1, king.getY()));
 			threatenPositions.add(Position.of(king.getX(), king.getY() + 1));
@@ -337,7 +324,8 @@ public class State {
 			final Stream<Position> s = Stream.concat(this.pawns.stream().filter(p -> p.isBlack()).map(p -> p.position),
 					citadels.stream().flatMap(c -> c.citadelPositions.stream()));
 			final int count = (int) s.distinct().filter(p -> p.equalsAny(threatenPositions)).count();
-			return startingValue - count;
+			
+			return 4 - count - (tronePosition.equalsAny(threatenPositions) ? 1 : 0);
 		}
 	}
 
@@ -492,25 +480,20 @@ public class State {
 	public boolean veryUglyKingPosition() {
 		Pawn king = this.getKing();
 		final Position toCheck;
-		boolean found = false;
 		Position n = Position.of(king.getX(), king.getY() - 1);
 		Position s = Position.of(king.getX(), king.getY() + 1);
 		Position e = Position.of(king.getX() + 1 , king.getY());
 		Position w = Position.of(king.getX() - 1, king.getY());
 		if (!this.pawns.stream().anyMatch(p -> p.position.equals(n))) {
 			toCheck = n;
-			found = true;
-		} else if (!found && !this.pawns.stream().anyMatch(p -> p.position.equals(s))) {
+		} else if (!this.pawns.stream().anyMatch(p -> p.position.equals(s))) {
 			toCheck = s;
-			found = true;
-		} else if (!found && !this.pawns.stream().anyMatch(p -> p.position.equals(e))) {
+		} else if (!this.pawns.stream().anyMatch(p -> p.position.equals(e))) {
 			toCheck = e;
-			found = true;
 		} else {
 			toCheck = w;
-			found = true;
 		}
-		for (int i = toCheck.x; i <= 9; i++) {
+		for (int i = toCheck.x + 1; i <= 9; i++) {
 			final Position tmp = Position.of(i, toCheck.y);
 			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
 				return true;
@@ -518,7 +501,7 @@ public class State {
 				break;
 			}
 		}
-		for (int i = toCheck.x; i >= 1; i--) {
+		for (int i = toCheck.x - 1; i >= 1; i--) {
 			final Position tmp = Position.of(i, toCheck.y);
 			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
 				return true;
@@ -526,7 +509,7 @@ public class State {
 				break;
 			}
 		}
-		for (int i = toCheck.y; i <= 9; i++) {
+		for (int i = toCheck.y + 1; i <= 9; i++) {
 			final Position tmp = Position.of(toCheck.x, i);
 			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
 				return true;
@@ -534,7 +517,7 @@ public class State {
 				break;
 			}
 		}
-		for (int i = toCheck.y; i >= 1; i--) {
+		for (int i = toCheck.y - 1; i >= 1; i--) {
 			final Position tmp = Position.of(toCheck.x, i);
 			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
 				return true;
@@ -551,12 +534,12 @@ public class State {
 	 */
 	private long getHeuristicWhite() {
 		long result = 370;
-
-		int remainingPositionForCaputureKing = this.remainingPositionForCaptureKing();
+		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
+		int remainingPositionForCaputureKing = this.remainingPositionForSurroundingKing();
 		result += remainingPositionForCaputureKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 		
 		if (remainingPositionForCaputureKing == 1 && this.veryUglyKingPosition()) {
-			return -Minimax.MAXVALUE*2 + 1;
+			return -Minimax.MAXVALUE*(long)Math.pow(2, Minimax.DEPTH) + 1;
 		}
 
 		if (State.TURN > 2 && State.TURN <= 5) {
@@ -674,6 +657,15 @@ public class State {
 	private long getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
+		State granpa = this;
+		while (granpa.parent != null && granpa.parent.parent != null) {
+			granpa = this.parent.parent;
+			final int remainingPositionForCaputureKing = granpa.remainingPositionForSurroundingKing();
+			if (remainingPositionForCaputureKing == 1 && granpa.veryUglyKingPosition()) {
+				return -Minimax.MAXVALUE;
+			}
+		}
+		
 		return this.getUtilityBlack();
 		//return Long.MAX_VALUE - (this.unfold().size() - 1) * 500;
 	}
@@ -692,7 +684,7 @@ public class State {
 				if(pawn.isPresent()) {
 					result.append((pawn.get().isBlack() ? 'B' : (pawn.get().king) ? 'K' : 'W'));
 				} else {
-					result.append('0');
+					result.append(' ');
 				}
 			}
 			result.append('\n');
