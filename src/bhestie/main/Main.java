@@ -1,4 +1,4 @@
-package bhestie.zizcom.tests;
+package bhestie.main;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
