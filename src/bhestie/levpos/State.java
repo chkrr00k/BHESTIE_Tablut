@@ -11,7 +11,6 @@ import java.util.stream.Stream;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
-import jdk.nashorn.internal.ir.ThrowNode;
 
 public class State {
 	private static final int MULTIPLICATOR = 10;
@@ -225,7 +224,7 @@ public class State {
 		haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
 
 		if (haveToAddThePawn) {
-			List<Pawn> newPawns = new LinkedList<>(this.getPawns());
+			List<Pawn> newPawns = new ArrayList<>(this.getPawns());
 			newPawns.remove(currentPawn);
 			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
 			final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
@@ -536,10 +535,10 @@ public class State {
 	private long getHeuristicWhite() {
 		long result = 370;
 		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		int remainingPositionForCaputureKing = this.remainingPositionForSurroundingKing();
-		result += remainingPositionForCaputureKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 		
-		if (remainingPositionForCaputureKing == 1 && this.veryUglyKingPosition()) {
+		if (remainingPositionForSurroundingKing <= 2 && this.threatenKingRemaining() == 1 && this.veryUglyKingPosition()) {
 			return -Minimax.MAXVALUE*(long)Math.pow(2, Minimax.DEPTH) + 1;
 		}
 
@@ -576,7 +575,7 @@ public class State {
 	
 	public int threatenKingRemaining(){
 		Pawn k = this.getKing();
-		final int positionNeeded = tronePosition.equals(k.position) || protectedKingPositions.contains(k.position) ? 4 : 2;
+		final int positionNeeded = protectedKingPositions.contains(k.position) ? 4 : 2;
 		
 		Position[] tp = new Position[]{
 			Position.of(k.getX() + 1, k.getY()), //e
@@ -697,8 +696,8 @@ public class State {
 		State granpa = this;
 		while (granpa.parent != null && granpa.parent.parent != null) {
 			granpa = this.parent.parent;
-			final int remainingPositionForCaputureKing = granpa.remainingPositionForSurroundingKing();
-			if (remainingPositionForCaputureKing == 1 && granpa.veryUglyKingPosition()) {
+			final int remainingPositionForSurroundingKing = granpa.remainingPositionForSurroundingKing();
+			if (remainingPositionForSurroundingKing == 1 && granpa.veryUglyKingPosition()) {
 				return -Minimax.MAXVALUE;
 			}
 		}
