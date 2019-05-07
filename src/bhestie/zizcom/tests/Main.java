@@ -1,6 +1,5 @@
 package bhestie.zizcom.tests;
 
-import java.io.IOException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
