@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
-import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;

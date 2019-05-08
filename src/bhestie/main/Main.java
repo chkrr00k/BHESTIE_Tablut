@@ -127,7 +127,7 @@ public class Main {
 	
 	public static void main(String[] args) {
 		try{
-			args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+//			args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 			
 			parse(args);
 			printLogo();
