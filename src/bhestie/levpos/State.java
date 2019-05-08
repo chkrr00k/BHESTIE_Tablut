@@ -629,7 +629,6 @@ public class State {
 	 */
 	private long getHeuristicWhite() {
 		long result = 370;
-		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
 		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
 		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
@@ -748,15 +747,7 @@ public class State {
 	private long getUtilityWhite() {
 		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
 		// Valore alto = la mossa è migliore per il bianco
-		State granpa = this;
-		while (granpa.parent != null && granpa.parent.parent != null) {
-			granpa = this.parent.parent;
-			final int remainingPositionForSurroundingKing = granpa.remainingPositionForSurroundingKing();
-			if (remainingPositionForSurroundingKing == 1 && granpa.veryUglyKingPosition()) {
-				return -Minimax.MAXVALUE;
-			}
-		}
-		
+	
 		return this.getUtilityBlack();
 		//return Long.MAX_VALUE - (this.unfold().size() - 1) * 500;
 	}

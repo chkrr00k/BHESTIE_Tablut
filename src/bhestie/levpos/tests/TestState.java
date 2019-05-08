@@ -122,6 +122,8 @@ public class TestState {
     	
     	Minimax.DEPTH = 4;
     	Minimax.FIXEDDEPTH = true;
+    	Minimax.TIMEOUT = 30;
+    	Minimax.init();
     	System.out.println(Minimax.alphaBethInit(s));
 	}
     
