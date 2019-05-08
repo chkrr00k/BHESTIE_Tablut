@@ -4,8 +4,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import bhestie.levpos.utils.HistoryStorage;
-
 public class Main {
 	
 	private static List<Pawn> initialState = new LinkedList<>();
@@ -63,6 +61,7 @@ public class Main {
 		double result = Minimax.alphaBethInit(currentState);
 		long b = System.nanoTime();
 		for(State s : Minimax.stack){
+			@SuppressWarnings({ "rawtypes", "unchecked" })
 			LinkedList<State> unfold = (LinkedList)s.unfold();
 			System.out.println("S=" + s.getHeuristic() + "\tUnfold=" + unfold.pollLast().getHeuristic());
 			//System.out.println(unfold);

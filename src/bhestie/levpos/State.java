@@ -580,12 +580,8 @@ public class State {
 	private long getHeuristicWhite() {
 		long result = 370;
 		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		int remainingPositionForCaputureKing = this.remainingPositionForSurroundingKing();
-		result += remainingPositionForCaputureKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
-		
-		if (remainingPositionForCaputureKing == 1 && this.veryUglyKingPosition()) {
-			return -Minimax.MAXVALUE*(long)Math.pow(2, Minimax.DEPTH) + 1;
-		}
+		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
 		if (State.TURN > 2 && State.TURN <= 5) {
 			result += this.rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
@@ -705,8 +701,8 @@ public class State {
 		State granpa = this;
 		while (granpa.parent != null && granpa.parent.parent != null) {
 			granpa = this.parent.parent;
-			final int remainingPositionForCaputureKing = granpa.remainingPositionForSurroundingKing();
-			if (remainingPositionForCaputureKing == 1 && granpa.veryUglyKingPosition()) {
+			final int remainingPositionForSurroundingKing = granpa.remainingPositionForSurroundingKing();
+			if (remainingPositionForSurroundingKing == 1 && granpa.veryUglyKingPosition()) {
 				return -Minimax.MAXVALUE;
 			}
 		}
