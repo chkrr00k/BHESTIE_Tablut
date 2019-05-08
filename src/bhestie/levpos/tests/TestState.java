@@ -35,8 +35,8 @@ public class TestState {
     @Test
 	public void testLoop() throws Exception {
     	Minimax.player = blackPlayer;
-    	HeuristicCalculatorGroup.getInstance().addThreads(3);
-    	Minimax.init();
+ //   	HeuristicCalculatorGroup.getInstance().addThreads(3);
+ //   	Minimax.init();
     	
     	List<Pawn> p = new LinkedList<Pawn>();
     	p.add(new Pawn(false, 5, 5, true));
@@ -71,14 +71,14 @@ public class TestState {
     	p.add(new Pawn(true, 5, 8, false));
     	
     	State s = new State(p, !blackPlayer);
-    	System.out.println(s);
+//    	System.out.println(s);
     	
     	assertFalse(s.veryUglyKingPosition());
     	assertFalse(s.isTerminal());
     	assertEquals(4, s.threatenKingRemaining().get(0).size());
     	
-    	Minimax.DEPTH = 4;
-    	Minimax.FIXEDDEPTH = true;
+/*    	Minimax.DEPTH = 4;
+    	Minimax.FIXEDDEPTH = true;*/
 //    	System.out.println(Minimax.alphaBethInit(s));
     	
     	p.clear();
@@ -114,17 +114,17 @@ public class TestState {
     	p.add(new Pawn(true, 5, 8, false));
     	
     	s = new State(p, !blackPlayer);
-    	System.out.println(s);
+//    	System.out.println(s);
     	
     	assertFalse(s.veryUglyKingPosition());
     	assertFalse(s.isTerminal());
     	assertEquals(4, s.threatenKingRemaining().get(0).size());
     	
-    	Minimax.DEPTH = 4;
+/*    	Minimax.DEPTH = 4;
     	Minimax.FIXEDDEPTH = true;
     	Minimax.TIMEOUT = 30;
-    	Minimax.init();
-    	System.out.println(Minimax.alphaBethInit(s));
+    	Minimax.init();*/
+//    	System.out.println(Minimax.alphaBethInit(s));
 	}
     
     @Test
