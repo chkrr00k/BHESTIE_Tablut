@@ -51,6 +51,14 @@ public class Position {
 		return false;
 
 	}
+	
+	public boolean equalsAny(Position[] positions) {
+		for(Position position : positions){
+			if(this.equals(position))
+				return true;
+		}
+		return false;
+	}
 
 	public boolean equals(Position position) {
 		return (this.x==position.x && this.y==position.y);

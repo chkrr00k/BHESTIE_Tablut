@@ -1,6 +1,5 @@
 package bhestie.zizcom.tests;
 
-import java.io.IOException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -119,10 +118,9 @@ public class Main {
 				}
 				break;
 			}
-			if(defaultThreads){
-				HeuristicCalculatorGroup.getInstance().addThreads(3);		
-
-			}
+		}
+		if(defaultThreads){
+			HeuristicCalculatorGroup.getInstance().addThreads(3);		
 		}
 	}
 	
@@ -161,7 +159,12 @@ public class Main {
 				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 
 				
-				currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+				if (Minimax.stack.size() > 0) {
+					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+				} else {
+					List<State> futureStates = currentState.getActions();
+					currentState = futureStates.get(r.nextInt(futureStates.size()));
+				}
 				List<State> unfold = currentState.unfold();
 				int unfoldSize = unfold.size();
 				if (unfoldSize > 0){

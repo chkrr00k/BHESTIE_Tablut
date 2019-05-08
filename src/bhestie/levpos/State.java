@@ -120,7 +120,7 @@ public class State {
 	 * Get the list of the next possible States.
 	 * @return The list of the next possible States.
 	 */
-	public Collection<State> getActions(){
+	public List<State> getActions(){
 		List<State> actions = new LinkedList<State>();
 
 		boolean symmetricalNorthSouth = true;
@@ -224,7 +224,7 @@ public class State {
 		haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
 
 		if (haveToAddThePawn) {
-			List<Pawn> newPawns = new LinkedList<>(this.getPawns());
+			List<Pawn> newPawns = new ArrayList<>(this.getPawns());
 			newPawns.remove(currentPawn);
 			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
 			final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
@@ -237,12 +237,66 @@ public class State {
 				drawCase = true;
 			}
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
-			actions.add(newState);
-			HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
-			HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
+			boolean haveToAddTheNewState = true;
+			if (!Minimax.player) { // White player
+				// Check if is going to suicide
+				haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
+			}
+			if (haveToAddTheNewState) {
+				actions.add(newState);
+				HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
+				HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
+			}
 			return true;
 		}
 		return false;
+	}
+	
+	public List<List<Position>> threatenKingRemaining(){
+		Pawn k = this.getKing();
+		final boolean kingInProtected = protectedKingPositions.contains(k.position); // XXX remove for optimization
+		
+		Position[] tp = new Position[]{
+			Position.of(k.getX() + 1, k.getY()), //e
+			Position.of(k.getX(), k.getY() + 1), //s
+			Position.of(k.getX() - 1, k.getY()), //w
+			Position.of(k.getX(), k.getY() - 1)  //n
+		};
+		
+		// here are all the pawns surrounding the king
+		List<Position> l = Stream.concat(this.pawns.stream()
+					.filter(p -> p.isBlack())
+					.map(p -> p.position),
+				citadels.stream()
+					.flatMap(c -> c.citadelPositions.stream())
+				).distinct()
+				.filter(p -> p.equalsAny(tp))
+				.limit(4)
+				.collect(Collectors.toList());
+		
+		if(tronePosition.equalsAny(tp)){
+			l.add(tronePosition);
+		}
+
+		List<List<Position>> result = new LinkedList<>();
+		List<Position> tmp = new LinkedList<>();
+		for (int i = 0; i < tp.length; i++) {
+			if (kingInProtected) {
+				if (!l.contains(tp[i])) {
+					tmp.add(tp[i]);
+				}
+			} else {
+				if (l.contains(tp[i])) {
+					tmp.add(tp[(i+2) % 4]);
+					result.add(tmp);
+					tmp = new LinkedList<>();
+				}
+			}
+		}
+		if (tmp.size() != 0)
+			result.add(tmp);
+		
+		return result;
 	}
 
 	/**
@@ -478,51 +532,42 @@ public class State {
 	}
 	
 	public boolean veryUglyKingPosition() {
-		Pawn king = this.getKing();
-		final Position toCheck;
-		Position n = Position.of(king.getX(), king.getY() - 1);
-		Position s = Position.of(king.getX(), king.getY() + 1);
-		Position e = Position.of(king.getX() + 1 , king.getY());
-		Position w = Position.of(king.getX() - 1, king.getY());
-		if (!this.pawns.stream().anyMatch(p -> p.position.equals(n))) {
-			toCheck = n;
-		} else if (!this.pawns.stream().anyMatch(p -> p.position.equals(s))) {
-			toCheck = s;
-		} else if (!this.pawns.stream().anyMatch(p -> p.position.equals(e))) {
-			toCheck = e;
-		} else {
-			toCheck = w;
-		}
-		for (int i = toCheck.x + 1; i <= 9; i++) {
-			final Position tmp = Position.of(i, toCheck.y);
-			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
-				return true;
-			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
-				break;
-			}
-		}
-		for (int i = toCheck.x - 1; i >= 1; i--) {
-			final Position tmp = Position.of(i, toCheck.y);
-			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
-				return true;
-			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
-				break;
-			}
-		}
-		for (int i = toCheck.y + 1; i <= 9; i++) {
-			final Position tmp = Position.of(toCheck.x, i);
-			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
-				return true;
-			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
-				break;
-			}
-		}
-		for (int i = toCheck.y - 1; i >= 1; i--) {
-			final Position tmp = Position.of(toCheck.x, i);
-			if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
-				return true;
-			} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
-				break;
+		List<List<Position>> positionWhereKingCanBeEaten = this.threatenKingRemaining();
+		for (List<Position> list : positionWhereKingCanBeEaten) {
+			if (list.size() == 1) {
+				final Position toCheck = list.get(0);
+				for (int i = toCheck.x + 1; i <= 9; i++) {
+					final Position tmp = Position.of(i, toCheck.y);
+					if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+						return true;
+					} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+						break;
+					}
+				}
+				for (int i = toCheck.x - 1; i >= 1; i--) {
+					final Position tmp = Position.of(i, toCheck.y);
+					if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+						return true;
+					} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+						break;
+					}
+				}
+				for (int i = toCheck.y + 1; i <= 9; i++) {
+					final Position tmp = Position.of(toCheck.x, i);
+					if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+						return true;
+					} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+						break;
+					}
+				}
+				for (int i = toCheck.y - 1; i >= 1; i--) {
+					final Position tmp = Position.of(toCheck.x, i);
+					if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isBlack())) {
+						return true;
+					} else if (this.pawns.stream().anyMatch(p -> p.position.equals(tmp) && p.isWhite())) {
+						break;
+					}
+				}
 			}
 		}
 		return false;
