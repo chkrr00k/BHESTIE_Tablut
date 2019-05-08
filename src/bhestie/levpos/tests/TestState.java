@@ -37,73 +37,73 @@ public class TestState {
     	List<Pawn> p = new LinkedList<Pawn>();
     	p.add(new Pawn(false, 5, 3, true));
     	State s = new State(p, !whitePlayer);
-    	assertEquals(1, s.threatenKingRemaining());
+    	assertEquals(1, s.threatenKingRemaining().get(0).size());
 
     	p.add(new Pawn(true, 4, 3, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(1, s.threatenKingRemaining());
+    	assertEquals(1, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 5, 4, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(0, s.threatenKingRemaining());
+    	assertEquals(1, s.threatenKingRemaining().get(0).size());
     	
     	p.clear();
     	p.add(new Pawn(false, 2, 2, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(2, s.threatenKingRemaining());
+    	assertEquals(4, s.threatenKingRemaining().stream().mapToInt(l -> l.size()).sum());
     	
     	p.clear();
     	p.add(new Pawn(false, 5, 4, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(3, s.threatenKingRemaining());
+    	assertEquals(3, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 5, 6, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(3, s.threatenKingRemaining());
+    	assertEquals(3, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 5, 3, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(2, s.threatenKingRemaining());
+    	assertEquals(2, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 4, 4, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(1, s.threatenKingRemaining());
+    	assertEquals(1, s.threatenKingRemaining().get(0).size());
     	
      	p.add(new Pawn(true, 6, 4, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(0, s.threatenKingRemaining());
+    	assertEquals(0, s.threatenKingRemaining().size());
     	
     	p.clear();
     	p.add(new Pawn(false, 5, 5, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(4, s.threatenKingRemaining());
+    	assertEquals(4, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 5, 6, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(3, s.threatenKingRemaining());
+    	assertEquals(3, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 5, 4, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(2, s.threatenKingRemaining());
+    	assertEquals(2, s.threatenKingRemaining().get(0).size());
     	
     	p.add(new Pawn(true, 4, 5, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(1, s.threatenKingRemaining());
+    	assertEquals(1, s.threatenKingRemaining().get(0).size());
     	
      	p.add(new Pawn(true, 6, 5, false));
     	s = new State(p, !whitePlayer);
-    	assertEquals(0, s.threatenKingRemaining());
+    	assertEquals(0, s.threatenKingRemaining().size());
     	
     	p.clear();
     	p.add(new Pawn(false, 2, 4, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(1, s.threatenKingRemaining());
+    	assertTrue(s.threatenKingRemaining().stream().allMatch(l -> l.size() == 1));
     	
-    	//XXX NOT A BUG
+    	//XXX NOT A BUG, special case not useful
     	p.clear();
     	p.add(new Pawn(false, 1, 1, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(2, s.threatenKingRemaining());
+    	assertEquals(4, s.threatenKingRemaining().get(0).size());
 	}
     
     @Test

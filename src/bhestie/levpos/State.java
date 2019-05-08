@@ -238,7 +238,7 @@ public class State {
 			}
 			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
 			boolean haveToAddTheNewState = true;
-			if (!Minimax.player) { // White player
+			if (!this.turn) { // White turn
 				// Check if is going to suicide
 				haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
 			}
@@ -279,22 +279,38 @@ public class State {
 		}
 
 		List<List<Position>> result = new LinkedList<>();
-		List<Position> tmp = new LinkedList<>();
+		List<Position> tmp = null;
 		for (int i = 0; i < tp.length; i++) {
 			if (kingInProtected) {
 				if (!l.contains(tp[i])) {
+					if (tmp == null) {
+						tmp = new LinkedList<>();
+					}
 					tmp.add(tp[i]);
 				}
 			} else {
-				if (l.contains(tp[i])) {
+				if (l.contains(tp[i]) && !l.contains(tp[(i+2) % 4])) {
+					tmp = new ArrayList<>(1);
 					tmp.add(tp[(i+2) % 4]);
 					result.add(tmp);
-					tmp = new LinkedList<>();
+					tmp = null;
 				}
 			}
 		}
-		if (tmp.size() != 0)
+		if (kingInProtected) {
+			if (tmp != null) {
+				result.add(tmp);
+			}
+		} else if (result.size() == 0) {
+			tmp = new ArrayList<Position>(2);
+			tmp.add(tp[0]);
+			tmp.add(tp[2]);
 			result.add(tmp);
+			tmp = new ArrayList<Position>(2);
+			tmp.add(tp[1]);
+			tmp.add(tp[3]);
+			result.add(tmp);
+		}
 		
 		return result;
 	}

@@ -158,17 +158,17 @@ public class Main {
 				System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
 				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 
-				
+				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
 					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+					unfold = currentState.unfold();
+					int unfoldSize = unfold.size();
+					if (unfoldSize > 0){
+						currentState = unfold.get(unfoldSize - 1);
+					}
 				} else {
 					List<State> futureStates = currentState.getActions();
 					currentState = futureStates.get(r.nextInt(futureStates.size()));
-				}
-				List<State> unfold = currentState.unfold();
-				int unfoldSize = unfold.size();
-				if (unfoldSize > 0){
-					currentState = unfold.get(unfoldSize - 1);
 				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
