@@ -540,12 +540,12 @@ public class State {
 			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
 					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isBlack())
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack());
+					+ this.checkROIQuantity(7, 1, 9, 3, p -> p.isBlack());
 			//number of white in the corners
 			long whiteInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isWhite()) 
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite())
 					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isWhite())
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
+					+ this.checkROIQuantity(7, 1, 9, 3, p -> p.isWhite());
 			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
 			// here is nice having black too
 			result += 10 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
@@ -629,6 +629,7 @@ public class State {
 	 */
 	private long getHeuristicWhite() {
 		long result = 370;
+		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
 		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
 		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
