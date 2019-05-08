@@ -103,7 +103,8 @@ public class TestState {
     	p.clear();
     	p.add(new Pawn(false, 1, 1, true));
     	s = new State(p, !whitePlayer);
-    	assertEquals(4, s.threatenKingRemaining().get(0).size());
+    	System.out.println(s.threatenKingRemaining());
+    	assertTrue(s.threatenKingRemaining().stream().allMatch(l -> l.size() == 2));
 	}
     
     @Test
