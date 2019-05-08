@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
@@ -30,6 +31,99 @@ public class TestState {
 		double utility = s.getUtility();
 		assertEquals(0, utility, 0.01);
     }
+    
+    @Test
+	public void testLoop() throws Exception {
+    	Minimax.player = blackPlayer;
+    	HeuristicCalculatorGroup.getInstance().addThreads(3);
+    	Minimax.init();
+    	
+    	List<Pawn> p = new LinkedList<Pawn>();
+    	p.add(new Pawn(false, 5, 5, true));
+    	
+    	p.add(new Pawn(false, 6, 6, false));
+    	p.add(new Pawn(false, 5, 4, false));
+    	p.add(new Pawn(false, 9, 7, false));
+    	p.add(new Pawn(false, 5, 3, false));
+    	p.add(new Pawn(false, 3, 5, false));
+    	p.add(new Pawn(false, 4, 5, false));
+    	p.add(new Pawn(false, 7, 1, false));
+    	p.add(new Pawn(false, 6, 5, false));
+    	
+    	p.add(new Pawn(true, 1, 4, false));
+    	p.add(new Pawn(true, 1, 5, false));
+    	p.add(new Pawn(true, 1, 6, false));
+    	p.add(new Pawn(true, 2, 7, false));
+    	
+    	p.add(new Pawn(true, 9, 4, false));
+    	p.add(new Pawn(true, 9, 5, false));
+    	p.add(new Pawn(true, 9, 6, false));
+    	p.add(new Pawn(true, 8, 3, false));
+    	
+    	p.add(new Pawn(true, 4, 1, false));
+    	p.add(new Pawn(true, 5, 1, false));
+    	p.add(new Pawn(true, 6, 1, false));
+    	p.add(new Pawn(true, 3, 2, false));
+    	
+    	p.add(new Pawn(true, 4, 9, false));
+    	p.add(new Pawn(true, 5, 9, false));
+    	p.add(new Pawn(true, 6, 9, false));
+    	p.add(new Pawn(true, 5, 8, false));
+    	
+    	State s = new State(p, !blackPlayer);
+    	System.out.println(s);
+    	
+    	assertFalse(s.veryUglyKingPosition());
+    	assertFalse(s.isTerminal());
+    	assertEquals(4, s.threatenKingRemaining().get(0).size());
+    	
+    	Minimax.DEPTH = 4;
+    	Minimax.FIXEDDEPTH = true;
+//    	System.out.println(Minimax.alphaBethInit(s));
+    	
+    	p.clear();
+    	p.add(new Pawn(false, 5, 5, true));
+    	
+    	p.add(new Pawn(false, 6, 6, false));
+    	p.add(new Pawn(false, 5, 4, false));
+    	p.add(new Pawn(false, 9, 7, false));
+    	p.add(new Pawn(false, 5, 3, false));
+    	p.add(new Pawn(false, 3, 5, false));
+    	p.add(new Pawn(false, 4, 5, false));
+    	p.add(new Pawn(false, 7, 1, false));
+    	p.add(new Pawn(false, 6, 4, false));
+    	
+    	p.add(new Pawn(true, 1, 4, false));
+    	p.add(new Pawn(true, 1, 5, false));
+    	p.add(new Pawn(true, 1, 6, false));
+    	p.add(new Pawn(true, 2, 7, false));
+    	
+    	p.add(new Pawn(true, 9, 4, false));
+    	p.add(new Pawn(true, 9, 5, false));
+    	p.add(new Pawn(true, 9, 6, false));
+    	p.add(new Pawn(true, 8, 3, false));
+    	
+    	p.add(new Pawn(true, 4, 1, false));
+    	p.add(new Pawn(true, 5, 1, false));
+    	p.add(new Pawn(true, 6, 1, false));
+    	p.add(new Pawn(true, 3, 2, false));
+    	
+    	p.add(new Pawn(true, 4, 9, false));
+    	p.add(new Pawn(true, 5, 9, false));
+    	p.add(new Pawn(true, 6, 9, false));
+    	p.add(new Pawn(true, 5, 8, false));
+    	
+    	s = new State(p, !blackPlayer);
+    	System.out.println(s);
+    	
+    	assertFalse(s.veryUglyKingPosition());
+    	assertFalse(s.isTerminal());
+    	assertEquals(4, s.threatenKingRemaining().get(0).size());
+    	
+    	Minimax.DEPTH = 4;
+    	Minimax.FIXEDDEPTH = true;
+    	System.out.println(Minimax.alphaBethInit(s));
+	}
     
     @Test
 	public void testThreatenKing() throws Exception {
@@ -103,7 +197,6 @@ public class TestState {
     	p.clear();
     	p.add(new Pawn(false, 1, 1, true));
     	s = new State(p, !whitePlayer);
-    	System.out.println(s.threatenKingRemaining());
     	assertTrue(s.threatenKingRemaining().stream().allMatch(l -> l.size() == 2));
 	}
     

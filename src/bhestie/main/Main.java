@@ -118,16 +118,16 @@ public class Main {
 				}
 				break;
 			}
-			if(defaultThreads){
-				HeuristicCalculatorGroup.getInstance().addThreads(3);		
+		}
+		if(defaultThreads){
+			HeuristicCalculatorGroup.getInstance().addThreads(3);		
 
-			}
 		}
 	}
 	
 	public static void main(String[] args) {
 		try{
-			//args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "5", TIMEOUT_FLAG, "300"}; //FIXME remove this to start it from CLI
+			args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 			
 			parse(args);
 			printLogo();
