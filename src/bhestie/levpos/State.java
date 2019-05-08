@@ -32,6 +32,8 @@ public class State {
 	private static final int WHITE_KING_MORE_ESCAPES_THEN_PARENT = 10 * MULTIPLICATOR;
 	private static final long WHITE_KING_IN_GOOD_POSITION = 5 * MULTIPLICATOR;
 
+	private static final long BLACK_PAWNS_GOES_OUT_OF_CITADEL = 35 * MULTIPLICATOR;
+
 	
 	public static int TURN = 0;
 	
@@ -493,13 +495,38 @@ public class State {
 		if (this.isTerminal()){
 			return this.getUtility();
 		}
+		long result = 800;
+		
+		int numRouteBlocked = this.routeBlocked();
+		
+		if (numRouteBlocked >= 6) { // new heuristic. Do eat! Do not be eaten! Do stay in octagon
+			long eaten = this.pawns.stream().filter(p -> p.isWhite()).count() - this.parent.pawns.stream().filter(p -> p.isWhite()).count(); 
+			if (eaten > 0) {
+				result += WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC * eaten;
+			}
+			eaten =  this.pawns.stream().filter(p -> p.isBlack()).count() - this.parent.pawns.stream().filter(p -> p.isBlack()).count();
+			if (eaten > 0) {
+				result -= BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC * eaten;
+			}
+			if (numRouteBlocked == 8) {
+				result += 100000;
+			}
+			result -= 50 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
+		} 
+		if (numRouteBlocked < 8){ // Do create the octagon
+			//Number of blocked goal tiles
+			result += (numRouteBlocked * WHITE_KING_ESCAPES);
+			if(numRouteBlocked < this.parent.routeBlocked()){
+				result -= WHITE_KING_ESCAPES;
+			}
+		}
+		
 		int kingEscape = this.kingEscape();
-		long result = 0;
 		
 		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
-			result = 20; // result = 7000;
+			result += 20; // result = 7000;
 		}else if(kingEscape == 0) {
-			result = WHITE_KING_ESCAPES * 4;
+			result += WHITE_KING_ESCAPES * 4;
 		}else{
 			result -= WHITE_KING_ESCAPES * kingEscape;
 		}
@@ -508,7 +535,7 @@ public class State {
 			result -= WHITE_KING_IN_GOOD_POSITION;
 		}
 		
-		if(State.TURN < 7){// preparation phase
+		if(State.TURN < 7) { // preparation phase
 			//number of black in the corners
 			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
@@ -521,24 +548,31 @@ public class State {
 					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite());
 			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
 			// here is nice having black too
-			result += 5 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
-			// NOT nice if they are black
-			result -= 10 * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
+			result += 10 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
+			// NOT nice if they are white
+			result -= 20 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
 			// to avoid cycling
-			result -= 5 * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
+			result -= 10.5 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
 						&& (p.position.y == 1 || p.position.y == 9) 
 						&& p.isBlack());
 		}
 		
-		result += WHITE_KING_MORE_ESCAPES_THEN_PARENT * (kingEscape - this.parent.kingEscape());
-		
-		//Number of blocked goal tiles
-		int numRouteBlocked = this.routeBlocked();
-		
-		result += (numRouteBlocked * WHITE_KING_ESCAPES);
-		if(numRouteBlocked < this.parent.routeBlocked()){
-			result -= WHITE_KING_ESCAPES / 2;
+		if (State.TURN <= 16) {
+			final int minPawnsInCitadel = (State.TURN < 8 ? 2 : 1);
+			long pawnsInCitadel = 0;
+			long pawnsInParentCitadel = 0;
+			for (int i = 0; i < 4; i++) {
+				pawnsInCitadel = this.pawns.stream().filter(p -> citadels.get(0).isPawnInCitadel(p)).count();
+				if (pawnsInCitadel <= minPawnsInCitadel) {
+					pawnsInParentCitadel = this.parent.pawns.stream().filter(p -> citadels.get(0).isPawnInCitadel(p)).count();
+					if (pawnsInCitadel < pawnsInParentCitadel) {
+						result -= BLACK_PAWNS_GOES_OUT_OF_CITADEL * 4;
+					}
+				}
+			}
 		}
+		
+		result += WHITE_KING_MORE_ESCAPES_THEN_PARENT * 2 * (kingEscape - this.parent.kingEscape());
 		
 		if (kingEscape != this.parent.kingEscape()) {
 			result = Minimax.MAXVALUE * 2 * (this.parent.kingEscape() - kingEscape);
@@ -887,11 +921,11 @@ public class State {
 		};
 	}
 	
-	private boolean kingProtrudingNorth(){
+	/*private boolean kingProtrudingSouth(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
 		return (king.getY() > 5 || this.checkROIQuantity(6, 5, 7, 5, p -> p.isWhite()) < 2); // king is in north sector;
 	}
-	private boolean kingProtrudingSouth(){
+	private boolean kingProtrudingNorth(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
 		return (king.getY() < 5 || this.checkROIQuantity(3, 5, 4, 5, p -> p.isWhite()) < 2); // king is in south sector;
 
@@ -903,12 +937,12 @@ public class State {
 	private boolean kingProtrudingWest(){
 		Pawn king = this.pawns.stream().filter(p -> p.king).findFirst().get();
 		return (king.getX() < 5 || this.checkROIQuantity(5, 3, 5, 4, p -> p.isWhite()) < 2); // king is in west sector;
-	}
+	}*/
 	
 	public int routeBlocked(){
 		int result = 0;
 		int modificator = 1; // express if the blocked route is in the right side of the chessboard
-		boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast(), south = this.kingProtrudingSouth(), west = this.kingProtrudingWest();
+		//boolean north = this.kingProtrudingNorth(), east = this.kingProtrudingEast(), south = this.kingProtrudingSouth(), west = this.kingProtrudingWest();
 		for(Position pos : escapeRouteBlocked){
 			if(this.pawns.stream().anyMatch(p -> p.isBlack() && p.position.equals(pos))){
 				result++;
@@ -917,11 +951,11 @@ public class State {
 				//if the move has been made in the (eg) NW position of the chessboard 
 				//we want to block on that side because it's the smart thing to do
 				//but only in the first steps
-				if(State.TURN < 6) {
-					if(north && pos.y > 5){// game is protruding north
+				/*if(State.TURN < 6) {
+					if(north && pos.y < 5){// game is protruding north
 						modificator+=0.05;
 					}
-					if(south && pos.y < 5){// game is protruding south
+					if(south && pos.y > 5){// game is protruding south
 						modificator+=0.05;
 					}
 					if(east && pos.x > 5){// game is protruding east
@@ -930,7 +964,7 @@ public class State {
 					if(west && pos.x < 5){// game is protruding west
 						modificator+=0.05;
 					}
-				}
+				}*/
 			}
 		}
 		return result * modificator;
@@ -959,6 +993,7 @@ public class State {
 	private static final List<Position> escapeRouteBlocked = new ArrayList<Position>(8);
 	static {
 		ArrayList<Position> citadelPositions = new ArrayList<>(4);
+		// North
 		citadelPositions.add(Position.of(5, 1));
 		citadelPositions.add(Position.of(4, 1));
 		citadelPositions.add(Position.of(6, 1));
@@ -966,6 +1001,7 @@ public class State {
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
+		// West
 		citadelPositions.add(Position.of(1, 5));
 		citadelPositions.add(Position.of(1, 4));
 		citadelPositions.add(Position.of(1, 6));
@@ -973,6 +1009,7 @@ public class State {
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
+		// East
 		citadelPositions.add(Position.of(9, 5));
 		citadelPositions.add(Position.of(9, 4));
 		citadelPositions.add(Position.of(9, 6));
@@ -980,6 +1017,7 @@ public class State {
 		citadels.add(new Citadel(citadelPositions));
 
 		citadelPositions = new ArrayList<>(4);
+		// South
 		citadelPositions.add(Position.of(5, 9));
 		citadelPositions.add(Position.of(4, 9));
 		citadelPositions.add(Position.of(6, 9));
