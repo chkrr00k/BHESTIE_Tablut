@@ -12,7 +12,7 @@ import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Board;
 import bhestie.zizcom.Connector;
 
-public class Main {
+public class MainOld {
 
 	private static final boolean whitePlayer = false;
 	private static final boolean blackPlayer = !whitePlayer;

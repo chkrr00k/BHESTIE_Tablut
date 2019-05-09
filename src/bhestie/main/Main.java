@@ -4,6 +4,8 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
@@ -168,7 +170,7 @@ public class Main {
 						currentState = unfold.get(unfoldSize - 1);
 					}
 				} else {
-					List<State> actions = currentState.getActions();
+					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
 					currentState = actions.get(r.nextInt(actions.size()));
 					System.out.println("I lost, but i don't want to admit it");
 				}

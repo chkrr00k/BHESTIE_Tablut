@@ -84,7 +84,7 @@ public final class Minimax {
 			return heuristic;
 		} else if(max){
 			v = -Minimax.MAXVALUE;
-			for(State c : s.getActions()){
+			for(State c : s.getChildren()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
 				if(beth <= alpha){
@@ -94,7 +94,7 @@ public final class Minimax {
 			}
 		}else{
 			v = Minimax.MAXVALUE;
-			for(State c : s.getActions()){
+			for(State c : s.getChildren()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
 				if(beth <= alpha){
