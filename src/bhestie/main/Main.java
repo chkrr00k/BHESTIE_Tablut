@@ -120,8 +120,7 @@ public class Main {
 			}
 		}
 		if(defaultThreads){
-			HeuristicCalculatorGroup.getInstance().addThreads(3);		
-
+			HeuristicCalculatorGroup.getInstance().addThreads(3);
 		}
 	}
 	
