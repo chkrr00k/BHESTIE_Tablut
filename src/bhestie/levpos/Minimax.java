@@ -5,7 +5,12 @@ import java.util.List;
 public final class Minimax {
 	
 	public static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
-	public static int DEPTH = 3;
+	public static int DEPTH = 3; // current depth
+	
+	public static int SCALINGFACTORUP = 10; // time it has to be signaled to start scaling up
+	public static int SCALINGFACTORDOWN = 0; // time it has to be signaled to start scaling down
+	
+	private static int CURRENTSCALINGUP = 0, CURRENTSCALINGDOWN = 0; //current times it has been signaled to go up or down;
 	
 	public static int TIMEOUT = 50; // In seconds
 	
@@ -43,6 +48,7 @@ public final class Minimax {
 	public static final long alphaBethInit(final State state) {
 		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
+		
 		nodeExplored = 0;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);
@@ -70,8 +76,8 @@ public final class Minimax {
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
-			Minimax.DEPTH++;
-			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+//			Minimax.DEPTH++;
+			Minimax.scaleUp();
 		}
 		t.interrupt();
 		t.stop();
@@ -127,12 +133,31 @@ public final class Minimax {
 		return v;
 	}
 
+	public static void scaleUp(){
+		if(!Minimax.FIXEDDEPTH){
+			if(Minimax.CURRENTSCALINGUP >= Minimax.SCALINGFACTORUP - 1){
+				Minimax.DEPTH++;
+				Minimax.CURRENTSCALINGUP = 0;
+				Minimax.CURRENTSCALINGDOWN = 0;
+				System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+			}else{
+				Minimax.CURRENTSCALINGUP++;
+			}
+		}
+	}
+	
 	public static synchronized void interrupt() {
 		Minimax.signal = true;
-		if (!Minimax.FIXEDDEPTH) {
-			Minimax.DEPTH--;
-			System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
-			Minimax.FIXEDDEPTH = true;
+		if(!Minimax.FIXEDDEPTH){
+			if (Minimax.CURRENTSCALINGDOWN >= Minimax.SCALINGFACTORDOWN - 1) {
+				Minimax.DEPTH--;
+				Minimax.CURRENTSCALINGDOWN = 0;
+				Minimax.CURRENTSCALINGUP = 0;
+				System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+	//			Minimax.FIXEDDEPTH = true;
+			}else{
+				Minimax.CURRENTSCALINGDOWN++;
+			}
 		}
 	}
 
