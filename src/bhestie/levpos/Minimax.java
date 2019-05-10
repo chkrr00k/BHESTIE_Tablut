@@ -39,14 +39,12 @@ public final class Minimax {
 	 * @param depth Max depth
 	 * @return The alphabeth value
 	 */
-	@SuppressWarnings("deprecation")
 	public static final long alphaBethInit(final State state) {
 		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
 		nodeExplored = 0;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);
-		threadPool.playAll();
 		interrupterThread.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
