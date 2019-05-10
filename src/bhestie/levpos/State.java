@@ -1221,7 +1221,7 @@ public class State {
 	}
 	
 	public class ParallelStateGenerator extends State.StateGenerator {
-		private static final int QUEUESIZE = 10;
+		private static final int QUEUESIZE = 3;
 		
 		private boolean finishedToGenerate = false;
 		private Queue<State> generatedQueue = new ConcurrentLinkedQueue<>();
@@ -1230,8 +1230,10 @@ public class State {
 			super(s);
 			
 			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
-			for (int i = 0; i < QUEUESIZE; i++) {
-				ThreadPool.stackQueuesToCalculate.add(this);
+			for (int i = 1; i < QUEUESIZE; i++) {
+				try {
+					ThreadPool.stackQueuesToCalculate.put(this);
+				} catch (InterruptedException e) {}
 			}
 		}
 		
@@ -1245,14 +1247,20 @@ public class State {
 		}
 		
 		public void generateAndCache() {
-			this.generate();
-			if (this.next.isPresent()) {
-				State next = this.next.get();
-				if (next.isTerminal())
-					next.getUtility();
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+				State n = next.get();
+				if (n.isTerminal())
+					n.getUtility();
 				else 
-					next.getHeuristic();
-				next.threatenKingRemaining();
+					n.getHeuristic();
+				n.threatenKingRemaining();
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
 			}
 		}
 		
@@ -1274,11 +1282,15 @@ public class State {
 			if (this.generatedQueue.isEmpty()) { // Nothing cached, calculate!
 				this.generate();
 			}
-			if (this.finishedToGenerate) { // Finished to generate!
+			if (this.finishedToGenerate && this.generatedQueue.isEmpty()) { // Finished to generate and nothing in queue
 				return false;
 			} else {
 				this.next = Optional.of(this.generatedQueue.poll());
-				ThreadPool.stackQueuesToCalculate.add(this); // Require to pool thread to fill the empty space!
+				if (!this.finishedToGenerate)
+					try {
+						ThreadPool.stackQueuesToCalculate.put(this); // Require to pool thread to fill the empty space!
+					} catch (InterruptedException e) {
+					} 
 			}
 			return true;
 		}

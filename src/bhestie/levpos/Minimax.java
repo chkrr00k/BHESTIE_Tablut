@@ -7,7 +7,7 @@ public final class Minimax {
 	public static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
-	public static int TIMEOUT = 50; // In seconds
+	public static int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter;
 	
@@ -58,9 +58,9 @@ public final class Minimax {
 					} catch (InterruptedException e) {
 						break;
 					}
-					long free = Runtime.getRuntime().freeMemory();
+					long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
 					//System.out.println("\t\t\t\t\t\t\t\t\t\t\tFree = " + free);
-					if (free <= 512*1024*1024 /*MB*/) {
+					if (free <= 512 /*MB*/) {
 						System.gc();
 					}	
 				}

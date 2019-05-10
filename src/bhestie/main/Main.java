@@ -122,7 +122,7 @@ public class Main {
 			}
 		}
 		if(defaultThreads){
-			ThreadPool.getInstance().addThreads(3);		
+			ThreadPool.getInstance().addThreads(4);		
 
 		}
 	}
