@@ -5,7 +5,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
 
-import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.State;
 import bhestie.levpos.utils.HistoryStorage;
@@ -83,7 +82,7 @@ public class MainOld {
 				break;
 			case THREAD_FLAG:
 				try{
-					HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
+					//HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
 					defaultThreads = false;
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
@@ -120,7 +119,7 @@ public class MainOld {
 			}
 		}
 		if(defaultThreads){
-			HeuristicCalculatorGroup.getInstance().addThreads(3);		
+			//HeuristicCalculatorGroup.getInstance().addThreads(3);		
 		}
 	}
 	
@@ -194,7 +193,7 @@ public class MainOld {
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");
-			HeuristicCalculatorGroup.getInstance().killAll();
+			//HeuristicCalculatorGroup.getInstance().killAll();
 			System.exit(-7);
 		}
 	}

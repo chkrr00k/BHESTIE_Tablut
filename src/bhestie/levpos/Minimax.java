@@ -1,4 +1,5 @@
 package bhestie.levpos;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public final class Minimax {
 	
 	public static final long MAXVALUE = 1000000L;
 	
-	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
+	private static ThreadPool threadPool = ThreadPool.getInstance();
 	
 	public static void init() {
 		interrupter = new Interrupter(TIMEOUT);
@@ -39,21 +40,43 @@ public final class Minimax {
 	 * @param depth Max depth
 	 * @return The alphabeth value
 	 */
+	@SuppressWarnings("deprecation")
 	public static final long alphaBethInit(final State state) {
 		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
 		nodeExplored = 0;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);
-		heuristicCalculatorGroup.playAll();
+		threadPool.playAll();
 		interrupterThread.start();
+		Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						break;
+					}
+					long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					//System.out.println("\t\t\t\t\t\t\t\t\t\t\tFree = " + free);
+					if (free <= 512) {
+						System.gc();
+					}	
+				}
+			}
+		});
+		t.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
 			Minimax.DEPTH++;
 			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 		}
-		heuristicCalculatorGroup.pauseAll();
+		t.interrupt();
+		t.stop();
+		threadPool.pauseAll();
 		return alphaBethResult;
 	}
 	

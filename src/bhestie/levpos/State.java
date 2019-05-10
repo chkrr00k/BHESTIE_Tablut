@@ -5,8 +5,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -130,7 +132,7 @@ public class State {
 	 * @return an iterator to generate children
 	 */
 	public StateGenerator getChildGenerator() {
-		return new StateGenerator(this);
+		return new ParallelStateGenerator(this);
 	}
 	/**
 	 * Returns an Iterable object that generates all possible children of the current status
@@ -922,8 +924,7 @@ public class State {
 
 	
 	public class StateGenerator implements Iterator<State>{
-
-		private State s;
+		private final State s;
 		
 		private State next;
 		private boolean nextPresent;
@@ -933,12 +934,12 @@ public class State {
 		private boolean symmetricalDiagonal;
 		private boolean symmetricalAntiDiagonal;
 		
-		private List<Pawn> pawnsToScan;
+		private final List<Pawn> pawnsToScan;
 		
 		private int stopDecrementX, stopDecrementY;
-		final boolean checkAll;
+		private final boolean checkAll;
 
-		private Iterator<Pawn> pawnIter;
+		private final Iterator<Pawn> pawnIter;
 		private Pawn currentPawn;
 		private int ei, wi, si, ni;
 		private boolean estop, wstop, sstop, nstop;
@@ -1134,8 +1135,6 @@ public class State {
 				}
 				if (haveToAddTheNewState) {
 					result = Optional.of(newState);
-					HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
-					HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
 				}
 			}
 			return result;
@@ -1198,6 +1197,10 @@ public class State {
 			}
 		}
 		
+		protected State getState() {
+			return this.s;
+		}
+		
 	}
 	public class StateChild implements Iterable<State>{
 		private StateGenerator sg;
@@ -1214,6 +1217,53 @@ public class State {
 		@Override
 		public Iterator<State> iterator() {
 			return this.sg;
+		}
+	}
+	
+	public class ParallelStateGenerator extends State.StateGenerator {
+		private static final int QUEUESIZE = 3;
+		
+		private Queue<State> generatedQueue = new ConcurrentLinkedQueue<>();
+		
+		public ParallelStateGenerator(State s) {
+			super(s);
+			
+			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
+			for (int i = 0; i < QUEUESIZE; i++) {
+				ThreadPool.stackQueuesToCalculate.add(new StackItems(this.generatedQueue, this));
+			}
+		}
+		
+		public boolean generate() {
+			synchronized (this) {
+				if (super.hasNext()) {
+					State next = super.next();
+					if (next != null) {
+						this.generatedQueue.add(next);
+						return true;
+					} else {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			}
+		}
+		
+		@Override
+		public boolean hasNext() {
+			synchronized (this) {
+				if (this.generatedQueue.isEmpty()) {
+					return generate();
+				} else {
+					return true;
+				}
+			}
+		}
+		
+		@Override
+		public State next() {
+			return this.generatedQueue.poll();
 		}
 		
 	}
