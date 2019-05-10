@@ -1221,8 +1221,9 @@ public class State {
 	}
 	
 	public class ParallelStateGenerator extends State.StateGenerator {
-		private static final int QUEUESIZE = 3;
+		private static final int QUEUESIZE = 10;
 		
+		private boolean finishedToGenerate = false;
 		private Queue<State> generatedQueue = new ConcurrentLinkedQueue<>();
 		
 		public ParallelStateGenerator(State s) {
@@ -1230,40 +1231,65 @@ public class State {
 			
 			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
 			for (int i = 0; i < QUEUESIZE; i++) {
-				ThreadPool.stackQueuesToCalculate.add(new StackItems(this.generatedQueue, this));
+				ThreadPool.stackQueuesToCalculate.add(this);
 			}
 		}
 		
-		public boolean generate() {
+		private Optional<State> getNext() {
 			synchronized (this) {
-				if (super.hasNext()) {
-					State next = super.next();
-					if (next != null) {
-						this.generatedQueue.add(next);
-						return true;
-					} else {
-						return false;
-					}
-				} else {
-					return false;
-				}
+				if (super.hasNext())
+					return Optional.of(super.next());
+				else
+					return Optional.empty();
 			}
 		}
 		
+		public void generateAndCache() {
+			this.generate();
+			if (this.next.isPresent()) {
+				State next = this.next.get();
+				if (next.isTerminal())
+					next.getUtility();
+				else 
+					next.getHeuristic();
+				next.threatenKingRemaining();
+			}
+		}
+		
+		public void generate() {
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
+			}
+		}
+		
+		private Optional<State> next = Optional.empty();
 		@Override
 		public boolean hasNext() {
-			synchronized (this) {
-				if (this.generatedQueue.isEmpty()) {
-					return generate();
-				} else {
-					return true;
-				}
+			if (this.generatedQueue.isEmpty()) { // Nothing cached, calculate!
+				this.generate();
 			}
+			if (this.finishedToGenerate) { // Finished to generate!
+				return false;
+			} else {
+				this.next = Optional.of(this.generatedQueue.poll());
+				ThreadPool.stackQueuesToCalculate.add(this); // Require to pool thread to fill the empty space!
+			}
+			return true;
 		}
 		
 		@Override
 		public State next() {
-			return this.generatedQueue.poll();
+			if (!this.next.isPresent())
+				throw new IllegalStateException("You must call hasNext() before!");
+			State next = this.next.get();
+			this.next = Optional.empty();
+			return next;
 		}
 		
 	}

@@ -2,7 +2,6 @@ package bhestie.levpos;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
@@ -13,7 +12,7 @@ public class ThreadPool {
 	
 	private List<PoolThread> threads = new ArrayList<>();
 	
-	public static final BlockingDeque<StackItems> stackQueuesToCalculate = new LinkedBlockingDeque<>();
+	public static final BlockingDeque<ParallelStateGenerator> stackQueuesToCalculate = new LinkedBlockingDeque<>();
 	
 	private ThreadPool() {}
 	private static ThreadPool instance = new ThreadPool();
@@ -70,17 +69,8 @@ class PoolThread extends Thread {
 		try {
 			while (true) {
 				while (running) {
-					StackItems items = ThreadPool.stackQueuesToCalculate.take(); // sleep here until it gets the element
-					ParallelStateGenerator stateGenerator = items.getStateGenerator();
-					Queue<bhestie.levpos.State> queue = items.getQueue();
-					stateGenerator.generate();
-					bhestie.levpos.State generated = queue.peek();
-					if (generated.isTerminal())
-						generated.getUtility();
-					else
-						generated.getHeuristic();
-					generated.threatenKingRemaining();
-					
+					ParallelStateGenerator stateGenerator = ThreadPool.stackQueuesToCalculate.take(); // sleep here until it gets the element
+					stateGenerator.generateAndCache();
 				}
 				this.semaphore.acquire();
 			}

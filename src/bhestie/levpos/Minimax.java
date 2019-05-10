@@ -1,5 +1,4 @@
 package bhestie.levpos;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -59,9 +58,9 @@ public final class Minimax {
 					} catch (InterruptedException e) {
 						break;
 					}
-					long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					long free = Runtime.getRuntime().freeMemory();
 					//System.out.println("\t\t\t\t\t\t\t\t\t\t\tFree = " + free);
-					if (free <= 512) {
+					if (free <= 512*1024*1024 /*MB*/) {
 						System.gc();
 					}	
 				}
@@ -134,18 +133,6 @@ public final class Minimax {
 			Minimax.DEPTH--;
 			System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 			Minimax.FIXEDDEPTH = true;
-		}
-	}
-	
-	private static long lastRun = 0;
-	@SuppressWarnings("unused")
-	private static final void clean(){
-		long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-//		System.out.println(used);
-		if(used > 100000000 && lastRun + 10000 < System.currentTimeMillis()){
-			System.out.println("GC running");
-			lastRun = System.currentTimeMillis();
-			System.gc();
 		}
 	}
 
