@@ -1,11 +1,16 @@
 package bhestie.levpos.tests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.junit.Test;
 
@@ -127,7 +132,6 @@ public class TestState {
     @Test
 	public void testStateChild() throws Exception {
       	Minimax.player = whitePlayer;
-    	List<Pawn> p = new LinkedList<Pawn>();
     	
     	List<Pawn> initialState = new LinkedList<>();		
 		initialState.add(new Pawn(true, 4, 1, false));
@@ -166,7 +170,7 @@ public class TestState {
 		Minimax.player = whitePlayer;
 		State cs = new State(initialState, Minimax.player);
 		int i = 0;
-    	for(State s : cs.getChildren()){
+    	for(@SuppressWarnings("unused") State c : cs.getChildren()){
     		i++;
     	}
     	assertEquals(7, i);
@@ -174,7 +178,7 @@ public class TestState {
     	Minimax.player = blackPlayer;
 		cs = new State(initialState, Minimax.player);
     	i = 0;
-    	for(State s : cs.getChildren()){
+    	for(@SuppressWarnings("unused") State s : cs.getChildren()){
     		i++;
     	}
     	assertEquals(10, i);
@@ -458,10 +462,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 2));
 			if (found)
 				break;
@@ -484,10 +487,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
@@ -510,10 +512,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
@@ -533,10 +534,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -554,10 +554,9 @@ public class TestState {
 		initialPawnState.add(new Pawn(true, 7, 5, false));
 		
 		State currentState = new State(initialPawnState, true); // Black turn
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -577,10 +576,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -600,9 +598,7 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, false); // White turn
 		
-		Collection<State> afterState = currentState.getActions();
-
-		assertTrue(afterState.stream().allMatch(s -> s.getPawns().size() == initialPawnState.size()));
+		assertTrue(StreamSupport.stream(Spliterators.spliteratorUnknownSize(currentState.getChildGenerator(), Spliterator.ORDERED), false).allMatch(s -> s.getPawns().size() == initialPawnState.size()));
 	}
 	
 	@Test
@@ -767,7 +763,7 @@ public class TestState {
 		}catch(NullPointerException e){
 			;
 		}
-		Action a = s.getActions().stream().findFirst().get().getAction();
+		Action a = s.getChildren().stream().findFirst().get().getAction();
 		assertEquals("d3", a.getTo());
 		assertEquals("c3", a.getFrom());
 		assertEquals("W", a.getState());
@@ -788,10 +784,8 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
-		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found){
 				Action a = state.getAction();

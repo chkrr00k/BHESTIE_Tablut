@@ -5,9 +5,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
@@ -1204,6 +1207,9 @@ public class State {
 			this.sg = s.getChildGenerator();
 		}
 
+		public Stream<State> stream() {
+			return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this.sg, Spliterator.ORDERED), false);
+		}
 
 		@Override
 		public Iterator<State> iterator() {
