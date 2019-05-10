@@ -12,7 +12,7 @@ public final class Minimax {
 	
 	private static int CURRENTSCALINGUP = 0, CURRENTSCALINGDOWN = 0; //current times it has been signaled to go up or down;
 	
-	public static int TIMEOUT = 50; // In seconds
+	public static int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter;
 	
@@ -64,9 +64,9 @@ public final class Minimax {
 					} catch (InterruptedException e) {
 						break;
 					}
-					long free = Runtime.getRuntime().freeMemory();
+					long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
 					//System.out.println("\t\t\t\t\t\t\t\t\t\t\tFree = " + free);
-					if (free <= 512*1024*1024 /*MB*/) {
+					if (free <= 512 /*MB*/) {
 						System.gc();
 					}	
 				}
