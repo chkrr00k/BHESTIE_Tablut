@@ -55,7 +55,6 @@ public final class Minimax {
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
-//			Minimax.DEPTH++;
 			Minimax.scaleUp();
 		}
 		threadPool.pauseAll();
@@ -131,7 +130,6 @@ public final class Minimax {
 				Minimax.CURRENTSCALINGDOWN = 0;
 				Minimax.CURRENTSCALINGUP = 0;
 				System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
-	//			Minimax.FIXEDDEPTH = true;
 			}else{
 				Minimax.CURRENTSCALINGDOWN++;
 			}
@@ -150,7 +148,6 @@ class Interrupter implements Runnable {
 	public void run() {
 		try {
 			Thread.sleep(1000 * secs - 500);
-			//LockSupport.parkNanos(Minimax.timeout.getNano());
 			Minimax.interrupt();
 			System.out.println("Signaled"); // TODO remove in the last commit
 		} catch (Exception e) {

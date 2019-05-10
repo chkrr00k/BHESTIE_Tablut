@@ -51,12 +51,18 @@ public class Main {
 	private static final String TIMEOUT_FLAG = "-l";
 	private static final String HELP_FLAG = "-h";
 	private static final String HOST_FLAG = "-H";
+	private static final String SCALING_UP_FLAG = "-s:up";
+	private static final String SCALING_DOWN_FLAG = "-s:dw";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
 			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
+			+ "\t" + SCALING_DOWN_FLAG + " <n>\tThe times the process have to signaled to be scaled down in depth "
+					+ "(default: " + Minimax.SCALINGFACTORDOWN + ")\n"
+			+ "\t" + SCALING_UP_FLAG + " <n>\tThe times the process have to signaled to be scaled up in depth "
+					+ "(default: " + Minimax.SCALINGFACTORUP + ")\n"
 			+ "\t" + HOST_FLAG + " <ip>\t\tThe game server host address you want to connect (default: " + host + ")\n"
 			+ "\t" + TIMEOUT_FLAG + " <n>\t\tTHe max timeout time (default: " + Minimax.TIMEOUT + ")\n";
 	
@@ -119,7 +125,24 @@ public class Main {
 					System.exit(-4);
 				}
 				break;
+			case SCALING_DOWN_FLAG:
+				try{
+					Minimax.SCALINGFACTORDOWN = Integer.parseInt(args[++i]);
+				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
+					System.err.println("You need to give me the scale factor you want!\n " + SCALING_DOWN_FLAG + " <number>");
+					System.exit(-4);
+				}
+				break;
+			case SCALING_UP_FLAG:
+				try{
+					Minimax.SCALINGFACTORUP = Integer.parseInt(args[++i]);
+				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
+					System.err.println("You need to give me the scale factor you want!\n " + SCALING_UP_FLAG + " <number>");
+					System.exit(-4);
+				}
+				break;
 			}
+			
 		}
 		if(defaultThreads){
 			ThreadPool.getInstance().setMaxThreads(4);		
@@ -128,8 +151,7 @@ public class Main {
 	
 	public static void main(String[] args) {
 		try{
-			//args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-			
+//			args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 			parse(args);
 			printLogo();
 			
@@ -171,7 +193,7 @@ public class Main {
 				} else {
 					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
 					currentState = actions.get(r.nextInt(actions.size()));
-					System.out.println("I lost, but i don't want to admit it");
+					System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
 				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
