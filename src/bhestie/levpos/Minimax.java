@@ -54,33 +54,12 @@ public final class Minimax {
 		interrupterThread.setDaemon(true);
 		threadPool.playAll();
 		interrupterThread.start();
-		Thread t = new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				while (true) {
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						break;
-					}
-					long free = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-					//System.out.println("\t\t\t\t\t\t\t\t\t\t\tFree = " + free);
-					if (free <= 512 /*MB*/) {
-						System.gc();
-					}	
-				}
-			}
-		});
-		t.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
 //			Minimax.DEPTH++;
 			Minimax.scaleUp();
 		}
-		t.interrupt();
-		t.stop();
 		threadPool.pauseAll();
 		return alphaBethResult;
 	}
