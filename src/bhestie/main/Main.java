@@ -85,7 +85,7 @@ public class Main {
 				break;
 			case THREAD_FLAG:
 				try{
-					ThreadPool.getInstance().addThreads(Integer.parseInt(args[++i]));
+					ThreadPool.getInstance().setMaxThreads(Integer.parseInt(args[++i]));
 					defaultThreads = false;
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
@@ -122,8 +122,7 @@ public class Main {
 			}
 		}
 		if(defaultThreads){
-			ThreadPool.getInstance().addThreads(4);		
-
+			ThreadPool.getInstance().setMaxThreads(4);		
 		}
 	}
 	
