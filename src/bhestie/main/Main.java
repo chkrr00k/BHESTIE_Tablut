@@ -4,10 +4,12 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
-import bhestie.levpos.HeuristicCalculatorGroup;
 import bhestie.levpos.Minimax;
 import bhestie.levpos.State;
+import bhestie.levpos.ThreadPool;
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Board;
 import bhestie.zizcom.Connector;
@@ -83,7 +85,7 @@ public class Main {
 				break;
 			case THREAD_FLAG:
 				try{
-					HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
+					ThreadPool.getInstance().addThreads(Integer.parseInt(args[++i]));
 					defaultThreads = false;
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
@@ -120,7 +122,7 @@ public class Main {
 			}
 		}
 		if(defaultThreads){
-			HeuristicCalculatorGroup.getInstance().addThreads(3);		
+			ThreadPool.getInstance().addThreads(4);		
 
 		}
 	}
@@ -168,7 +170,7 @@ public class Main {
 						currentState = unfold.get(unfoldSize - 1);
 					}
 				} else {
-					List<State> actions = currentState.getActions();
+					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
 					currentState = actions.get(r.nextInt(actions.size()));
 					System.out.println("I lost, but i don't want to admit it");
 				}
@@ -196,7 +198,8 @@ public class Main {
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");
-			HeuristicCalculatorGroup.getInstance().killAll();
+			e.printStackTrace();
+			ThreadPool.getInstance().killAll();
 			System.exit(-7);
 		}
 	}

@@ -1,13 +1,18 @@
 package bhestie.levpos;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
@@ -118,141 +123,25 @@ public class State {
 		return this.king;
 	}
 	
-	/**
-	 * Get the list of the next possible States.
-	 * @return The list of the next possible States.
-	 */
+	@Deprecated
 	public List<State> getActions(){
-		List<State> actions = new LinkedList<State>();
-
-		boolean symmetricalNorthSouth = true;
-		boolean symmetricalEastWest = true;
-		boolean symmetricalDiagonal = true;
-		boolean symmetricalAntiDiagonal = true;
-
-		// Check the symmetries
-		for (Pawn pawn : this.getPawns()) {
-			if (symmetricalNorthSouth && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalNorthSouth = false;
-			}
-			if (symmetricalEastWest && !this.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalEastWest = false;
-			}
-			if (symmetricalDiagonal && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalDiagonal = false;
-			}
-			if(symmetricalAntiDiagonal && !getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.king==pawn.king)) {
-				symmetricalAntiDiagonal = false;
-			}
-			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth || symmetricalAntiDiagonal)){
-				break;
-			}
-		}
-
-		Stream<Pawn> pawnToScanStream = this.getPawns().stream().filter(p -> p.filterByTurn(this.turn));
-
-		if (symmetricalEastWest){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getX()>= 5); // Takes only the high part, X from 5 to 9 (from E to I)
-		}
-		if (symmetricalNorthSouth){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= 5); // Takes only the high part, Y from 5 to 9
-		}
-		if (symmetricalDiagonal){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= p.getX()); // Takes only the lower triangle part
-		}
-		if (symmetricalAntiDiagonal){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getX() + p.getY() >= 10); // Takes only the lower triangle part (built in the anti-diagonal way)
-		}
-
-		Collection<Pawn> pawnToScan = pawnToScanStream.collect(Collectors.toList());
-
-		final boolean checkXY = !(symmetricalEastWest && symmetricalNorthSouth && symmetricalDiagonal && symmetricalAntiDiagonal); // if this -> it's simmetrical and I can check only the X assis
-		int stopDecrementX = 0, stopDecrementY = 0;
-		for (Pawn currentPawn : pawnToScan) {
-
-			stopDecrementX = (symmetricalEastWest && currentPawn.getX() == 5 ? 5 : 1);
-			for (int i = currentPawn.getX() + 1; i <= 9; i++) {
-				if (!this.checkXY(i, currentPawn.getY(), actions, currentPawn))
-					break;
-			}
-
-			for (int i = currentPawn.getX() - 1; i >= stopDecrementX; i--) {
-				if (!this.checkXY(i, currentPawn.getY(), actions, currentPawn))
-					break;
-			}
-
-			if (checkXY){
-				stopDecrementY = (symmetricalNorthSouth && currentPawn.getY() == 5 ? 5 : 1);
-				for (int i = currentPawn.getY() + 1; i <= 9; i++) {
-					if(!this.checkXY(currentPawn.getX(), i, actions, currentPawn)){
-						break;
-					}
-				}
-
-				for (int i = currentPawn.getY() - 1; i >= stopDecrementY; i--) {
-					if(!this.checkXY(currentPawn.getX(), i, actions, currentPawn)){
-						break;
-					}
-				}
-			}
-		}
-		
-		return actions;
+		throw new UnsupportedOperationException("This function was moved use getChildren() instead");
 	}
-
 	/**
-	 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
-	 * @param x The nex X position
-	 * @param y The new Y position
-	 * @param actions The list of next possible states
-	 * @param currentPawn The pawn that is moving
-	 * @return If it added a new action of not
+	 * Returns a generator that generates all possible combination of future states of the current state
+	 * @return an iterator to generate children
 	 */
-	private boolean checkXY(final int x, final int y, List<State> actions, Pawn currentPawn) {
-
-		final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
-		boolean haveToAddThePawn = !this.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
-
-		if (currentPawn.isWhite()
-				|| (currentPawn.isBlack() && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
-			haveToAddThePawn = haveToAddThePawn && !citadels.stream().anyMatch(c -> c.isXYInCitadel(x, y));
-		}
-
-		if (currentPawn.isBlack()
-				&& pawnInCitadel) { // pezzo nero e dentro una citadel, allora può muoversi solo dentro la sua citadel, non può andare in un'altra citadel
-			haveToAddThePawn = haveToAddThePawn && !citadels.stream().filter(c -> !c.isPawnInCitadel(currentPawn)).anyMatch(c -> c.isXYInCitadel(x, y));
-		}
-
-		haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
-
-		if (haveToAddThePawn) {
-			List<Pawn> newPawns = new ArrayList<>(this.getPawns());
-			newPawns.remove(currentPawn);
-			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
-			final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
-			newPawns.add(newPawn);
-			HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : this.historyStorage.clone()); // if eaten -> new storage
-			boolean drawCase = false;
-			try {
-				newHistoryStorage.add(newPawns);
-			}catch(IllegalArgumentException e) {
-				drawCase = true;
-			}
-			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
-			boolean haveToAddTheNewState = true;
-			if (!this.turn) { // White turn
-				// Check if is going to suicide
-				haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
-			}
-			if (haveToAddTheNewState) {
-				actions.add(newState);
-				HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
-				HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
-			}
-			return true;
-		}
-		return false;
+	public StateGenerator getChildGenerator() {
+		return new ParallelStateGenerator(this);
 	}
+	/**
+	 * Returns an Iterable object that generates all possible children of the current status
+	 * @return an Iterable object
+	 */
+	public StateChild getChildren(){
+		return new StateChild(this);
+	}
+
 	
 	public List<List<Position>> threatenKingRemaining(){
 		Pawn k = this.getKing();
@@ -317,48 +206,6 @@ public class State {
 		return result;
 	}
 
-	/**
-	 * Checks if (after moving a @param movedPawn) some pawns have to be eaten.
-	 * @param toX The new X position
-	 * @param toY The new Y position
-	 * @param movedPawn The pawn that is moved
-	 * @param newPawns List of new Pawns in the next state board
-	 * @return If some pawns have been eaten.
-	 */
-	private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
-		boolean haveEaten = false;
-		// Get all the "near" pawns (near means +1 or -1 in vertical or horizontal) 
-		List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.isBlack() != movedPawn.isBlack() && (Math.abs(p.getX() - toX) + Math.abs(p.getY()- toY) == 1)).collect(Collectors.toList());
-		int deltaX, deltaY;
-		boolean haveToEat = false;
-		
-		for (Pawn pawn : pawnOfInterest) {
-			deltaX = (pawn.getX() - toX)*2;
-			deltaY = (pawn.getY() - toY)*2;
-			final int partnerPositionX = deltaX + toX;
-			final int partnerPositionY = deltaY + toY;
-			haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX && p.getY() == partnerPositionY)) ||
-					(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
-					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
-
-			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
-				final int partnerPositionX_2 = pawn.getX() + (deltaY != 0 ? 1 : 0);
-				final int partnerPositionY_2 = pawn.getY() + (deltaX != 0 ? 1 : 0);
-				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
-						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
-				final int partnerPositionX_3 = pawn.getX() + (deltaY != 0 ? -1 : 0);
-				final int partnerPositionY_3 = pawn.getY() + (deltaX != 0 ? -1 : 0);
-				haveToEat = haveToEat && newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
-						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
-			}
-
-			if (haveToEat) {
-				newPawns.remove(pawn);
-				haveEaten = true;
-			}
-		}
-		return haveEaten;
-	}
 
 	/**
 	 * It generates a list with all the parents State of the current State
@@ -1074,4 +921,389 @@ public class State {
 		escapeRouteBlocked.add(Position.of(7, 8)); //VII
 		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
 	}
+
+	
+	public class StateGenerator implements Iterator<State>{
+		private final State s;
+		
+		private State next;
+		private boolean nextPresent;
+		
+		private boolean symmetricalNorthSouth;
+		private boolean symmetricalEastWest;
+		private boolean symmetricalDiagonal;
+		private boolean symmetricalAntiDiagonal;
+		
+		private final List<Pawn> pawnsToScan;
+		
+		private int stopDecrementX, stopDecrementY;
+		private final boolean checkAll;
+
+		private final Iterator<Pawn> pawnIter;
+		private Pawn currentPawn;
+		private int ei, wi, si, ni;
+		private boolean estop, wstop, sstop, nstop;
+			
+ 		public StateGenerator(State s) {
+			super();
+			this.s = s;
+			this.next = null;
+			this.nextPresent = false;
+			
+			this.symmetricalNorthSouth = true;
+			this.symmetricalEastWest = true;
+			this.symmetricalDiagonal = true;
+			this.symmetricalAntiDiagonal = !this.s.turn; // Only for white
+			
+			this.pawnsToScan = this.filterPawns();
+			this.stopDecrementX = 0;
+			this.stopDecrementY = 0;
+			
+			this.checkAll = !(this.symmetricalEastWest && this.symmetricalNorthSouth && this.symmetricalDiagonal && this.symmetricalAntiDiagonal);
+			this.pawnIter = this.pawnsToScan.iterator();
+			
+			this.currentPawn = null;
+			this.ei = 0;
+			this.si = 0;
+			this.ni = 0;
+			this.wi = 0;
+			
+			this.estop = false;
+			this.wstop = false;
+			this.sstop = false;
+			this.nstop = false;
+			
+			this.refreshCurrentPawn();
+			
+		}
+
+		private List<Pawn> filterPawns(){
+			// Check the symmetries
+			for (Pawn pawn : this.s.getPawns()) {
+				if (this.symmetricalNorthSouth && !this.s.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalNorthSouth = false;
+				}
+				if (this.symmetricalEastWest && !this.s.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalEastWest = false;
+				}
+				if (this.symmetricalDiagonal && !this.s.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalDiagonal = false;
+				}
+				if(this.symmetricalAntiDiagonal && !this.s.getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.king==pawn.king)) {
+					this.symmetricalAntiDiagonal = false;
+				}
+				if(!(this.symmetricalDiagonal || this.symmetricalEastWest || this.symmetricalNorthSouth || this.symmetricalAntiDiagonal)){
+					break;
+				}
+			}
+
+			Stream<Pawn> pawnToScanStream = this.s.getPawns().stream().filter(p -> p.filterByTurn(s.turn));
+
+			if (this.symmetricalEastWest){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getX() >= 5); // Takes only the high part, X from 5 to 9 (from E to I)
+			}
+			if (this.symmetricalNorthSouth){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= 5); // Takes only the high part, Y from 5 to 9
+			}
+			if (this.symmetricalDiagonal){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= p.getX()); // Takes only the lower triangle part
+			}
+			if (this.symmetricalAntiDiagonal){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getX() + p.getY() >= 10); // Takes only the lower triangle part (built in the anti-diagonal way)
+			}
+
+			return pawnToScanStream.collect(Collectors.toList());
+		}
+		
+		private void refreshCurrentPawn(){
+			if(this.pawnIter.hasNext()){
+				this.currentPawn = this.pawnIter.next();
+				
+				this.estop = false;
+				this.wstop = false;
+				this.sstop = false;
+				this.nstop = false;
+				
+				this.ei = this.currentPawn.getX() + 1;
+				this.si = this.currentPawn.getX() - 1;
+				this.stopDecrementX = (this.symmetricalEastWest && this.currentPawn.getX() == 5 ? 5 : 1);
+				if(this.checkAll){
+					this.ni = this.currentPawn.getY() + 1;
+					this.wi = this.currentPawn.getY() - 1;
+					this.stopDecrementY = (this.symmetricalNorthSouth && currentPawn.getY() == 5 ? 5 : 1);
+				}
+				this.nextPresent = true;
+			}else{
+				this.nextPresent = false;
+			}
+		}
+		/**
+		 * Get the list of the next possible States.
+		 * @return The list of the next possible States.
+		 */
+		private boolean generateNext(){
+			Optional<State> tmp = Optional.empty();
+			boolean found = false;
+			if(this.nextPresent){
+				while(!found){
+					if(!this.estop && this.ei <= 9) {
+						if (this.nextPresent = (tmp = this.processPosition(this.ei++, this.currentPawn.getY(), this.currentPawn)).isPresent()){
+							this.next = tmp.get();
+							found = true;
+						}else{
+							this.estop = true;
+						}
+					}else if(!this.sstop && this.si >= this.stopDecrementX){
+						if (this.nextPresent = (tmp = this.processPosition(this.si--, this.currentPawn.getY(), this.currentPawn)).isPresent()){
+							this.next = tmp.get();
+							found = true;
+						}else{
+							this.sstop = true;
+						}
+					}else if(!this.nstop && this.checkAll && this.ni <= 9){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.ni++, this.currentPawn)).isPresent()){
+							this.next = tmp.get();
+							found = true;
+						}else{
+							this.nstop = true;
+						}
+					}else if(!this.wstop && this.checkAll && this.wi >= this.stopDecrementY){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.wi--, this.currentPawn)).isPresent()){
+							this.next = tmp.get();
+							found = true;
+						}else{
+							this.wstop = true;
+						}
+					}else{
+						if(this.pawnIter.hasNext()){
+							this.refreshCurrentPawn();
+						}else{
+							break;
+						}
+					}
+				}
+				if(!found){
+					this.nextPresent = false;
+				}
+			}
+			return this.nextPresent;
+		}
+
+		/**
+		 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
+		 * @param x The nex X position
+		 * @param y The new Y position
+		 * @param actions The list of next possible states
+		 * @param currentPawn The pawn that is moving
+		 * @return If it added a new action of not
+		 */
+		private Optional<State> processPosition(final int x, final int y, Pawn currentPawn) {
+			Optional<State> result = Optional.empty();
+			final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
+			boolean haveToAddThePawn = !s.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
+
+			if (currentPawn.isWhite()
+					|| (currentPawn.isBlack() && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
+				haveToAddThePawn = haveToAddThePawn && !citadels.stream().anyMatch(c -> c.isXYInCitadel(x, y));
+			}
+
+			if (currentPawn.isBlack()
+					&& pawnInCitadel) { // pezzo nero e dentro una citadel, allora può muoversi solo dentro la sua citadel, non può andare in un'altra citadel
+				haveToAddThePawn = haveToAddThePawn && !citadels.stream().filter(c -> !c.isPawnInCitadel(currentPawn)).anyMatch(c -> c.isXYInCitadel(x, y));
+			}
+
+			haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
+
+			if (haveToAddThePawn) {
+				List<Pawn> newPawns = new ArrayList<>(s.getPawns());
+				newPawns.remove(currentPawn);
+				Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
+				final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
+				newPawns.add(newPawn);
+				HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : s.historyStorage.clone()); // if eaten -> new storage
+				boolean drawCase = false;
+				try {
+					newHistoryStorage.add(newPawns);
+				}catch(IllegalArgumentException e) {
+					drawCase = true;
+				}
+				State newState = new State(newPawns, !s.turn, newHistoryStorage, s, drawCase);
+				boolean haveToAddTheNewState = true;
+				if (!s.turn) { // White turn
+					// Check if is going to suicide
+					haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
+				}
+				if (haveToAddTheNewState) {
+					result = Optional.of(newState);
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Checks if (after moving a @param movedPawn) some pawns have to be eaten.
+		 * @param toX The new X position
+		 * @param toY The new Y position
+		 * @param movedPawn The pawn that is moved
+		 * @param newPawns List of new Pawns in the next state board
+		 * @return If some pawns have been eaten.
+		 */
+		private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
+			boolean haveEaten = false;
+			// Get all the "near" pawns (near means +1 or -1 in vertical or horizontal) 
+			List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.isBlack() != movedPawn.isBlack() && (Math.abs(p.getX() - toX) + Math.abs(p.getY()- toY) == 1)).collect(Collectors.toList());
+			int deltaX, deltaY;
+			boolean haveToEat = false;
+			
+			for (Pawn pawn : pawnOfInterest) {
+				deltaX = (pawn.getX() - toX)*2;
+				deltaY = (pawn.getY() - toY)*2;
+				final int partnerPositionX = deltaX + toX;
+				final int partnerPositionY = deltaY + toY;
+				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX && p.getY() == partnerPositionY)) ||
+						(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
+						(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
+
+				if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
+					final int partnerPositionX_2 = pawn.getX() + (deltaY != 0 ? 1 : 0);
+					final int partnerPositionY_2 = pawn.getY() + (deltaX != 0 ? 1 : 0);
+					haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
+							(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
+					final int partnerPositionX_3 = pawn.getX() + (deltaY != 0 ? -1 : 0);
+					final int partnerPositionY_3 = pawn.getY() + (deltaX != 0 ? -1 : 0);
+					haveToEat = haveToEat && newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
+							(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
+				}
+
+				if (haveToEat) {
+					newPawns.remove(pawn);
+					haveEaten = true;
+				}
+			}
+			return haveEaten;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return this.generateNext();
+		}
+
+		@Override
+		public State next() {
+			if(this.nextPresent){
+				return this.next;
+			}else{
+				throw new IllegalStateException("You need to call hasNext() first");
+			}
+		}
+		
+		protected State getState() {
+			return this.s;
+		}
+		
+	}
+	public class StateChild implements Iterable<State>{
+		private StateGenerator sg;
+		
+		public StateChild(State s) {
+			super();
+			this.sg = s.getChildGenerator();
+		}
+
+		public Stream<State> stream() {
+			return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this.sg, Spliterator.ORDERED), false);
+		}
+
+		@Override
+		public Iterator<State> iterator() {
+			return this.sg;
+		}
+	}
+	
+	public class ParallelStateGenerator extends State.StateGenerator {
+		private static final int QUEUESIZE = 3;
+		
+		private boolean finishedToGenerate = false;
+		private Queue<State> generatedQueue = new ConcurrentLinkedQueue<>();
+		
+		public ParallelStateGenerator(State s) {
+			super(s);
+			
+			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
+			for (int i = 1; i < QUEUESIZE; i++) {
+				try {
+					ThreadPool.stackQueuesToCalculate.put(this);
+				} catch (InterruptedException e) {}
+			}
+		}
+		
+		private Optional<State> getNext() {
+			synchronized (this) {
+				if (super.hasNext())
+					return Optional.of(super.next());
+				else
+					return Optional.empty();
+			}
+		}
+		
+		public void generateAndCache() {
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+				State n = next.get();
+				if (n.isTerminal())
+					n.getUtility();
+				else 
+					n.getHeuristic();
+				n.threatenKingRemaining();
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
+			}
+		}
+		
+		public void generate() {
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
+			}
+		}
+		
+		private Optional<State> next = Optional.empty();
+		@Override
+		public boolean hasNext() {
+			if (this.generatedQueue.isEmpty()) { // Nothing cached, calculate!
+				this.generate();
+			}
+			if (this.finishedToGenerate && this.generatedQueue.isEmpty()) { // Finished to generate and nothing in queue
+				return false;
+			} else {
+				this.next = Optional.of(this.generatedQueue.poll());
+				if (!this.finishedToGenerate)
+					try {
+						ThreadPool.stackQueuesToCalculate.put(this); // Require to pool thread to fill the empty space!
+					} catch (InterruptedException e) {
+					} 
+			}
+			return true;
+		}
+		
+		@Override
+		public State next() {
+			if (!this.next.isPresent())
+				throw new IllegalStateException("You must call hasNext() before!");
+			State next = this.next.get();
+			this.next = Optional.empty();
+			return next;
+		}
+		
+	}
+
 }

@@ -7,13 +7,13 @@ public final class Minimax {
 	public static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
 	public static int DEPTH = 3;
 	
-	public static int TIMEOUT = 50; // In seconds
+	public static int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter;
 	
 	public static final long MAXVALUE = 1000000L;
 	
-	private static HeuristicCalculatorGroup heuristicCalculatorGroup = HeuristicCalculatorGroup.getInstance();
+	private static ThreadPool threadPool = ThreadPool.getInstance();
 	
 	public static void init() {
 		interrupter = new Interrupter(TIMEOUT);
@@ -39,13 +39,14 @@ public final class Minimax {
 	 * @param depth Max depth
 	 * @return The alphabeth value
 	 */
+	@SuppressWarnings("deprecation")
 	public static final long alphaBethInit(final State state) {
 		maxHeuFound = -Minimax.MAXVALUE;
 		Minimax.signal = false;
 		nodeExplored = 0;
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);
-		heuristicCalculatorGroup.playAll();
+		threadPool.playAll();
 		interrupterThread.start();
 		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
 		interrupterThread.interrupt();
@@ -53,7 +54,7 @@ public final class Minimax {
 			Minimax.DEPTH++;
 			System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 		}
-		heuristicCalculatorGroup.pauseAll();
+		threadPool.pauseAll();
 		return alphaBethResult;
 	}
 	
@@ -84,7 +85,7 @@ public final class Minimax {
 			return heuristic;
 		} else if(max){
 			v = -Minimax.MAXVALUE;
-			for(State c : s.getActions()){
+			for(State c : s.getChildren()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
 				if(beth <= alpha){
@@ -94,7 +95,7 @@ public final class Minimax {
 			}
 		}else{
 			v = Minimax.MAXVALUE;
-			for(State c : s.getActions()){
+			for(State c : s.getChildren()){
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
 				if(beth <= alpha){
@@ -111,18 +112,6 @@ public final class Minimax {
 			Minimax.DEPTH--;
 			System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
 			Minimax.FIXEDDEPTH = true;
-		}
-	}
-	
-	private static long lastRun = 0;
-	@SuppressWarnings("unused")
-	private static final void clean(){
-		long used  = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-//		System.out.println(used);
-		if(used > 100000000 && lastRun + 10000 < System.currentTimeMillis()){
-			System.out.println("GC running");
-			lastRun = System.currentTimeMillis();
-			System.gc();
 		}
 	}
 
