@@ -4,15 +4,37 @@ import java.util.List;
 
 public final class Minimax {
 	
-	public static boolean FIXEDDEPTH = false; // If true the DEPTH can't be modified
+	/**
+	 * If the scaling system is disabled.<br/>
+	 * If true the depth can't be modified.
+	 * @see Minimax.DEPTH
+	 */
+	public static boolean FIXEDDEPTH = false;
+	/**
+	 * Current depth at which the program is operating. It's also the starting depth position.
+	 * @see Minimax.FIXEDDEPTH
+	 */
 	public static int DEPTH = 3; // current depth
-	
+	/**
+	 * Time the algorithm can be executed before performing a scaling up.<br/>
+	 * If set at 0 it updates every time it gets executed, if it's at 1 it gets executed two times and then it gets updated.<br/> 
+	 * If the scaling system is disabled this part is ignored
+	 * @see Minimax.DEPTH
+	 * @see Minimax.FIXEDDEPTH
+	 */
 	public static int SCALINGFACTORUP = 10; // time it has to be signaled to start scaling up
+	/**
+	 * Time the algorithm can be signaled before performing a scaling up.<br/>
+	 * If set at 0 it updates every time it gets signaled, if it's at 1 it gets signaled two times and then it gets updated.<br/> 
+	 * If the scaling system is disabled this part is ignored
+	 * @see Minimax.DEPTH
+	 * @see Minimax.FIXEDDEPTH
+	 */
 	public static int SCALINGFACTORDOWN = 0; // time it has to be signaled to start scaling down
 	
 	private static int CURRENTSCALINGUP = 0, CURRENTSCALINGDOWN = 0; //current times it has been signaled to go up or down;
 	
-	public static int TIMEOUT = 60; // In seconds
+	public static int TIMEOUT = 59; // In seconds
 	
 	private static Interrupter interrupter;
 	
@@ -45,7 +67,7 @@ public final class Minimax {
 	 * @return The alphabeth value
 	 */
 	public static final long alphaBethInit(final State state) {
-		maxHeuFound = -Minimax.MAXVALUE;
+		maxHeuFound = - Minimax.MAXVALUE;
 		Minimax.signal = false;
 		
 		nodeExplored = 0;
@@ -87,7 +109,7 @@ public final class Minimax {
 			}
 			return heuristic;
 		} else if(max){
-			v = -Minimax.MAXVALUE;
+			v = - Minimax.MAXVALUE;
 			for(State c : s.getChildren()){
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
@@ -109,7 +131,7 @@ public final class Minimax {
 		return v;
 	}
 
-	public static void scaleUp(){
+	private static void scaleUp(){
 		if(!Minimax.FIXEDDEPTH){
 			if(Minimax.CURRENTSCALINGUP >= Minimax.SCALINGFACTORUP - 1){
 				Minimax.DEPTH++;

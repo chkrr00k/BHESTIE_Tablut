@@ -130,7 +130,7 @@ public class Main {
 					Minimax.SCALINGFACTORDOWN = Integer.parseInt(args[++i]);
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the scale factor you want!\n " + SCALING_DOWN_FLAG + " <number>");
-					System.exit(-4);
+					System.exit(-10);
 				}
 				break;
 			case SCALING_UP_FLAG:
@@ -138,7 +138,7 @@ public class Main {
 					Minimax.SCALINGFACTORUP = Integer.parseInt(args[++i]);
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the scale factor you want!\n " + SCALING_UP_FLAG + " <number>");
-					System.exit(-4);
+					System.exit(-11);
 				}
 				break;
 			}
@@ -152,6 +152,7 @@ public class Main {
 	public static void main(String[] args) {
 		try{
 //			args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+
 			parse(args);
 			printLogo();
 			
