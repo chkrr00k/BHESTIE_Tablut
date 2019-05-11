@@ -11,7 +11,7 @@ public class ThreadPool {
 
 	private List<PoolThread> threads = new ArrayList<>();
 
-	public static final SynchronousQueue<ParallelStateGenerator> stackQueuesToCalculate = new SynchronousQueue<>();
+	public static SynchronousQueue<ParallelStateGenerator> stackQueuesToCalculate = new SynchronousQueue<>();
 
 	private ThreadPool() {}
 	private static ThreadPool instance = new ThreadPool();

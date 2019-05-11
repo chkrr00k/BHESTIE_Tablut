@@ -1228,11 +1228,11 @@ public class State {
 		
 		public ParallelStateGenerator(State s) {
 			super(s);
-			
+			ParallelStateGenerator p = this;
 			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
 			for (int i = 1; i < QUEUESIZE; i++) {
 				try {
-					ThreadPool.stackQueuesToCalculate.put(this);
+					ThreadPool.stackQueuesToCalculate.put(p);
 				} catch (InterruptedException e) {}
 			}
 		}
