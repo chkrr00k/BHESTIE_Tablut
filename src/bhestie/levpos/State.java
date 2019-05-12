@@ -14,6 +14,21 @@ import bhestie.zizcom.Action;
 
 public class State {
 	public static int MULTIPLICATOR = 1;
+
+	//fino al turno 7
+	//essere mangiati 75
+    //mangiare 200
+
+    //dopo turno 7
+    //essere mangiati 125
+    //mangiare 150
+
+    //dopo la 30
+    //essere mangiati 300
+    //mangiare 25
+
+    //dopo la
+
 	
 	// Black heuristic
 	private static final int BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL = 800;
@@ -21,10 +36,24 @@ public class State {
 	private static final int BLACK_HEURISTIC_POINTS_FOR_EATING_WHITES = 100;
 	
 	// White heuristic
-	private static final long WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS = 0;
-	private static final long WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS = 1000;
+	private static final long WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS = 180;
+	private static final long WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS = 720;
+	private static final long BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS / 16;//45
 
-	
+
+
+	private static final long WHITE_HEURISTIC_REMAINING_POSITION_FOR_CAPTURE_KING = 30;
+
+	private static final long DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 10;
+
+	private static final long WHITE_PAWNS_ON_MAIN_AXIS = 28;
+
+	private static final long WHITE_KING_ESCAPES = 40;
+
+	private static final long WHITE_KING_MORE_ESCAPES_THEN_PARENT = 0;
+
+	private static final long WHITE_KING_IN_GOOD_POSITION = 40;
+
 	public static int TURN = 0;
 	
 	private Long heuristicCache = null; 	// Cached heuristic
@@ -530,7 +559,7 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicBlack() {
-
+		/*
 		// Avoid to let the enemy win
 		int kingEscape = this.kingEscape();
 		if (kingEscape > 0) {
@@ -587,8 +616,8 @@ public class State {
 			long currentResultForWhitePawns = (long) (Math.log(tmp) * -maxResultForWhitePawns / Math.log(10));
 			result += currentResultForWhitePawns;
 		}
-		
-		//result = 10; // XXX disabled
+		*/
+		int result = 10; // XXX disabled
 		
 		return result * MULTIPLICATOR;
 	}
@@ -647,7 +676,10 @@ public class State {
 		}
 		
 		long result = 0;
-		
+
+		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+
+		/*
 		// Check for number of black pawns
 		{
 			long maxResultForBlackPawns = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS;
@@ -658,25 +690,27 @@ public class State {
 			
 			result += currentResultForWhitePawns;
 		}
+		*/
 		
 		// Check for number of white pawns (the more are the more it increases)
-		/*{
+		{
 			long maxResultForWhitePawns = WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS;
 			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
-			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
-			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
-			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
+			// ( e ^ ( (9-x)/10 ) - 1 ) * ( 1 / ( e ^ (9/10) - 1 ) )
+			//TODO flippare la parabola (conta poco perdere i primi e molto perdere tanti
+			double tmp = ( Math.exp(9d/10) - 1 ); // Moltiplicatore finale
+			long currentResultForWhitePawns = (long) (( Math.exp((9d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
 			result += currentResultForWhitePawns;
-		}*/
+		}
 		
 		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
 		
 		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		/*int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
+		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+		result += remainingPositionForSurroundingKing * WHITE_HEURISTIC_REMAINING_POSITION_FOR_CAPTURE_KING;
 
 		if (State.TURN > 2 && State.TURN <= 5) {
-			result += this.rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
+			result += (6 - this.rawDistanceFromEscape()) * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
 		}
 
 		if (State.TURN < 3) {
@@ -684,7 +718,21 @@ public class State {
 		} else if (State.TURN == 3) {
 			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS / 2;
 		}
-		
+
+		if (State.TURN > 2) {
+			int kingEscapes = this.kingEscape();
+			if(kingEscapes >= 2)
+				return Minimax.MAXVALUE;
+			result += kingEscapes * WHITE_KING_ESCAPES;
+
+
+			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+				result += WHITE_KING_IN_GOOD_POSITION;
+			}
+
+		}
+
+		/*
 		if (State.TURN > 2) {
 			int kingEscapes = this.kingEscape();
 			int parentKingEscapes = this.parent.kingEscape();
@@ -698,11 +746,12 @@ public class State {
 			}
 			
 		}
+		*/
 
-		result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+		//result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-*/
+		//result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
+
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
 	}
