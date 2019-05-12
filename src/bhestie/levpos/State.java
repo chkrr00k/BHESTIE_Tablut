@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,6 +17,7 @@ import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
 public class State {
+	
 	private static final int MULTIPLICATOR = 10;
 	
 	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 85 * MULTIPLICATOR;
@@ -41,6 +41,8 @@ public class State {
 
 	
 	public static int TURN = 0;
+	
+	private static final ThreadPool threadPool = ThreadPool.getInstance();
 	
 	private Long heuristicCache = null; 	// Cached heuristic
 	private Boolean isTerminalCache = null;	// Cache isTerminal
@@ -1224,16 +1226,14 @@ public class State {
 		private static final int QUEUESIZE = 3;
 		
 		private boolean finishedToGenerate = false;
-		private Queue<State> generatedQueue = new ConcurrentLinkedQueue<>();
+		private ConcurrentLinkedQueue<State> generatedQueue = new ConcurrentLinkedQueue<>();
 		
 		public ParallelStateGenerator(State s) {
 			super(s);
-			ParallelStateGenerator p = this;
+			
 			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
-			for (int i = 1; i < QUEUESIZE; i++) {
-				try {
-					ThreadPool.stackQueuesToCalculate.put(p);
-				} catch (InterruptedException e) {}
+			for (int i = 0; i < QUEUESIZE; i++) {
+				threadPool.add(this);
 			}
 		}
 		
@@ -1287,10 +1287,7 @@ public class State {
 			} else {
 				this.next = Optional.of(this.generatedQueue.poll());
 				if (!this.finishedToGenerate)
-					try {
-						ThreadPool.stackQueuesToCalculate.put(this); // Require to pool thread to fill the empty space!
-					} catch (InterruptedException e) {
-					} 
+					threadPool.add(this);
 			}
 			return true;
 		}

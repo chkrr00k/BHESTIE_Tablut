@@ -1,17 +1,17 @@
 package bhestie.levpos;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import bhestie.levpos.State.ParallelStateGenerator;
 
 public class ThreadPool {
 
-	private List<PoolThread> threads = new ArrayList<>();
+	private ExecutorService threads = Executors.newCachedThreadPool();
 
-	public static SynchronousQueue<ParallelStateGenerator> stackQueuesToCalculate = new SynchronousQueue<>();
+	public static final BlockingDeque<ParallelStateGenerator> dequeToCalculate = new LinkedBlockingDeque<>();
 
 	private ThreadPool() {}
 	private static ThreadPool instance = new ThreadPool();
@@ -19,77 +19,43 @@ public class ThreadPool {
 		return instance;
 	}
 
-	public void addThreads(int num) {
-		for (int i = 0; i < num; i++) {
-			PoolThread t = new PoolThread();
-			t.setDaemon(true);
-			this.addThread(t);
-		}
+	public void setMaxThreads(int num) {
+		this.threads = Executors.newFixedThreadPool(num);
 	}
-
-	private void addThread(PoolThread t) {
-		this.threads.add(t);
-		if (!t.isAlive())
-			t.start();
+	
+	private static final PoolThread poolThread = new PoolThread();
+	public void add(ParallelStateGenerator stateGenerator) {
+		dequeToCalculate.add(stateGenerator);
+		this.threads.submit(poolThread);
 	}
-
-	public void killAll() {
-		for (PoolThread thread : this.threads) {
-			thread.kill();
-		}
-		stackQueuesToCalculate.clear();
-	}
-
-	public void playAll() {
-		for (PoolThread thread : this.threads) {
-			thread.play();
-		}
-	}
-
+	
 	public void pauseAll() {
-		for (PoolThread thread : this.threads) {
-			thread.pause();
-		}
-		stackQueuesToCalculate.clear();
+		//this.threads.shutdownNow();
+		//this.threads = Executors.newFixedThreadPool(4);
+		dequeToCalculate.clear();
+	}
+	
+	public void killAll() {
+		this.threads.shutdownNow();
+		dequeToCalculate.clear();
 	}
 
 }
 
-class PoolThread extends Thread {
-	private boolean running = false;
-	private Semaphore semaphore = new Semaphore(0);
-
+class PoolThread extends Thread implements Runnable {
+	
 	public PoolThread() {
 		super("Parallel Pool Thread");
 	}
 
 	@Override
 	public void run() {
-		while (true) {
-			try {
-				while (running) {
-					ParallelStateGenerator stateGenerator = ThreadPool.stackQueuesToCalculate.take(); // sleep here until it gets the element
-					stateGenerator.generateAndCache();
-				}
-				this.semaphore.acquire();
-			} catch (Exception e) { // ignore and terminate thread
-				continue;
-			}
+		try {
+			ParallelStateGenerator stateGenerator = ThreadPool.dequeToCalculate.take();
+			if (stateGenerator != null)
+				stateGenerator.generateAndCache();
+		} catch (Exception e) {
 		}
-	}
-
-	@SuppressWarnings("deprecation")
-	public synchronized void kill() {
-		this.stop();
-	}
-
-	public synchronized void play() {
-		this.running = true;
-		this.semaphore.release();
-	}
-
-	public synchronized void pause() {
-		this.running = false;
 	}
 
 }
