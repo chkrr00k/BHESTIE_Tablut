@@ -544,10 +544,10 @@ public class State {
 		
 		long result = 0;
 		
-		long malusSouth = this.checkROI(1, 1, 9, 4, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 4 || p.position.y == 3)).count() < 2) ? 25 : 0;
+		long malusSouth = this.checkROI(1, 1, 9, 4, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 3 || p.position.y == 4)).count() < 2) ? 25 : 0;
 		long malusNorth = this.checkROI(1, 6, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 6 || p.position.y == 7)).count() < 2) ? 25 : 0;
-		long malusWest =  this.checkROI(6, 1, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 4 || p.position.x == 3)).count() < 2) ? 25 : 0;
-		long malusEast =  this.checkROI(1, 1, 4, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 6 || p.position.x == 7)).count() < 2) ? 25 : 0;
+		long malusWest =  this.checkROI(6, 1, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 6 || p.position.x == 7)).count() < 2) ? 25 : 0;
+		long malusEast =  this.checkROI(1, 1, 4, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 4 || p.position.x == 4)).count() < 2) ? 25 : 0;
 		
 		// Check for North-east octagon
 		long maxResultNorthEast = (200 - malusNorth - malusEast) * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
