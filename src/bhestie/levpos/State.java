@@ -15,20 +15,6 @@ import bhestie.zizcom.Action;
 public class State {
 	public static int MULTIPLICATOR = 1;
 
-	//fino al turno 7
-	//essere mangiati 75
-    //mangiare 200
-
-    //dopo turno 7
-    //essere mangiati 125
-    //mangiare 150
-
-    //dopo la 30
-    //essere mangiati 300
-    //mangiare 25
-
-    //dopo la
-
 	
 	// Black heuristic
 	private static final int BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL = 800;
