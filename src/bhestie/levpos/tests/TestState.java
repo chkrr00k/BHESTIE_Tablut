@@ -27,26 +27,6 @@ public class TestState {
     private static final boolean blackPlayer = !whitePlayer;
     
     @Test
-    public void test() {
-    	Minimax.player = blackPlayer;
-    	Minimax.DEPTH = 3;
-    	Minimax.FIXEDDEPTH = true;
-    	Minimax.init();
-    	
-    	List<Pawn> pawns = new LinkedList<>();
-    	pawns.add(new Pawn(false, 4, 2, true));
-    	pawns.add(new Pawn(true, 3, 2, false));
-    	pawns.add(new Pawn(false, 4, 5, false));
-    	pawns.add(new Pawn(false, 5, 3, false));
-    	
-    	State s = new State(pawns, Minimax.player);
-    	
-    	// XXX it fails at depth=2 after moving pawn from (C2) to (C1). King doesn't generates extra moves
-    	Minimax.alphaBethInit(s);
-    	
-    }
-    
-    @Test
     public void testDrawBlackTurn() {
     	Minimax.player = blackPlayer;
 		List<Pawn> pawns = new LinkedList<>();

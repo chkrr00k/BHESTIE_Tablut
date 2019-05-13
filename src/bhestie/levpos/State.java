@@ -124,8 +124,8 @@ public class State {
 	 * Returns a generator that generates all possible combination of future states of the current state
 	 * @return an iterator to generate children
 	 */
-	public StateGenerator getChildGenerator() {
-		return new ParallelStateGenerator(this);
+	public StateGenerator getChildGenerator() {//FIXEME was parallel
+		return new StateGenerator(this);
 	}
 	/**
 	 * Returns an Iterable object that generates all possible children of the current status
@@ -1168,43 +1168,43 @@ public class State {
 		 * @return The list of the next possible States.
 		 */
 		private boolean generateNext(){
-			Optional<State> tmp = Optional.empty();
+			OptionalState tmp = OptionalState.empty();
 			boolean found = false;
 			if(this.nextPresent){
 				while(!found){
 					if(!this.estop && this.ei <= 9) {
-						if (this.nextPresent = (tmp = this.processPosition(this.ei++, this.currentPawn.getY(), this.currentPawn)).isPresent()){
+						if (this.nextPresent = (tmp = this.processPosition(this.ei++, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
-						}else{
+						}else if(!tmp.isPresent()){
 							this.estop = true;
 						}
 					}else if(!this.sstop && this.si >= this.stopDecrementX){
-						if (this.nextPresent = (tmp = this.processPosition(this.si--, this.currentPawn.getY(), this.currentPawn)).isPresent()){
+						if (this.nextPresent = (tmp = this.processPosition(this.si--, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
-						}else{
+						}else if(!tmp.isPresent()){
 							this.sstop = true;
 						}
 					}else if(!this.nstop && this.checkAll && this.ni <= 9){
-						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.ni++, this.currentPawn)).isPresent()){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.ni++, this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
-						}else{
+						}else if(!tmp.isPresent()){
 							this.nstop = true;
 						}
 					}else if(!this.wstop && this.checkAll && this.wi >= this.stopDecrementY){
-						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.wi--, this.currentPawn)).isPresent()){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.wi--, this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
-						}else{
+						}else if(!tmp.isPresent()){
 							this.wstop = true;
 						}
 					}else{
 						if(this.pawnIter.hasNext()){
 							this.refreshCurrentPawn();
 						}else{
-							break;
+							break; // this break is evil
 						}
 					}
 				}
@@ -1223,8 +1223,8 @@ public class State {
 		 * @param currentPawn The pawn that is moving
 		 * @return If it added a new action of not
 		 */
-		private Optional<State> processPosition(final int x, final int y, Pawn currentPawn) {
-			Optional<State> result = Optional.empty();
+		private OptionalState processPosition(final int x, final int y, Pawn currentPawn) {
+			OptionalState result = OptionalState.empty();
 			final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
 			boolean haveToAddThePawn = !s.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
 
@@ -1260,7 +1260,9 @@ public class State {
 					haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
 				}
 				if (haveToAddTheNewState) {
-					result = Optional.of(newState);
+					result = OptionalState.of(newState);
+				}else{
+					result = OptionalState.invalid(newState);
 				}
 			}
 			return result;
@@ -1343,6 +1345,50 @@ public class State {
 		@Override
 		public Iterator<State> iterator() {
 			return this.sg;
+		}
+	}
+	
+	private static class OptionalState {
+		private State s;
+		private boolean isValid;
+		private boolean isPresent;
+		
+		private OptionalState(State s, boolean isValid, boolean isPresent) {
+			if(s == null){
+				this.s = null;
+				this.isValid = false;
+				this.isPresent = false;
+			}else{
+				this.s = s;
+				this.isValid = isValid;
+				this.isPresent = isPresent;
+			}
+		}
+		public State get() {
+			if(this.isPresent){
+				return this.s;
+			}else{
+				throw new NullPointerException();
+			}
+		}
+		public boolean isValid() {
+			return this.isValid;
+		}
+		public boolean isPresent() {
+			return this.isPresent;
+		}
+		public boolean isPresentValid(){
+			return this.isPresent() && this.isValid();
+		}
+
+		public static OptionalState of(State s){
+			return new OptionalState(s, true, true);
+		}
+		public static OptionalState empty(){
+			return new OptionalState(null, false, false);
+		}
+		public static OptionalState invalid(State s){
+			return new OptionalState(s, false, true);
 		}
 	}
 	
