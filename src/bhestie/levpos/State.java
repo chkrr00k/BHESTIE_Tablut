@@ -431,6 +431,8 @@ public class State {
 			return distanceRecord;
 		}
 	}
+
+	
 	
 	/**
 	*is positive to have pawn in escape positions for controlling that area
