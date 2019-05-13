@@ -301,28 +301,24 @@ public class State {
 				result = this.getUtilityValue();
 				if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 					if (!Minimax.player) { // White player
-						return -result;
-					} else {
-						return result;
+						result = -result;
 					}
 				} else { // Is terminal and black not win -> White wins
 					if (Minimax.player) { // Black player
-						return -result;
-					} else {
-						return result;
+						result = -result;
 					}
 				}
-			}
-			
-			if (!this.turn) { // Black turn
-				result = this.getHeuristicBlack();
-				if (!Minimax.player){
-					result = -result;
-				}
-			} else { // White turn
-				result = this.getHeuristicWhite();
-				if (Minimax.player){
-					result = -result;
+			} else { // Not terminal -> heuristic
+				if (!this.turn) { // Black turn
+					result = this.getHeuristicBlack();
+					if (!Minimax.player){
+						result = -result;
+					}
+				} else { // White turn
+					result = this.getHeuristicWhite();
+					if (Minimax.player){
+						result = -result;
+					}
 				}
 			}
 			this.heuristicCache = result;
@@ -676,10 +672,10 @@ public class State {
 		if (!king.isPresent()) { // No king -> black wins
 			this.isTerminalCache = true;
 			return true;
-		} else if (kingEscaped(king.get())) { // Re runs away -> white wins
+		} /*else if (kingEscaped(king.get())) { // Re runs away -> white wins
 			this.isTerminalCache = true;
 			return true;
-		}
+		}*/
 		this.isTerminalCache = false;
 		return false;
 	}
