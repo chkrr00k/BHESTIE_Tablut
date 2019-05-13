@@ -672,10 +672,10 @@ public class State {
 		if (!king.isPresent()) { // No king -> black wins
 			this.isTerminalCache = true;
 			return true;
-		} /*else if (kingEscaped(king.get())) { // Re runs away -> white wins
+		} else if (kingEscaped(king.get())) { // King runs away -> white wins
 			this.isTerminalCache = true;
 			return true;
-		}*/
+		}
 		this.isTerminalCache = false;
 		return false;
 	}
@@ -719,7 +719,7 @@ public class State {
 	 * @return A number that says if the board is a winning or losing board
 	 */
 	private long getUtilityValue() {
-		if (this.unfold().size() <= 2) { // If the move is the first or the second (hence the first for the player) is the best
+		if (this.unfold().size() == 1) { // If the move is the first or the second (hence the first for the player) is the best
 			return Long.MAX_VALUE;
 		} else {
 			return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
