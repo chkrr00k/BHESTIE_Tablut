@@ -56,7 +56,7 @@ public class Main {
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
-			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
+			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 4)\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
 			+ "\t" + SCALING_DOWN_FLAG + " <n>\tThe times the process have to signaled to be scaled down in depth "
@@ -145,7 +145,7 @@ public class Main {
 			
 		}
 		if(defaultThreads){
-			ThreadPool.getInstance().setMaxThreads(4);		
+      ThreadPool.getInstance().setMaxThreads(4);	
 		}
 	}
 	

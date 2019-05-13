@@ -17,27 +17,18 @@ import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
 public class State {
+  public static int MULTIPLICATOR = 1;
 	
-	private static final int MULTIPLICATOR = 10;
+	// Black heuristic
 	
-	private static final int REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC = 85 * MULTIPLICATOR;
+	// White heuristic
+	private static final long WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS = 0;
+	private static final long WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS = 1000;
 
-	//TODO is positive to be eaten for white? change paremeter if it is...
-	private static final int WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 30  * MULTIPLICATOR;
-	//if a state has less black pawns, it will have a more positive value because the malus
-	//BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC will be subtracted less times
-	private static final int BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = 40 * MULTIPLICATOR;
-
-	//raw distance from nearest escape, the more it is, the more malus we get
-	private static final int DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 15 * MULTIPLICATOR;
-
-	//having white pawn on main axis (default position) is a malus
-	private static final int WHITE_PAWNS_ON_MAIN_AXIS = -10 * MULTIPLICATOR;
-	private static final int WHITE_KING_ESCAPES = 50 * MULTIPLICATOR;
-	private static final int WHITE_KING_MORE_ESCAPES_THEN_PARENT = 10 * MULTIPLICATOR;
-	private static final long WHITE_KING_IN_GOOD_POSITION = 5 * MULTIPLICATOR;
-
-	private static final long BLACK_PAWNS_GOES_OUT_OF_CITADEL = 35 * MULTIPLICATOR;
+	
+	private static final int END_PREPARATION_PHASE = 7;
+	private static final int END_MAIN_PHASE = 16;
+	private static final int END_ATTACK_PHASE = 30;
 
 	
 	public static int TURN = 0;
@@ -301,6 +292,28 @@ public class State {
 	private long getHeuristic(double minPercentage) {
 		long result;
 		if (this.heuristicCache == null) {
+			
+			if (this.isTerminal()) {
+				if (drawCase){
+					this.utilityCache = 0L;
+					return 0;
+				}
+				result = this.getUtilityValue();
+				if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
+					if (!Minimax.player) { // White player
+						return -result;
+					} else {
+						return result;
+					}
+				} else { // Is terminal and black not win -> White wins
+					if (Minimax.player) { // Black player
+						return -result;
+					} else {
+						return result;
+					}
+				}
+			}
+			
 			if (!this.turn) { // Black turn
 				result = this.getHeuristicBlack();
 				if (!Minimax.player){
@@ -315,6 +328,10 @@ public class State {
 			this.heuristicCache = result;
 		} else {
 			result = this.heuristicCache;
+		}
+		
+		if (result == Long.MAX_VALUE) {
+			return result;
 		}
 		
 		// The following code set the percentage in order to set more weight the more the State is near the init State (the State I have to find the best move)
@@ -333,7 +350,30 @@ public class State {
 			result *= Math.min(percentage, 1);
 		}
 		
-		return Math.min(result, Minimax.MAXVALUE - 1);
+		return Math.min(result, Minimax.MAXVALUE);
+	}
+	
+	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult, boolean preferInternal) {
+		long currentResult = 0;
+		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
+		long numberOfWhitesOutOfInternalOctagon = this.checkROIQuantity(fromInternal.x, fromInternal.y, toInternal.x, toInternal.y, p -> p.isWhite() && !p.position.equals(excludeForInternal));
+		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
+		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
+		
+		if (numberOfWhitesOutOfExternalOctagon >= 2) {
+			maxResult = 0;
+		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
+			maxResult = 90 * maxResult / 200;
+		}
+		
+		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
+			currentResult = maxResult;
+		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
+			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
+		} else { 														// Non ho fatto nè quello interno nè quello esterno
+			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
+		}
+		return currentResult;
 	}
 	
 	/**
@@ -341,93 +381,165 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicBlack() {
-		if (this.isTerminal()){
-			return this.getUtility();
-		}
-		long result = 800;
-		
-		int numRouteBlocked = this.routeBlocked();
-		
-		if (numRouteBlocked >= 6) { // new heuristic. Do eat! Do not be eaten! Do stay in octagon
-			long eaten = this.pawns.stream().filter(p -> p.isWhite()).count() - this.parent.pawns.stream().filter(p -> p.isWhite()).count(); 
-			if (eaten > 0) {
-				result += WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC * eaten;
-			}
-			eaten =  this.pawns.stream().filter(p -> p.isBlack()).count() - this.parent.pawns.stream().filter(p -> p.isBlack()).count();
-			if (eaten > 0) {
-				result -= BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC * eaten;
-			}
-			if (numRouteBlocked == 8) {
-				result += 100000;
-			}
-			result -= 50 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
-		} 
-		if (numRouteBlocked < 8){ // Do create the octagon
-			//Number of blocked goal tiles
-			result += (numRouteBlocked * WHITE_KING_ESCAPES);
-			if(numRouteBlocked < this.parent.routeBlocked()){
-				result -= WHITE_KING_ESCAPES;
-			}
-		}
-		
+
+		// Avoid to let the enemy win
 		int kingEscape = this.kingEscape();
-		
-		if(this.checkROI(4, 4, 6, 6, p -> p.king)){
-			result += 20; // result = 7000;
-		}else if(kingEscape == 0) {
-			result += WHITE_KING_ESCAPES * 4;
-		}else{
-			result -= WHITE_KING_ESCAPES * kingEscape;
+		if (kingEscape > 0) {
+			return -Minimax.MAXVALUE;
 		}
 		
-		if(this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-			result -= WHITE_KING_IN_GOOD_POSITION;
+		// Negative if black has 3 or less pawns and white has still 2 pawns
+		if (this.pawns.stream().filter(p -> p.isBlack()).count() <= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() >= 2) {
+			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
 		}
 		
-		if(State.TURN < 7) { // preparation phase
-			//number of black in the corners
-			long blackInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isBlack()) 
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isBlack())
-					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isBlack())
-					+ this.checkROIQuantity(7, 1, 9, 3, p -> p.isBlack());
-			//number of white in the corners
-			long whiteInCorners = this.checkROIQuantity(7, 7, 9, 9, p -> p.isWhite()) 
-					+ this.checkROIQuantity(1, 7, 3, 9, p -> p.isWhite())
-					+ this.checkROIQuantity(1, 1, 3, 3, p -> p.isWhite())
-					+ this.checkROIQuantity(7, 1, 9, 3, p -> p.isWhite());
-			result += (blackInCorners * 2 - whiteInCorners) * 4; // it's positive black in corners and negative for blacks
-			// here is nice having black too
-			result += 10 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isBlack()));
-			// NOT nice if they are white
-			result -= 20 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 9, 9, holedROIPredicateFactory(1, 1, 9, 9).and(p -> p.isWhite()));;
-			// to avoid cycling
-			result -= 10.5 * MULTIPLICATOR * this.checkROIQuantity(1, 1, 1, 1, p -> (p.position.x == 1 || p.position.x == 9) 
-						&& (p.position.y == 1 || p.position.y == 9) 
-						&& p.isBlack());
+		final int octagonPoints;
+		final int eatingPoints;
+		final int notBeEatenPoints;
+		final int whiteKingGoodPositionPoints;
+		final int remainInCitadelsPoints;
+		final int kingAssaultPoints;
+		
+		if (State.TURN <= END_PREPARATION_PHASE) {
+			octagonPoints = 700;
+			eatingPoints = 50;
+			notBeEatenPoints = 125;
+			whiteKingGoodPositionPoints = 25;
+			remainInCitadelsPoints = 100;
+			kingAssaultPoints = 0;
+		} else if (State.TURN <= END_MAIN_PHASE) {
+			octagonPoints = 500;
+			eatingPoints = 100;
+			notBeEatenPoints = 176;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 124;
+			kingAssaultPoints = 0;
+		} else if (State.TURN <= END_ATTACK_PHASE) {
+			octagonPoints = 500;
+			eatingPoints = 150;
+			notBeEatenPoints = 150;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 10;
+			kingAssaultPoints = 90;
+		} else { // Desperation phase
+			octagonPoints = 400;
+			eatingPoints = 150;
+			notBeEatenPoints = 150;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 0;
+			kingAssaultPoints = 200;
 		}
 		
-		if (State.TURN <= 16) {
-			final int minPawnsInCitadel = (State.TURN < 8 ? 2 : 1);
-			long pawnsInCitadel = 0;
-			long pawnsInParentCitadel = 0;
+		long result = 0;
+		
+		long malusSouth = this.checkROI(1, 1, 9, 4, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 3 || p.position.y == 4)).count() < 2) ? 25 : 0;
+		long malusNorth = this.checkROI(1, 6, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 6 || p.position.y == 7)).count() < 2) ? 25 : 0;
+		long malusWest =  this.checkROI(6, 1, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 6 || p.position.x == 7)).count() < 2) ? 25 : 0;
+		long malusEast =  this.checkROI(1, 1, 4, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 4 || p.position.x == 4)).count() < 2) ? 25 : 0;
+		
+		
+		
+		// Check for North-east octagon
+		long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
+		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast, malusNorth > 0 || malusEast > 0);
+		result += resultNorthEast;
+		
+		// Check for North-west octagon
+		long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
+		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest, malusNorth > 0 || malusWest > 0);
+		result += resultNorthWest;
+		
+		// Check for South-east octagon
+		long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
+		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast, malusSouth > 0 || malusEast > 0);
+		result += resultSouthEast;
+		
+		// Check for South-west octagon
+		long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
+		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest, malusSouth > 0 || malusWest > 0);
+		result += resultSouthWest;
+		
+		// Check for number of black pawns (not be eaten)
+		{
+			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
+			final double currentResultForBlackPawns;
+			
+			if (numberOfBlackPawns >= 12) {
+				currentResultForBlackPawns = 2+5+7 + (numberOfBlackPawns - 4) * 2 / 4;
+			} else if (numberOfBlackPawns >= 8) {
+				currentResultForBlackPawns = 2+5 + (numberOfBlackPawns - 4) * 7 / 4;
+			} else if (numberOfBlackPawns >= 4) {
+				currentResultForBlackPawns = 2 + (numberOfBlackPawns - 4) * 5 / 4;
+			} else {
+				currentResultForBlackPawns = (numberOfBlackPawns - 4) * 2 / 4;
+			}
+			
+			result += currentResultForBlackPawns * notBeEatenPoints / 16;
+		}
+		
+		// Check for number of white pawns (the less are the more it increases) (eat)
+		{
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			final double currentResultForWhitePawns;
+			// ln( (x+1) / 9 ) / ( ln(9) * (-1) )
+			double tmp = ((double)(numberOfWhitePawns + 1)) / 10;
+			currentResultForWhitePawns = (long) (Math.log(tmp) * -eatingPoints / Math.log(10));
+			result += currentResultForWhitePawns;
+		}
+		
+		// White king in good position
+		if (!this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))) {
+			result += whiteKingGoodPositionPoints;
+		}
+		
+		// Remain in citadel
+		{
+			final int minPawnsInCitadel = (State.TURN < END_PREPARATION_PHASE ? 2 : 1);
+			long points = 0;
 			for (int i = 0; i < 4; i++) {
-				pawnsInCitadel = this.pawns.stream().filter(p -> citadels.get(0).isPawnInCitadel(p)).count();
-				if (pawnsInCitadel <= minPawnsInCitadel) {
-					pawnsInParentCitadel = this.parent.pawns.stream().filter(p -> citadels.get(0).isPawnInCitadel(p)).count();
-					if (pawnsInCitadel < pawnsInParentCitadel) {
-						result -= BLACK_PAWNS_GOES_OUT_OF_CITADEL * 4;
-					}
+				final int j = i;
+				if (this.pawns.stream().filter(p -> citadels.get(j).isPawnInCitadel(p)).count() >= minPawnsInCitadel) {
+					points += 24;
 				}
 			}
+			if (points == 96) {
+				points += 4;
+			}
+			result += points * remainInCitadelsPoints / 100;
 		}
 		
-		result += WHITE_KING_MORE_ESCAPES_THEN_PARENT * 2 * (kingEscape - this.parent.kingEscape());
-		
-		if (kingEscape != this.parent.kingEscape()) {
-			result = Minimax.MAXVALUE * 2 * (this.parent.kingEscape() - kingEscape);
+		// King assault
+		{
+			long points = 0;
+			long currentThreatenPositions = this.threatenKingRemaining().stream().flatMap(l -> l.stream()).count();
+			if (currentThreatenPositions == 3) {
+				points = 100;
+			} else if (currentThreatenPositions == 2) {
+				points = 50;
+			} else if (currentThreatenPositions == 1) {
+				points = 25;
+			}
+			
+			// King center of gravity dependency
+			int xBar = 0;
+			int yBar = 0;
+			final Pawn king = this.getKing();
+			for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
+				xBar += p.getX() - king.getX();
+				yBar += p.getY() - king.getY();
+			}
+			
+			if (xBar == 0 && yBar == 0) {
+				points += 100;
+			} else {
+				points += 100 /  Math.sqrt(xBar * xBar + yBar * yBar);
+			}
+			
+			result += points * kingAssaultPoints;
 		}
 		
-		return result;
+		//result = 10; // XXX disabled
+		return result * MULTIPLICATOR;
 	}
 	
 	public boolean veryUglyKingPosition() {
@@ -477,9 +589,39 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicWhite() {
-		long result = 370;
+	
+		// Negative if black has 3 or more pawns and white has only the king
+		if (this.pawns.stream().filter(p -> p.isBlack()).count() >= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() <= 1) {
+			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
+		}
+		
+		long result = 0;
+		
+		// Check for number of black pawns
+		{
+			long maxResultForBlackPawns = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS;
+			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
+			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
+			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
+			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfBlackPawns)/10) - 1 ) * maxResultForBlackPawns / tmp);
+			
+			result += currentResultForWhitePawns;
+		}
+		
+		// Check for number of white pawns (the more are the more it increases)
+		/*{
+			long maxResultForWhitePawns = WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS;
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
+			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
+			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
+			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
+			result += currentResultForWhitePawns;
+		}*/
+		
+		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+		
 		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+		/*int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
 		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
 
 		if (State.TURN > 2 && State.TURN <= 5) {
@@ -509,8 +651,9 @@ public class State {
 		result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-
-		return result;
+*/
+		result = 10; // XXX disabled
+		return result * MULTIPLICATOR;
 	}
 	
 	/**
@@ -530,7 +673,6 @@ public class State {
 			return true;
 		}
 		Optional<Pawn> king = this.getPawns().stream().filter(p -> p.king).findAny();
-		// XXX comprimere gli if di sotto
 		if (!king.isPresent()) { // No king -> black wins
 			this.isTerminalCache = true;
 			return true;
@@ -560,19 +702,16 @@ public class State {
 				this.utilityCache = 0L;
 				return 0;
 			}
+			result = this.getUtilityValue();
 			if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
-				result = getUtilityBlack();
 				if (!Minimax.player) { // White player
 					result = -result;
 				}
 			} else { // Is terminal and black not win -> White wins
-				result = getUtilityWhite();
 				if (Minimax.player) { // Black player
 					result = -result;
 				}
 			}
-		} else {
-			result = this.getHeuristic(); // In case you ask getUtility and it's not a terminalState -> returns the getHeuristic value
 		}
 		
 		this.utilityCache = result;
@@ -583,25 +722,14 @@ public class State {
 	 * The biggest value the more "good" is the board
 	 * @return A number that says if the board is a winning or losing board
 	 */
-	private long getUtilityBlack() {
-		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il nero.
-		// Valore alto = la mossa è migliore per il nero
-		
-		return Minimax.MAXVALUE - (this.unfold().size() - 1) * 5000;
+	private long getUtilityValue() {
+		if (this.unfold().size() <= 2) { // If the move is the first or the second (hence the first for the player) is the best
+			return Long.MAX_VALUE;
+		} else {
+			return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
+		}
 	}
 	
-	/**
-	 * The biggest value the more "good" is the board
-	 * @return A number that says if the board is a winning or losing board
-	 */
-	private long getUtilityWhite() {
-		// TODO da scrivere. Viene chiamata quando la scacchiera è vincente per il bianco.
-		// Valore alto = la mossa è migliore per il bianco
-	
-		return this.getUtilityBlack();
-		//return Long.MAX_VALUE - (this.unfold().size() - 1) * 500;
-	}
-
 	/**
 	 * Prints the board in a String
 	 * @return The board as a String
