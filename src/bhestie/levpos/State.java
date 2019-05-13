@@ -255,6 +255,22 @@ public class State {
 		}
 		return false;
 	}
+
+	public int whitePawnSurroundingKing(){
+		Pawn k = this.getKing();
+
+		//it doesn't matter to check other things
+		//if king is in the border is escaped
+		//if king is near citadel we don't count here...whe have other heuristic
+		Position[] tp = new Position[]{
+				Position.of(k.getX() + 1, k.getY()), //e
+				Position.of(k.getX(), k.getY() + 1), //s
+				Position.of(k.getX() - 1, k.getY()), //w
+				Position.of(k.getX(), k.getY() - 1)  //n
+		};
+
+		return (int) pawns.stream().filter(p -> p.isWhite() && Position.of(p.getX(), p.getY()).equalsAny(tp)).count();
+	}
 	
 	public List<List<Position>> threatenKingRemaining(){
 		Pawn k = this.getKing();
@@ -648,7 +664,12 @@ public class State {
 		}
 		return false;
 	}
-	
+
+	public double calculateEatenWhitePawnsValue(){
+		long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
+		return Math.log(2*(numberOfWhitePawns-1) + 1)/2.82;
+	}
+
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
@@ -713,7 +734,11 @@ public class State {
 			//result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
 			// FIXME check the belowe function! It is incorrect
-			result += (16 - blackPawnsNumber) * eatingPoints / 240; //Like Bisa's idea on Octagon
+			// TODO il valore massimo che puo assmure questa euristica e 16 (non ho ancora mangiato nessuno)
+			//  quindi perche divido per 240? non ddovrei dividere per 16 appunto?
+			//  lasciando 240 il valore non oscilla tra 0 e eatingPoints ma tra 16*eatingPoins/240
+			//  quindi per il primo turno in cui eating poins vale 200 viene 17
+			result += (16 - blackPawnsNumber) * eatingPoints / 16; //Like Bisa's idea on Octagon
 		}
 		
 		/*
@@ -739,10 +764,11 @@ public class State {
 			long currentResultForWhitePawns = (long) (( Math.exp((9d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
 			result += currentResultForWhitePawns;
 		}*/
-		
+
 		// Check for number of white pawns (not being eaten)
 		{
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
+			result += calculateEatenWhitePawnsValue() * dontBeEatenPoints;
+			/*
 			long currentResultForWhitePawns;
 			// FIXME check the function if does what we want
 			// Here some random calculus. The more pawns are eaten, the more I care to avoid being eaten (Bisa did the same...)
@@ -756,6 +782,7 @@ public class State {
 				currentResultForWhitePawns = (numberOfWhitePawns - 4) * 2 / 4;
 			}
 			result += currentResultForWhitePawns * dontBeEatenPoints / 8;
+			*/
 		}
 		
 		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
@@ -768,14 +795,16 @@ public class State {
 		{
 			int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
 			// FIXME check the points gives
-			result += remainingPositionForSurroundingKing * kingUnderCheckPoints;
+			//  corretto col / 4, in questo modo il valore risultante oscilla tra 0 e kingUnderCheckPoints
+			result += remainingPositionForSurroundingKing / 4 * kingUnderCheckPoints;
 		}
 		
 		// TODO Protected King
 		{
 			// Maybe count white pawns "linger" the king, then multiply it with the points
 			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
-			result += kingProtectedPoints;
+
+			result += whitePawnSurroundingKing() / 4 * kingProtectedPoints;
 		}
 		
 		/*
@@ -805,13 +834,15 @@ public class State {
 		// Raw distance from escape
 		{
 			// FIXME
+			//  bhestia dice : giusto
 			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints;
 		}
 		
 		// White on main axis
 		{
 			// FIXME
-			result += this.mainAxisDefaultPosition() * whiteOnMainAxisPoints;
+			//  bhestia dice : giusto, col / 8 oscilla tra 0 e whiteOnMainAxisPoints
+			result += this.mainAxisDefaultPosition() / 8 * whiteOnMainAxisPoints;
 		}
 		
 		// Go in a spot with some escapes
@@ -822,12 +853,14 @@ public class State {
 			if(kingEscapes >= 2) {
 				return Minimax.MAXVALUE;
 			}
+			// bhestia dice: va bene, kingEscapes al piu vale 1
 			result += kingEscapes * kingEscapesPoints;
 		}
 		
 		// Go in a "good position"
 		{
 			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+				//ok, la ponderazione non serve, e binaria la cosa
 				result += kingInGoodPositionPoints;
 			}
 		}
