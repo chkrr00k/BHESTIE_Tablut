@@ -710,6 +710,7 @@ public class State {
 		{
 			//result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
+			// FIXME check the belowe function! It is incorrect
 			result += (16 - blackPawnsNumber) * eatingPoints / 240; //Like Bisa's idea on Octagon
 		}
 		
@@ -741,6 +742,7 @@ public class State {
 		{
 			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
 			long currentResultForWhitePawns;
+			// FIXME check the function if does what we want
 			// Here some random calculus. The more pawns are eaten, the more I care to avoid being eaten (Bisa did the same...)
 			if (numberOfWhitePawns >= 7) {
 				currentResultForWhitePawns = 7 + (numberOfWhitePawns - 4) * 8 / 4;
@@ -763,6 +765,7 @@ public class State {
 		// King under check
 		{
 			int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
+			// FIXME check the points gives
 			result += remainingPositionForSurroundingKing * kingUnderCheckPoints;
 		}
 		
@@ -799,11 +802,13 @@ public class State {
 		
 		// Raw distance from escape
 		{
+			// FIXME
 			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints;
 		}
 		
 		// White on main axis
 		{
+			// FIXME
 			result += this.mainAxisDefaultPosition() * whiteOnMainAxisPoints;
 		}
 		
