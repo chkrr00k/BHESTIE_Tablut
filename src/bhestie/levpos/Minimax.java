@@ -118,7 +118,9 @@ public final class Minimax {
 			return heuristic;
 		} else if(max){
         v = -Long.MAX_VALUE;
+        boolean entered = false;
         for(State c : s.getChildren()){
+        		entered = true;
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
 				if(beth <= alpha){
@@ -126,15 +128,23 @@ public final class Minimax {
 					break;
 				}
 			}
+        if (!entered) {
+        	v = -v;
+        }
 		}else{
         v = Long.MAX_VALUE;
+        boolean entered = false;
         for(State c : s.getChildren()){
+        		entered = true;
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
 				if(beth <= alpha){
 					break;
 				}
 			}
+        if (!entered) {
+        	v = -v;
+        }
 		}
 		return v;
 	}

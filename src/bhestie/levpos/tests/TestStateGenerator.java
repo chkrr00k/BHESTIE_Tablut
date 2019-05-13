@@ -28,13 +28,13 @@ public class TestStateGenerator {
     	List<Pawn> pawns = new LinkedList<>();
     	pawns.add(new Pawn(false, 4, 2, true));
     	pawns.add(new Pawn(true, 3, 2, false));
-    	pawns.add(new Pawn(false, 4, 5, false));
-    	pawns.add(new Pawn(false, 5, 3, false));
+    	pawns.add(new Pawn(true, 4, 5, false));
+    	pawns.add(new Pawn(true, 5, 3, false));
     	
     	State s = new State(pawns, Minimax.player);
     	
     	// XXX it fails at depth=2 after moving pawn from (C2) to (C1). King doesn't generates extra moves
-//    	Minimax.alphaBethInit(s);
+    	Minimax.alphaBethInit(s);
     	
     	Minimax.player = whitePlayer;
     	Minimax.DEPTH = 3;
@@ -44,12 +44,12 @@ public class TestStateGenerator {
     	pawns.clear();
     	pawns.add(new Pawn(false, 4, 2, true));
     	pawns.add(new Pawn(true, 3, 1, false));
-    	pawns.add(new Pawn(false, 4, 5, false));
-    	pawns.add(new Pawn(false, 5, 3, false));
+    	pawns.add(new Pawn(true, 4, 5, false));
+    	pawns.add(new Pawn(true, 5, 3, false));
     	
     	s = new State(pawns, Minimax.player);
     	List<State> actions = StreamSupport.stream(s.getChildren().spliterator(), false).collect(Collectors.toList());
-    	assertEquals(5, actions.size());
+    	assertEquals(2, actions.size());
     }
 
 }
