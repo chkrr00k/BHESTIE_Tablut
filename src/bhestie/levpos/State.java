@@ -17,20 +17,13 @@ import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
 public class State {
-  public static int MULTIPLICATOR = 1;
-	
-	// Black heuristic
-	
-	// White heuristic
-	private static final long WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS = 0;
-	private static final long WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS = 1000;
 
-	
+	public static int MULTIPLICATOR = 1;
+
 	private static final int END_PREPARATION_PHASE = 7;
 	private static final int END_MAIN_PHASE = 16;
 	private static final int END_ATTACK_PHASE = 30;
 
-	
 	public static int TURN = 0;
 	
 	private static final ThreadPool threadPool = ThreadPool.getInstance();
@@ -135,6 +128,16 @@ public class State {
 		return new StateChild(this);
 	}
 
+	public int whitePawnSurroundingKing(){
+		Pawn k = this.getKing();
+		
+		if (k == null) {
+			return 0;
+		}
+
+		return (int) this.pawns.stream().filter(p -> p.isWhite() && !p.king && Math.abs(p.getX() - k.getX()) + Math.abs(p.getY() - k.getY()) == 1).count();
+		
+	}
 	
 	public List<List<Position>> threatenKingRemaining(){
 		Pawn k = this.getKing();
@@ -266,6 +269,8 @@ public class State {
 			return distanceRecord;
 		}
 	}
+
+	
 	
 	/**
 	*is positive to have pawn in escape positions for controlling that area
@@ -377,7 +382,6 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicBlack() {
-
 		// Avoid to let the enemy win
 		int kingEscape = this.kingEscape();
 		if (kingEscape > 0) {
@@ -579,76 +583,140 @@ public class State {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicWhite() {
-	
 		// Negative if black has 3 or more pawns and white has only the king
 		if (this.pawns.stream().filter(p -> p.isBlack()).count() >= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() <= 1) {
 			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
 		}
 		
+		final int eatingPoints;
+		final int dontBeEatenPoints;
+		final int kingUnderCheckPoints;
+		final int kingInGoodPositionPoints;
+		final int kingEscapesPoints;
+		final int whiteOnMainAxisPoints;
+		final int rawDistanceFromEscapePoints;
+		final int kingProtectedPoints;
+		
+		if (State.TURN <= END_PREPARATION_PHASE) {
+			eatingPoints = 250;
+			dontBeEatenPoints = 125;
+			kingUnderCheckPoints = 150;
+			kingInGoodPositionPoints = 50;
+			kingEscapesPoints = 100;
+			whiteOnMainAxisPoints = 150;
+			rawDistanceFromEscapePoints = 0;
+			kingProtectedPoints = 175;
+		} else if (State.TURN <= END_MAIN_PHASE) {
+			eatingPoints = 200;
+			dontBeEatenPoints = 125;
+			kingUnderCheckPoints = 150;
+			kingInGoodPositionPoints = 100;
+			kingEscapesPoints = 100;
+			whiteOnMainAxisPoints = 75;
+			rawDistanceFromEscapePoints = 50;
+			kingProtectedPoints = 200;
+		} else if (State.TURN <= END_ATTACK_PHASE) {
+			eatingPoints = 75;
+			dontBeEatenPoints = 165;
+			kingUnderCheckPoints = 190;
+			kingInGoodPositionPoints = 115;
+			kingEscapesPoints = 140;
+			whiteOnMainAxisPoints = 0;
+			rawDistanceFromEscapePoints = 75;
+			kingProtectedPoints = 240;
+		} else { //DESPERATION PHASE
+			eatingPoints = 50;
+			dontBeEatenPoints = 200;
+			kingUnderCheckPoints = 225;
+			kingInGoodPositionPoints = 75;
+			kingEscapesPoints = 200;
+			whiteOnMainAxisPoints = 0;
+			rawDistanceFromEscapePoints = 0;
+			kingProtectedPoints = 250;
+		}
+		
 		long result = 0;
 		
-		// Check for number of black pawns
+		// Check for number of black pawns (eat)
 		{
-			long maxResultForBlackPawns = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS;
-			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
-			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
-			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
-			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfBlackPawns)/10) - 1 ) * maxResultForBlackPawns / tmp);
-			
-			result += currentResultForWhitePawns;
+			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
+			final long currentEatingPoints;
+			if (blackPawnsNumber > 12) {
+				currentEatingPoints = 14+5 + (blackPawnsNumber - 12) * 2 / 4;
+			} else if (blackPawnsNumber > 7) {
+				currentEatingPoints = 14 + (blackPawnsNumber - 7) * 5 / 5;
+			} else {
+				currentEatingPoints = (blackPawnsNumber) * 14 / 7;
+			}
+			result += currentEatingPoints * eatingPoints / 21;
 		}
 		
-		// Check for number of white pawns (the more are the more it increases)
-		/*{
-			long maxResultForWhitePawns = WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS;
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
-			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
-			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
-			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
-			result += currentResultForWhitePawns;
-		}*/
-		
-		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-		
-		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		/*int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-		result += remainingPositionForSurroundingKing * REMAINING_POSITION_FOR_CAPTURE_KING_VALUE_FOR_WHITE_HEURISTIC;
-
-		if (State.TURN > 2 && State.TURN <= 5) {
-			result += this.rawDistanceFromEscape() * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
-		}
-
-		if (State.TURN < 3) {
-			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
-		} else if (State.TURN == 3) {
-			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS / 2;
+		// Check for number of white pawns (not being eaten)
+		{
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			final long currentDontBeEaten;
+			if (numberOfWhitePawns > 6) {
+				currentDontBeEaten = 2+2+8+4 + (numberOfWhitePawns - 6) * 6 / 2;
+			} else if (numberOfWhitePawns > 2) {
+				currentDontBeEaten = 2+2 + (numberOfWhitePawns - 2) * 8 / 4;
+			} else {
+				currentDontBeEaten = numberOfWhitePawns * 2 / 2;
+			}
+			result += currentDontBeEaten * dontBeEatenPoints / 22;
 		}
 		
-		if (State.TURN > 2) {
+		// King under check
+		{
+			result += this.remainingPositionForSurroundingKing() * kingUnderCheckPoints / 4;
+		}
+		
+		// Protected King
+		{
+			// Maybe count white pawns "linger" the king, then multiply it with the points
+			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
+			int whitePawnsSuroundingKing = this.whitePawnSurroundingKing();
+			if (whitePawnsSuroundingKing < 4) {
+				result += whitePawnsSuroundingKing * kingProtectedPoints / 4;
+			} else {
+				result += 3 * kingProtectedPoints / 4;
+			}
+		}
+		
+		// Raw distance from escape
+		{
+			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
+		}
+		
+		// White on main axis
+		{
+			result += (8 - this.mainAxisDefaultPosition()) * whiteOnMainAxisPoints / 8;
+		}
+		
+		// Go in a spot with some escapes
+		{
 			int kingEscapes = this.kingEscape();
-			int parentKingEscapes = this.parent.kingEscape();
-			result += kingEscapes * WHITE_KING_ESCAPES;
-			if (kingEscapes > parentKingEscapes) { // more escapes then parent
-				result += (kingEscapes - parentKingEscapes) * WHITE_KING_MORE_ESCAPES_THEN_PARENT;
-			}
 			
+			if(kingEscapes >= 2) {
+				return this.getUtilityValue();
+			}
+			result += kingEscapes * kingEscapesPoints / 4;
+		}
+		
+		// Go in a "good position"
+		{
 			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-				result += WHITE_KING_IN_GOOD_POSITION;
+				result += kingInGoodPositionPoints;
 			}
-			
 		}
 
-		result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
-		result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-*/
-		result = 10; // XXX disabled
+		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
 	}
 	

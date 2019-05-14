@@ -563,6 +563,56 @@ public class TestState {
 		}
 		assertFalse(found);
 	}
+
+	@Test
+	public void whitePawnSurroundingKing() {
+		List<Pawn> initialPawnState = new LinkedList<>();
+		initialPawnState.add(new Pawn(false, 5, 5, true));
+		initialPawnState.add(new Pawn(false, 6, 5, false)); // Pawn to move that eats
+		initialPawnState.add(new Pawn(false, 5, 6, false));
+		initialPawnState.add(new Pawn(false, 4, 5, false));
+		initialPawnState.add(new Pawn(false, 5, 4, false));
+
+		State state = new State(initialPawnState, true); // Black turn
+
+		assertEquals(state.whitePawnSurroundingKing(), 4);
+	}
+
+	/*@Test
+	public void testLogaritmicFunctionInEvaluationEatenWhitePawns() {
+		List<Pawn> initialPawnState = new LinkedList<>();
+		initialPawnState.add(new Pawn(false, 5, 5, true));
+
+		State state = new State(initialPawnState, true); // Black turn
+
+		assertEquals(state.calculateEatenWhitePawnsValue(), 0, 0.1);
+
+		initialPawnState.add(new Pawn(false, 6, 5, true));//1 pawn
+		State state1 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 6, 6, true));//2 pawn
+		State state2 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 7, 5, true));//3 pawn
+		State state3 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 7, 6, true));//4 pawn
+		State state4 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 7, 7, true));//5 pawn
+		State state5 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 4, 5, true));//6 pawn
+		State state6 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 4, 4, true));//7 pawn
+		State state7 = new State(initialPawnState, true); // Black turn
+		initialPawnState.add(new Pawn(false, 3, 3, true));//8 pawn
+		State state8 = new State(initialPawnState, true); // Black turn
+
+		assertTrue(state1.calculateEatenWhitePawnsValue() <
+				state2.calculateEatenWhitePawnsValue() &&
+				state2.calculateEatenWhitePawnsValue() < state3.calculateEatenWhitePawnsValue() &&
+				state3.calculateEatenWhitePawnsValue() < state4.calculateEatenWhitePawnsValue() &&
+				state4.calculateEatenWhitePawnsValue() < state5.calculateEatenWhitePawnsValue() &&
+				state5.calculateEatenWhitePawnsValue() < state6.calculateEatenWhitePawnsValue() &&
+				state6.calculateEatenWhitePawnsValue() < state7.calculateEatenWhitePawnsValue() &&
+				state7.calculateEatenWhitePawnsValue() < state8.calculateEatenWhitePawnsValue());
+	}*/
 	
 	@Test
 	public void testEatKingNearTrone() {
