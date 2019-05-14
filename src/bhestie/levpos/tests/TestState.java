@@ -1,17 +1,23 @@
 package bhestie.levpos.tests;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.junit.Test;
 
 import bhestie.levpos.Minimax;
 import bhestie.levpos.Pawn;
 import bhestie.levpos.State;
+import bhestie.levpos.State.StateGenerator;
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
@@ -30,6 +36,153 @@ public class TestState {
 		double utility = s.getUtility();
 		assertEquals(0, utility, 0.01);
     }
+    
+    @Test
+	public void testStateGenerator() throws Exception {
+    	Minimax.player = blackPlayer;
+    	List<Pawn> p = new LinkedList<Pawn>();
+    	p.add(new Pawn(false, 5, 3, true));
+    	State s = new State(p, !blackPlayer);
+    	
+    	assertTrue(s.getChildGenerator().hasNext());
+    	StateGenerator sg = s.getChildGenerator();
+    	int i = 0;
+    	while(sg.hasNext()){
+    		sg.next();
+    		i++;
+    	}
+    	assertEquals(5, i);
+    	
+    	p = new LinkedList<Pawn>();
+    	p.add(new Pawn(false, 5, 5, true));
+    	s = new State(p, !blackPlayer);
+    	
+    	assertTrue(s.getChildGenerator().hasNext());
+    	
+    	sg = s.getChildGenerator();
+    	i = 0;
+    	while(sg.hasNext()){
+    		sg.next();
+    		i++;
+    	}
+    	assertEquals(2, i);
+    	
+      	Minimax.player = whitePlayer;
+    	p = new LinkedList<Pawn>();
+    	p.add(new Pawn(false, 5, 3, true));
+    	s = new State(p, !whitePlayer);
+    	
+    	assertFalse(s.getChildGenerator().hasNext());
+    	
+    	List<Pawn> initialState = new LinkedList<>();		
+		initialState.add(new Pawn(true, 4, 1, false));
+		initialState.add(new Pawn(true, 5, 1, false));
+		initialState.add(new Pawn(true, 6, 1, false));
+		initialState.add(new Pawn(true, 5, 2, false));
+		
+		initialState.add(new Pawn(true, 1, 4, false));
+		initialState.add(new Pawn(true, 1, 5, false));
+		initialState.add(new Pawn(true, 1, 6, false));
+		initialState.add(new Pawn(true, 2, 5, false));
+		
+		initialState.add(new Pawn(true, 4, 9, false));
+		initialState.add(new Pawn(true, 5, 9, false));
+		initialState.add(new Pawn(true, 6, 9, false));
+		initialState.add(new Pawn(true, 5, 8, false));
+		
+		initialState.add(new Pawn(true, 9, 4, false));
+		initialState.add(new Pawn(true, 9, 5, false));
+		initialState.add(new Pawn(true, 9, 6, false));
+		initialState.add(new Pawn(true, 8, 5, false));
+		
+		// King
+		initialState.add(new Pawn(false, 5, 5, true));
+		
+		// White
+		initialState.add(new Pawn(false, 5, 6, false));
+		initialState.add(new Pawn(false, 5, 7, false));
+		initialState.add(new Pawn(false, 4, 5, false));
+		initialState.add(new Pawn(false, 3, 5, false));
+		initialState.add(new Pawn(false, 5, 3, false));
+		initialState.add(new Pawn(false, 5, 4, false));
+		initialState.add(new Pawn(false, 6, 5, false));
+		initialState.add(new Pawn(false, 7, 5, false));
+		
+		Minimax.player = whitePlayer;
+		State cs = new State(initialState, Minimax.player);
+    	sg = cs.getChildGenerator();
+    	i = 0;
+    	while(sg.hasNext()){
+    		sg.next();
+    		i++;
+    	}
+    	assertEquals(7, i);
+    	
+    	Minimax.player = blackPlayer;
+		cs = new State(initialState, Minimax.player);
+    	sg = cs.getChildGenerator();
+    	i = 0;
+    	while(sg.hasNext()){
+    		sg.next();
+    		i++;
+    	}
+    	assertEquals(10, i);
+	}
+    
+    @Test
+	public void testStateChild() throws Exception {
+      	Minimax.player = whitePlayer;
+    	
+    	List<Pawn> initialState = new LinkedList<>();		
+		initialState.add(new Pawn(true, 4, 1, false));
+		initialState.add(new Pawn(true, 5, 1, false));
+		initialState.add(new Pawn(true, 6, 1, false));
+		initialState.add(new Pawn(true, 5, 2, false));
+		
+		initialState.add(new Pawn(true, 1, 4, false));
+		initialState.add(new Pawn(true, 1, 5, false));
+		initialState.add(new Pawn(true, 1, 6, false));
+		initialState.add(new Pawn(true, 2, 5, false));
+		
+		initialState.add(new Pawn(true, 4, 9, false));
+		initialState.add(new Pawn(true, 5, 9, false));
+		initialState.add(new Pawn(true, 6, 9, false));
+		initialState.add(new Pawn(true, 5, 8, false));
+		
+		initialState.add(new Pawn(true, 9, 4, false));
+		initialState.add(new Pawn(true, 9, 5, false));
+		initialState.add(new Pawn(true, 9, 6, false));
+		initialState.add(new Pawn(true, 8, 5, false));
+		
+		// King
+		initialState.add(new Pawn(false, 5, 5, true));
+		
+		// White
+		initialState.add(new Pawn(false, 5, 6, false));
+		initialState.add(new Pawn(false, 5, 7, false));
+		initialState.add(new Pawn(false, 4, 5, false));
+		initialState.add(new Pawn(false, 3, 5, false));
+		initialState.add(new Pawn(false, 5, 3, false));
+		initialState.add(new Pawn(false, 5, 4, false));
+		initialState.add(new Pawn(false, 6, 5, false));
+		initialState.add(new Pawn(false, 7, 5, false));
+		
+		Minimax.player = whitePlayer;
+		State cs = new State(initialState, Minimax.player);
+		int i = 0;
+    	for(@SuppressWarnings("unused") State c : cs.getChildren()){
+    		i++;
+    	}
+    	assertEquals(7, i);
+    	
+    	Minimax.player = blackPlayer;
+		cs = new State(initialState, Minimax.player);
+    	i = 0;
+    	for(@SuppressWarnings("unused") State s : cs.getChildren()){
+    		i++;
+    	}
+    	assertEquals(10, i);
+	}
     
     @Test
 	public void testLoop() throws Exception {
@@ -309,10 +462,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 2));
 			if (found)
 				break;
@@ -335,10 +487,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
@@ -361,10 +512,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found)
 				break;
@@ -384,10 +534,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -405,10 +554,9 @@ public class TestState {
 		initialPawnState.add(new Pawn(true, 7, 5, false));
 		
 		State currentState = new State(initialPawnState, true); // Black turn
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -478,10 +626,9 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
 		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 1));
 			if (found)
 				break;
@@ -501,9 +648,7 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, false); // White turn
 		
-		Collection<State> afterState = currentState.getActions();
-
-		assertTrue(afterState.stream().allMatch(s -> s.getPawns().size() == initialPawnState.size()));
+		assertTrue(StreamSupport.stream(Spliterators.spliteratorUnknownSize(currentState.getChildGenerator(), Spliterator.ORDERED), false).allMatch(s -> s.getPawns().size() == initialPawnState.size()));
 	}
 	
 	@Test
@@ -514,7 +659,12 @@ public class TestState {
 		pawns.add(new Pawn(false, 3, 7, false));
 		pawns.add(new Pawn(false, 7, 7, false));
 		State s = new State(pawns, false); // White turn
-		assertEquals(5, s.getActions().size());
+		StateGenerator sg = s.getChildGenerator();
+		int i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(5, i);
 	}
 	
 	@Test
@@ -531,7 +681,12 @@ public class TestState {
 		pawns.add(new Pawn(false, 8, 7, false));
 		
 		State s = new State(pawns, false); // White turn
-		assertEquals(12, s.getActions().size());
+		StateGenerator sg = s.getChildGenerator();
+		int i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(12, i);
 	}
 	@Test
 	public void testDiagonalSystem() throws Exception {
@@ -584,29 +739,54 @@ public class TestState {
 		List<Pawn> pawns = new LinkedList<>();
 		pawns.add(new Pawn(false, 3, 3, false));
 		State s = new State(pawns, false); // White turn
-		assertEquals(16, s.getActions().size()); // one pawn generates 16 successors
+		StateGenerator sg = s.getChildGenerator();
+		int i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(16, i); // one pawn generates 16 successors
 		
 		pawns.add(new Pawn(false, 7, 3, false));
 		s = new State(pawns, false); // White turn
-		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because x symmetry
+		sg = s.getChildGenerator();
+		i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(13, i); // two pawn generates 13 successors in this configuration because x symmetry
 	
 		pawns.clear();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 3, 7, false));
 		s = new State(pawns, false); // White turn
-		assertEquals(13, s.getActions().size()); // two pawn generates 13 successors in this configuration because y symmetry
+		sg = s.getChildGenerator();
+		i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(13, i); // two pawn generates 13 successors in this configuration because y symmetry
 		
 		pawns.clear();
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 7, false));
 		s = new State(pawns, false); // White turn
-		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because diagonal symmetry
+		sg = s.getChildGenerator();
+		i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(16, i); // two pawn generates 16 successors in this configuration because diagonal symmetry
 		
 		pawns.clear();
 		pawns.add(new Pawn(false, 7, 3, false));
 		pawns.add(new Pawn(false, 3, 7, false));
 		s = new State(pawns, false); // White turn
-		assertEquals(16, s.getActions().size()); // two pawn generates 16 successors in this configuration because antidiagonal symmetry
+		sg = s.getChildGenerator();
+		i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(16, i); // two pawn generates 16 successors in this configuration because antidiagonal symmetry
 		
 		pawns.clear();
 		pawns.add(new Pawn(false, 7, 3, false));
@@ -614,7 +794,12 @@ public class TestState {
 		pawns.add(new Pawn(false, 3, 3, false));
 		pawns.add(new Pawn(false, 7, 7, false));
 		s = new State(pawns, false); // White turn
-		assertEquals(5, s.getActions().size()); // two pawn generates 5 successors in this configuration because all the symmetries
+		sg = s.getChildGenerator();
+		i = 0;
+		while(sg.hasNext()){
+			i++;
+		}
+		assertEquals(5, i); // two pawn generates 5 successors in this configuration because all the symmetries
 
 	}
 	@Test
@@ -628,7 +813,7 @@ public class TestState {
 		}catch(NullPointerException e){
 			;
 		}
-		Action a = s.getActions().stream().findFirst().get().getAction();
+		Action a = s.getChildren().stream().findFirst().get().getAction();
 		assertEquals("d3", a.getTo());
 		assertEquals("c3", a.getFrom());
 		assertEquals("W", a.getState());
@@ -649,10 +834,8 @@ public class TestState {
 		
 		State currentState = new State(initialPawnState, true); // Black turn
 		
-		Collection<State> afterState = currentState.getActions();
-		
 		boolean found = false;
-		for (State state : afterState) {
+		for (State state : currentState.getChildren()) {
 			found = ((state.getPawns().size() == initialPawnState.size() - 3));
 			if (found){
 				Action a = state.getAction();

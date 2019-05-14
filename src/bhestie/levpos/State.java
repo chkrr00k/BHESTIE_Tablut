@@ -1,43 +1,32 @@
 package bhestie.levpos;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Action;
 
 public class State {
+
 	public static int MULTIPLICATOR = 1;
 
-	
-	// Black heuristic
-	private static final int BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL = 800;
-	private static final int BLACK_HEURISTIC_POINTS_FOR_HAVING_BLACK_PAWNS = 100;
-	private static final int BLACK_HEURISTIC_POINTS_FOR_EATING_WHITES = 100;
-	
-	// White heuristic
-	private static final long WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS = 180;
-	private static final long WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS = 720;
-	private static final long BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS / 16;//45
-	private static final long WHITE_HEURISTIC_REMAINING_POSITION_FOR_CAPTURE_KING = 30;
-	private static final long DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC = 10;
-	private static final long WHITE_PAWNS_ON_MAIN_AXIS = 28;
-	private static final long WHITE_KING_ESCAPES = 40;
-	private static final long WHITE_KING_MORE_ESCAPES_THEN_PARENT = 0;
-	private static final long WHITE_KING_IN_GOOD_POSITION = 40;
-	
 	private static final int END_PREPARATION_PHASE = 7;
 	private static final int END_MAIN_PHASE = 16;
 	private static final int END_ATTACK_PHASE = 30;
-	
 
 	public static int TURN = 0;
+	
+	private static final ThreadPool threadPool = ThreadPool.getInstance();
 	
 	private Long heuristicCache = null; 	// Cached heuristic
 	private Boolean isTerminalCache = null;	// Cache isTerminal
@@ -120,140 +109,23 @@ public class State {
 		return this.king;
 	}
 	
-	/**
-	 * Get the list of the next possible States.
-	 * @return The list of the next possible States.
-	 */
+	@Deprecated
 	public List<State> getActions(){
-		List<State> actions = new LinkedList<State>();
-
-		boolean symmetricalNorthSouth = true;
-		boolean symmetricalEastWest = true;
-		boolean symmetricalDiagonal = true;
-		boolean symmetricalAntiDiagonal = true;
-
-		// Check the symmetries
-		for (Pawn pawn : this.getPawns()) {
-			if (symmetricalNorthSouth && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalNorthSouth = false;
-			}
-			if (symmetricalEastWest && !this.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalEastWest = false;
-			}
-			if (symmetricalDiagonal && !this.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
-				symmetricalDiagonal = false;
-			}
-			if(symmetricalAntiDiagonal && !getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.king==pawn.king)) {
-				symmetricalAntiDiagonal = false;
-			}
-			if(!(symmetricalDiagonal || symmetricalEastWest || symmetricalNorthSouth || symmetricalAntiDiagonal)){
-				break;
-			}
-		}
-
-		Stream<Pawn> pawnToScanStream = this.getPawns().stream().filter(p -> p.filterByTurn(this.turn));
-
-		if (symmetricalEastWest){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getX()>= 5); // Takes only the high part, X from 5 to 9 (from E to I)
-		}
-		if (symmetricalNorthSouth){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= 5); // Takes only the high part, Y from 5 to 9
-		}
-		if (symmetricalDiagonal){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= p.getX()); // Takes only the lower triangle part
-		}
-		if (symmetricalAntiDiagonal){
-			pawnToScanStream = pawnToScanStream.filter(p -> p.getX() + p.getY() >= 10); // Takes only the lower triangle part (built in the anti-diagonal way)
-		}
-
-		Collection<Pawn> pawnToScan = pawnToScanStream.collect(Collectors.toList());
-
-		final boolean checkXY = !(symmetricalEastWest && symmetricalNorthSouth && symmetricalDiagonal && symmetricalAntiDiagonal); // if this -> it's simmetrical and I can check only the X assis
-		int stopDecrementX = 0, stopDecrementY = 0;
-		for (Pawn currentPawn : pawnToScan) {
-
-			stopDecrementX = (symmetricalEastWest && currentPawn.getX() == 5 ? 5 : 1);
-			for (int i = currentPawn.getX() + 1; i <= 9; i++) {
-				if (!this.checkXY(i, currentPawn.getY(), actions, currentPawn))
-					break;
-			}
-
-			for (int i = currentPawn.getX() - 1; i >= stopDecrementX; i--) {
-				if (!this.checkXY(i, currentPawn.getY(), actions, currentPawn))
-					break;
-			}
-
-			if (checkXY){
-				stopDecrementY = (symmetricalNorthSouth && currentPawn.getY() == 5 ? 5 : 1);
-				for (int i = currentPawn.getY() + 1; i <= 9; i++) {
-					if(!this.checkXY(currentPawn.getX(), i, actions, currentPawn)){
-						break;
-					}
-				}
-
-				for (int i = currentPawn.getY() - 1; i >= stopDecrementY; i--) {
-					if(!this.checkXY(currentPawn.getX(), i, actions, currentPawn)){
-						break;
-					}
-				}
-			}
-		}
-		
-		return actions;
+		throw new UnsupportedOperationException("This function was moved use getChildren() instead");
 	}
-
 	/**
-	 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
-	 * @param x The nex X position
-	 * @param y The new Y position
-	 * @param actions The list of next possible states
-	 * @param currentPawn The pawn that is moving
-	 * @return If it added a new action of not
+	 * Returns a generator that generates all possible combination of future states of the current state
+	 * @return an iterator to generate children
 	 */
-	private boolean checkXY(final int x, final int y, List<State> actions, Pawn currentPawn) {
-
-		final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
-		boolean haveToAddThePawn = !this.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
-
-		if (currentPawn.isWhite()
-				|| (currentPawn.isBlack() && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
-			haveToAddThePawn = haveToAddThePawn && !citadels.stream().anyMatch(c -> c.isXYInCitadel(x, y));
-		}
-
-		if (currentPawn.isBlack()
-				&& pawnInCitadel) { // pezzo nero e dentro una citadel, allora può muoversi solo dentro la sua citadel, non può andare in un'altra citadel
-			haveToAddThePawn = haveToAddThePawn && !citadels.stream().filter(c -> !c.isPawnInCitadel(currentPawn)).anyMatch(c -> c.isXYInCitadel(x, y));
-		}
-
-		haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
-
-		if (haveToAddThePawn) {
-			List<Pawn> newPawns = new ArrayList<>(this.getPawns());
-			newPawns.remove(currentPawn);
-			Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
-			final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
-			newPawns.add(newPawn);
-			HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : this.historyStorage.clone()); // if eaten -> new storage
-			boolean drawCase = false;
-			try {
-				newHistoryStorage.add(newPawns);
-			}catch(IllegalArgumentException e) {
-				drawCase = true;
-			}
-			State newState = new State(newPawns, !this.turn, newHistoryStorage, this, drawCase);
-			boolean haveToAddTheNewState = true;
-			if (!this.turn) { // White turn
-				// Check if is going to suicide
-				haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
-			}
-			if (haveToAddTheNewState) {
-				actions.add(newState);
-				HeuristicCalculatorGroup.statesToCalculateCache.add(newState);
-				HeuristicCalculatorGroup.semaphoreStatesToBeCalculated.release();
-			}
-			return true;
-		}
-		return false;
+	public StateGenerator getChildGenerator() {//FIXEME was parallel
+		return new StateGenerator(this);
+	}
+	/**
+	 * Returns an Iterable object that generates all possible children of the current status
+	 * @return an Iterable object
+	 */
+	public StateChild getChildren(){
+		return new StateChild(this);
 	}
 
 	public int whitePawnSurroundingKing(){
@@ -330,48 +202,6 @@ public class State {
 		return result;
 	}
 
-	/**
-	 * Checks if (after moving a @param movedPawn) some pawns have to be eaten.
-	 * @param toX The new X position
-	 * @param toY The new Y position
-	 * @param movedPawn The pawn that is moved
-	 * @param newPawns List of new Pawns in the next state board
-	 * @return If some pawns have been eaten.
-	 */
-	private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
-		boolean haveEaten = false;
-		// Get all the "near" pawns (near means +1 or -1 in vertical or horizontal) 
-		List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.isBlack() != movedPawn.isBlack() && (Math.abs(p.getX() - toX) + Math.abs(p.getY()- toY) == 1)).collect(Collectors.toList());
-		int deltaX, deltaY;
-		boolean haveToEat = false;
-		
-		for (Pawn pawn : pawnOfInterest) {
-			deltaX = (pawn.getX() - toX)*2;
-			deltaY = (pawn.getY() - toY)*2;
-			final int partnerPositionX = deltaX + toX;
-			final int partnerPositionY = deltaY + toY;
-			haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX && p.getY() == partnerPositionY)) ||
-					(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
-					(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
-
-			if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
-				final int partnerPositionX_2 = pawn.getX() + (deltaY != 0 ? 1 : 0);
-				final int partnerPositionY_2 = pawn.getY() + (deltaX != 0 ? 1 : 0);
-				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
-						(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
-				final int partnerPositionX_3 = pawn.getX() + (deltaY != 0 ? -1 : 0);
-				final int partnerPositionY_3 = pawn.getY() + (deltaX != 0 ? -1 : 0);
-				haveToEat = haveToEat && newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
-						(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
-			}
-
-			if (haveToEat) {
-				newPawns.remove(pawn);
-				haveEaten = true;
-			}
-		}
-		return haveEaten;
-	}
 
 	/**
 	 * It generates a list with all the parents State of the current State
@@ -476,28 +306,24 @@ public class State {
 				result = this.getUtilityValue();
 				if (!this.getPawns().stream().anyMatch(p -> p.king)) { // Black wins
 					if (!Minimax.player) { // White player
-						return -result;
-					} else {
-						return result;
+						result = -result;
 					}
 				} else { // Is terminal and black not win -> White wins
 					if (Minimax.player) { // Black player
-						return -result;
-					} else {
-						return result;
+						result = -result;
 					}
 				}
-			}
-			
-			if (!this.turn) { // Black turn
-				result = this.getHeuristicBlack();
-				if (!Minimax.player){
-					result = -result;
-				}
-			} else { // White turn
-				result = this.getHeuristicWhite();
-				if (Minimax.player){
-					result = -result;
+			} else { // Not terminal -> heuristic
+				if (!this.turn) { // Black turn
+					result = this.getHeuristicBlack();
+					if (!Minimax.player){
+						result = -result;
+					}
+				} else { // White turn
+					result = this.getHeuristicWhite();
+					if (Minimax.player){
+						result = -result;
+					}
 				}
 			}
 			this.heuristicCache = result;
@@ -528,22 +354,23 @@ public class State {
 		return Math.min(result, Minimax.MAXVALUE);
 	}
 	
-	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult) {
+	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult, boolean preferInternal) {
 		long currentResult = 0;
 		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
 		long numberOfWhitesOutOfInternalOctagon = this.checkROIQuantity(fromInternal.x, fromInternal.y, toInternal.x, toInternal.y, p -> p.isWhite() && !p.position.equals(excludeForInternal));
 		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
 		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
 		
-		if (numberOfWhitesOutOfExternalOctagon > 2) // XXX check if it is what we want
+		if (numberOfWhitesOutOfExternalOctagon >= 2) {
 			maxResult = 0;
-		else if (numberOfWhitesOutOfExternalOctagon == 1)
-			maxResult = 90 * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
+		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
+			maxResult = 90 * maxResult / 200;
+		}
 		
 		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
 			currentResult = maxResult;
 		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
-			currentResult = maxResult;
+			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
 			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
 		}
@@ -555,7 +382,6 @@ public class State {
 	 * @return A number that stimates the "goodness" of the board 
 	 */
 	private long getHeuristicBlack() {
-		/*
 		// Avoid to let the enemy win
 		int kingEscape = this.kingEscape();
 		if (kingEscape > 0) {
@@ -567,6 +393,43 @@ public class State {
 			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
 		}
 		
+		final int octagonPoints;
+		final int eatingPoints;
+		final int notBeEatenPoints;
+		final int whiteKingGoodPositionPoints;
+		final int remainInCitadelsPoints;
+		final int kingAssaultPoints;
+		
+		if (State.TURN <= END_PREPARATION_PHASE) {
+			octagonPoints = 700;
+			eatingPoints = 50;
+			notBeEatenPoints = 125;
+			whiteKingGoodPositionPoints = 25;
+			remainInCitadelsPoints = 100;
+			kingAssaultPoints = 0;
+		} else if (State.TURN <= END_MAIN_PHASE) {
+			octagonPoints = 500;
+			eatingPoints = 100;
+			notBeEatenPoints = 176;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 124;
+			kingAssaultPoints = 0;
+		} else if (State.TURN <= END_ATTACK_PHASE) {
+			octagonPoints = 500;
+			eatingPoints = 150;
+			notBeEatenPoints = 150;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 10;
+			kingAssaultPoints = 90;
+		} else { // Desperation phase
+			octagonPoints = 400;
+			eatingPoints = 150;
+			notBeEatenPoints = 150;
+			whiteKingGoodPositionPoints = 100;
+			remainInCitadelsPoints = 0;
+			kingAssaultPoints = 200;
+		}
+		
 		long result = 0;
 		
 		long malusSouth = this.checkROI(1, 1, 9, 4, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.x == 5 && (p.position.y == 3 || p.position.y == 4)).count() < 2) ? 25 : 0;
@@ -574,47 +437,108 @@ public class State {
 		long malusWest =  this.checkROI(6, 1, 9, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 6 || p.position.x == 7)).count() < 2) ? 25 : 0;
 		long malusEast =  this.checkROI(1, 1, 4, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 4 || p.position.x == 4)).count() < 2) ? 25 : 0;
 		
+		
+		
 		// Check for North-east octagon
-		long maxResultNorthEast = (200 - malusNorth - malusEast) * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
-		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast);
+		long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
+		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast, malusNorth > 0 || malusEast > 0);
 		result += resultNorthEast;
 		
 		// Check for North-west octagon
-		long maxResultNorthWest = (200 - malusNorth - malusWest) * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
-		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest);
+		long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
+		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest, malusNorth > 0 || malusWest > 0);
 		result += resultNorthWest;
 		
 		// Check for South-east octagon
-		long maxResultSouthEast = (200 - malusSouth - malusEast) * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
-		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast);
+		long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
+		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast, malusSouth > 0 || malusEast > 0);
 		result += resultSouthEast;
 		
 		// Check for South-west octagon
-		long maxResultSouthWest = (200 - malusSouth - malusWest) * BLACK_HEURISTIC_POINTS_FOR_OCTAGONAL / 800;
-		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest);
+		long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
+		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest, malusSouth > 0 || malusWest > 0);
 		result += resultSouthWest;
 		
-		// Check for number of black pawns
+		// Check for number of black pawns (not be eaten)
 		{
-			long maxResultForBlackPawns = BLACK_HEURISTIC_POINTS_FOR_HAVING_BLACK_PAWNS;
 			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
-			// ln( x+1 ) / ln( 17 )
-			long currentResultForBlackPawns = (long) (Math.log(numberOfBlackPawns + 1) * maxResultForBlackPawns / Math.log(17));
-			result += currentResultForBlackPawns;
+			final double currentResultForBlackPawns;
+			
+			if (numberOfBlackPawns >= 12) {
+				currentResultForBlackPawns = 2+5+7 + (numberOfBlackPawns - 4) * 2 / 4;
+			} else if (numberOfBlackPawns >= 8) {
+				currentResultForBlackPawns = 2+5 + (numberOfBlackPawns - 4) * 7 / 4;
+			} else if (numberOfBlackPawns >= 4) {
+				currentResultForBlackPawns = 2 + (numberOfBlackPawns - 4) * 5 / 4;
+			} else {
+				currentResultForBlackPawns = (numberOfBlackPawns - 4) * 2 / 4;
+			}
+			
+			result += currentResultForBlackPawns * notBeEatenPoints / 16;
 		}
 		
-		// Check for number of white pawns (the less are the more it increases)
+		// Check for number of white pawns (the less are the more it increases) (eat)
 		{
-			long maxResultForWhitePawns = BLACK_HEURISTIC_POINTS_FOR_EATING_WHITES;
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			final double currentResultForWhitePawns;
 			// ln( (x+1) / 9 ) / ( ln(9) * (-1) )
 			double tmp = ((double)(numberOfWhitePawns + 1)) / 10;
-			long currentResultForWhitePawns = (long) (Math.log(tmp) * -maxResultForWhitePawns / Math.log(10));
+			currentResultForWhitePawns = (long) (Math.log(tmp) * -eatingPoints / Math.log(10));
 			result += currentResultForWhitePawns;
 		}
-		*/
-		int result = 10; // XXX disabled
 		
+		// White king in good position
+		if (!this.checkROI(2, 2, 8, 8, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))) {
+			result += whiteKingGoodPositionPoints;
+		}
+		
+		// Remain in citadel
+		{
+			final int minPawnsInCitadel = (State.TURN < END_PREPARATION_PHASE ? 2 : 1);
+			long points = 0;
+			for (int i = 0; i < 4; i++) {
+				final int j = i;
+				if (this.pawns.stream().filter(p -> citadels.get(j).isPawnInCitadel(p)).count() >= minPawnsInCitadel) {
+					points += 24;
+				}
+			}
+			if (points == 96) {
+				points += 4;
+			}
+			result += points * remainInCitadelsPoints / 100;
+		}
+		
+		// King assault
+		{
+			long points = 0;
+			long currentThreatenPositions = this.threatenKingRemaining().stream().flatMap(l -> l.stream()).count();
+			if (currentThreatenPositions == 3) {
+				points = 100;
+			} else if (currentThreatenPositions == 2) {
+				points = 50;
+			} else if (currentThreatenPositions == 1) {
+				points = 25;
+			}
+			
+			// King center of gravity dependency
+			int xBar = 0;
+			int yBar = 0;
+			final Pawn king = this.getKing();
+			for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
+				xBar += p.getX() - king.getX();
+				yBar += p.getY() - king.getY();
+			}
+			
+			if (xBar == 0 && yBar == 0) {
+				points += 100;
+			} else {
+				points += 100 /  Math.sqrt(xBar * xBar + yBar * yBar);
+			}
+			
+			result += points * kingAssaultPoints;
+		}
+		
+		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
 	}
 	
@@ -791,6 +715,7 @@ public class State {
 			}
 		}
 
+
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
 	}
@@ -815,7 +740,7 @@ public class State {
 		if (!king.isPresent()) { // No king -> black wins
 			this.isTerminalCache = true;
 			return true;
-		} else if (kingEscaped(king.get())) { // Re runs away -> white wins
+		} else if (kingEscaped(king.get())) { // King runs away -> white wins
 			this.isTerminalCache = true;
 			return true;
 		}
@@ -862,7 +787,7 @@ public class State {
 	 * @return A number that says if the board is a winning or losing board
 	 */
 	private long getUtilityValue() {
-		if (this.unfold().size() <= 2) { // If the move is the first or the second (hence the first for the player) is the best
+		if (this.unfold().size() == 1) { // If the move is the first or the second (hence the first for the player) is the best
 			return Long.MAX_VALUE;
 		} else {
 			return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
@@ -1190,4 +1115,430 @@ public class State {
 		escapeRouteBlocked.add(Position.of(7, 8)); //VII
 		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
 	}
+
+	
+	public class StateGenerator implements Iterator<State>{
+		private final State s;
+		
+		private State next;
+		private boolean nextPresent;
+		
+		private boolean symmetricalNorthSouth;
+		private boolean symmetricalEastWest;
+		private boolean symmetricalDiagonal;
+		private boolean symmetricalAntiDiagonal;
+		
+		private final List<Pawn> pawnsToScan;
+		
+		private int stopDecrementX, stopDecrementY;
+		private final boolean checkAll;
+
+		private final Iterator<Pawn> pawnIter;
+		private Pawn currentPawn;
+		private int ei, wi, si, ni;
+		private boolean estop, wstop, sstop, nstop;
+			
+ 		public StateGenerator(State s) {
+			super();
+			this.s = s;
+			this.next = null;
+			this.nextPresent = false;
+			
+			this.symmetricalNorthSouth = true;
+			this.symmetricalEastWest = true;
+			this.symmetricalDiagonal = true;
+			this.symmetricalAntiDiagonal = !this.s.turn; // Only for white
+			
+			this.pawnsToScan = this.filterPawns();
+			this.stopDecrementX = 0;
+			this.stopDecrementY = 0;
+			
+			this.checkAll = !(this.symmetricalEastWest && this.symmetricalNorthSouth && this.symmetricalDiagonal && this.symmetricalAntiDiagonal);
+			this.pawnIter = this.pawnsToScan.iterator();
+			
+			this.currentPawn = null;
+			this.ei = 0;
+			this.si = 0;
+			this.ni = 0;
+			this.wi = 0;
+			
+			this.estop = false;
+			this.wstop = false;
+			this.sstop = false;
+			this.nstop = false;
+			
+			this.refreshCurrentPawn();
+			
+		}
+
+		private List<Pawn> filterPawns(){
+			// Check the symmetries
+			for (Pawn pawn : this.s.getPawns()) {
+				if (this.symmetricalNorthSouth && !this.s.getPawns().stream().anyMatch(p -> p.getX()==pawn.getX() && p.getY() +pawn.getY()==10 && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalNorthSouth = false;
+				}
+				if (this.symmetricalEastWest && !this.s.getPawns().stream().anyMatch(p -> p.getX()+pawn.getX()==10 && p.getY()==pawn.getY() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalEastWest = false;
+				}
+				if (this.symmetricalDiagonal && !this.s.getPawns().stream().anyMatch(p -> p.getX()==pawn.getY() && p.getY()==pawn.getX() && p.isBlack()==pawn.isBlack() && p.king==pawn.king)) {
+					this.symmetricalDiagonal = false;
+				}
+				if(this.symmetricalAntiDiagonal && !this.s.getPawns().stream().anyMatch(p -> p.getX() + pawn.getY() == 10 && p.getY() + pawn.getX() == 10 && p.isBlack()==pawn.isBlack()  && p.king==pawn.king)) {
+					this.symmetricalAntiDiagonal = false;
+				}
+				if(!(this.symmetricalDiagonal || this.symmetricalEastWest || this.symmetricalNorthSouth || this.symmetricalAntiDiagonal)){
+					break;
+				}
+			}
+
+			Stream<Pawn> pawnToScanStream = this.s.getPawns().stream().filter(p -> p.filterByTurn(s.turn));
+
+			if (this.symmetricalEastWest){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getX() >= 5); // Takes only the high part, X from 5 to 9 (from E to I)
+			}
+			if (this.symmetricalNorthSouth){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= 5); // Takes only the high part, Y from 5 to 9
+			}
+			if (this.symmetricalDiagonal){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getY() >= p.getX()); // Takes only the lower triangle part
+			}
+			if (this.symmetricalAntiDiagonal){
+				pawnToScanStream = pawnToScanStream.filter(p -> p.getX() + p.getY() >= 10); // Takes only the lower triangle part (built in the anti-diagonal way)
+			}
+
+			return pawnToScanStream.collect(Collectors.toList());
+		}
+		
+		private void refreshCurrentPawn(){
+			if(this.pawnIter.hasNext()){
+				this.currentPawn = this.pawnIter.next();
+				
+				this.estop = false;
+				this.wstop = false;
+				this.sstop = false;
+				this.nstop = false;
+				
+				this.ei = this.currentPawn.getX() + 1;
+				this.si = this.currentPawn.getX() - 1;
+				this.stopDecrementX = (this.symmetricalEastWest && this.currentPawn.getX() == 5 ? 5 : 1);
+				if(this.checkAll){
+					this.ni = this.currentPawn.getY() + 1;
+					this.wi = this.currentPawn.getY() - 1;
+					this.stopDecrementY = (this.symmetricalNorthSouth && currentPawn.getY() == 5 ? 5 : 1);
+				}
+				this.nextPresent = true;
+			}else{
+				this.nextPresent = false;
+			}
+		}
+		/**
+		 * Get the list of the next possible States.
+		 * @return The list of the next possible States.
+		 */
+		private boolean generateNext(){
+			OptionalState tmp = OptionalState.empty();
+			boolean found = false;
+			if(this.nextPresent){
+				while(!found){
+					if(!this.estop && this.ei <= 9) {
+						if (this.nextPresent = (tmp = this.processPosition(this.ei++, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
+							this.next = tmp.get();
+							found = true;
+						}else if(!tmp.isPresent()){
+							this.estop = true;
+						}
+					}else if(!this.sstop && this.si >= this.stopDecrementX){
+						if (this.nextPresent = (tmp = this.processPosition(this.si--, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
+							this.next = tmp.get();
+							found = true;
+						}else if(!tmp.isPresent()){
+							this.sstop = true;
+						}
+					}else if(!this.nstop && this.checkAll && this.ni <= 9){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.ni++, this.currentPawn)).isPresentValid()){
+							this.next = tmp.get();
+							found = true;
+						}else if(!tmp.isPresent()){
+							this.nstop = true;
+						}
+					}else if(!this.wstop && this.checkAll && this.wi >= this.stopDecrementY){
+						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.wi--, this.currentPawn)).isPresentValid()){
+							this.next = tmp.get();
+							found = true;
+						}else if(!tmp.isPresent()){
+							this.wstop = true;
+						}
+					}else{
+						if(this.pawnIter.hasNext()){
+							this.refreshCurrentPawn();
+						}else{
+							break; // this break is evil
+						}
+					}
+				}
+				if(!found){
+					this.nextPresent = false;
+				}
+			}
+			return this.nextPresent;
+		}
+
+		/**
+		 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
+		 * @param x The nex X position
+		 * @param y The new Y position
+		 * @param actions The list of next possible states
+		 * @param currentPawn The pawn that is moving
+		 * @return If it added a new action of not
+		 */
+		private OptionalState processPosition(final int x, final int y, Pawn currentPawn) {
+			OptionalState result = OptionalState.empty();
+			final boolean pawnInCitadel = citadels.stream().anyMatch(c -> c.isPawnInCitadel(currentPawn));
+			boolean haveToAddThePawn = !s.getPawns().stream().anyMatch(p -> p.getY() == y && p.getX() == x); // Se non c'è già un altro pezzo
+
+			if (currentPawn.isWhite()
+					|| (currentPawn.isBlack() && !pawnInCitadel) /*il pezzo è nero e non in una citadel*/ ) {
+				haveToAddThePawn = haveToAddThePawn && !citadels.stream().anyMatch(c -> c.isXYInCitadel(x, y));
+			}
+
+			if (currentPawn.isBlack()
+					&& pawnInCitadel) { // pezzo nero e dentro una citadel, allora può muoversi solo dentro la sua citadel, non può andare in un'altra citadel
+				haveToAddThePawn = haveToAddThePawn && !citadels.stream().filter(c -> !c.isPawnInCitadel(currentPawn)).anyMatch(c -> c.isXYInCitadel(x, y));
+			}
+
+			haveToAddThePawn = haveToAddThePawn && (x != tronePosition.x || y != tronePosition.y);
+
+			if (haveToAddThePawn) {
+				List<Pawn> newPawns = new ArrayList<>(s.getPawns());
+				newPawns.remove(currentPawn);
+				Pawn newPawn = new Pawn(currentPawn.isBlack(), x, y, currentPawn.king);
+				final boolean haveEaten = checkPawnsEaten(x, y, currentPawn, newPawns);
+				newPawns.add(newPawn);
+				HistoryStorage newHistoryStorage = (haveEaten ? new HistoryStorage() : s.historyStorage.clone()); // if eaten -> new storage
+				boolean drawCase = false;
+				try {
+					newHistoryStorage.add(newPawns);
+				}catch(IllegalArgumentException e) {
+					drawCase = true;
+				}
+				State newState = new State(newPawns, !s.turn, newHistoryStorage, s, drawCase);
+				boolean haveToAddTheNewState = true;
+				if (!s.turn) { // White turn
+					// Check if is going to suicide
+					haveToAddTheNewState = newState.isTerminal() || !newState.veryUglyKingPosition();
+				}
+				if (haveToAddTheNewState) {
+					result = OptionalState.of(newState);
+				}else{
+					result = OptionalState.invalid(newState);
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Checks if (after moving a @param movedPawn) some pawns have to be eaten.
+		 * @param toX The new X position
+		 * @param toY The new Y position
+		 * @param movedPawn The pawn that is moved
+		 * @param newPawns List of new Pawns in the next state board
+		 * @return If some pawns have been eaten.
+		 */
+		private boolean checkPawnsEaten(int toX, int toY, Pawn movedPawn, List<Pawn> newPawns) {
+			boolean haveEaten = false;
+			// Get all the "near" pawns (near means +1 or -1 in vertical or horizontal) 
+			List<Pawn> pawnOfInterest = newPawns.stream().filter(p -> p.isBlack() != movedPawn.isBlack() && (Math.abs(p.getX() - toX) + Math.abs(p.getY()- toY) == 1)).collect(Collectors.toList());
+			int deltaX, deltaY;
+			boolean haveToEat = false;
+			
+			for (Pawn pawn : pawnOfInterest) {
+				deltaX = (pawn.getX() - toX)*2;
+				deltaY = (pawn.getY() - toY)*2;
+				final int partnerPositionX = deltaX + toX;
+				final int partnerPositionY = deltaY + toY;
+				haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX && p.getY() == partnerPositionY)) ||
+						(tronePosition.x == partnerPositionX && tronePosition.y == partnerPositionY) ||
+						(citadels.stream().anyMatch(c -> c.isXYInFringeCitadels(partnerPositionX, partnerPositionY)));
+
+				if (haveToEat && pawn.king && protectedKingPositions.contains(pawn.position)) { // Special case for king
+					final int partnerPositionX_2 = pawn.getX() + (deltaY != 0 ? 1 : 0);
+					final int partnerPositionY_2 = pawn.getY() + (deltaX != 0 ? 1 : 0);
+					haveToEat = newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_2 && p.getY() == partnerPositionY_2)) ||
+							(tronePosition.x == partnerPositionX_2 && tronePosition.y == partnerPositionY_2);
+					final int partnerPositionX_3 = pawn.getX() + (deltaY != 0 ? -1 : 0);
+					final int partnerPositionY_3 = pawn.getY() + (deltaX != 0 ? -1 : 0);
+					haveToEat = haveToEat && newPawns.stream().anyMatch(p -> p.isBlack() == movedPawn.isBlack() && (p.getX() == partnerPositionX_3 && p.getY() == partnerPositionY_3)) ||
+							(tronePosition.x == partnerPositionX_3 && tronePosition.y == partnerPositionY_3);
+				}
+
+				if (haveToEat) {
+					newPawns.remove(pawn);
+					haveEaten = true;
+				}
+			}
+			return haveEaten;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return this.generateNext();
+		}
+
+		@Override
+		public State next() {
+			if(this.nextPresent){
+				return this.next;
+			}else{
+				throw new IllegalStateException("You need to call hasNext() first");
+			}
+		}
+		
+		protected State getState() {
+			return this.s;
+		}
+		
+	}
+	public class StateChild implements Iterable<State>{
+		private StateGenerator sg;
+		
+		public StateChild(State s) {
+			super();
+			this.sg = s.getChildGenerator();
+		}
+
+		public Stream<State> stream() {
+			return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this.sg, Spliterator.ORDERED), false);
+		}
+
+		@Override
+		public Iterator<State> iterator() {
+			return this.sg;
+		}
+	}
+	
+	private static class OptionalState {
+		private State s;
+		private boolean isValid;
+		private boolean isPresent;
+		
+		private OptionalState(State s, boolean isValid, boolean isPresent) {
+			if(s == null){
+				this.s = null;
+				this.isValid = false;
+				this.isPresent = false;
+			}else{
+				this.s = s;
+				this.isValid = isValid;
+				this.isPresent = isPresent;
+			}
+		}
+		public State get() {
+			if(this.isPresent){
+				return this.s;
+			}else{
+				throw new NullPointerException();
+			}
+		}
+		public boolean isValid() {
+			return this.isValid;
+		}
+		public boolean isPresent() {
+			return this.isPresent;
+		}
+		public boolean isPresentValid(){
+			return this.isPresent() && this.isValid();
+		}
+
+		public static OptionalState of(State s){
+			return new OptionalState(s, true, true);
+		}
+		public static OptionalState empty(){
+			return new OptionalState(null, false, false);
+		}
+		public static OptionalState invalid(State s){
+			return new OptionalState(s, false, true);
+		}
+	}
+	
+	public class ParallelStateGenerator extends State.StateGenerator {
+		private static final int QUEUESIZE = 3;
+		
+		private boolean finishedToGenerate = false;
+		private ConcurrentLinkedQueue<State> generatedQueue = new ConcurrentLinkedQueue<>();
+		
+		public ParallelStateGenerator(State s) {
+			super(s);
+			
+			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
+			for (int i = 0; i < QUEUESIZE; i++) {
+				threadPool.add(this);
+			}
+		}
+		
+		private Optional<State> getNext() {
+			synchronized (this) {
+				if (super.hasNext())
+					return Optional.of(super.next());
+				else
+					return Optional.empty();
+			}
+		}
+		
+		public void generateAndCache() {
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+				State n = next.get();
+				if (n.isTerminal())
+					n.getUtility();
+				else 
+					n.getHeuristic();
+				n.threatenKingRemaining();
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
+			}
+		}
+		
+		public void generate() {
+			if (this.finishedToGenerate) // Finished yet!
+				return;
+			
+			Optional<State> next = this.getNext();
+			if (next.isPresent()) { // Found a new state, save it!
+				this.generatedQueue.add(next.get());
+			} else { // not got the next -> I have finished to generating
+				finishedToGenerate = true;
+			}
+		}
+		
+		private Optional<State> next = Optional.empty();
+		@Override
+		public boolean hasNext() {
+			if (this.generatedQueue.isEmpty()) { // Nothing cached, calculate!
+				this.generate();
+			}
+			if (this.finishedToGenerate && this.generatedQueue.isEmpty()) { // Finished to generate and nothing in queue
+				return false;
+			} else {
+				this.next = Optional.of(this.generatedQueue.poll());
+				if (!this.finishedToGenerate)
+					threadPool.add(this);
+			}
+			return true;
+		}
+		
+		@Override
+		public State next() {
+			if (!this.next.isPresent())
+				throw new IllegalStateException("You must call hasNext() before!");
+			State next = this.next.get();
+			this.next = Optional.empty();
+			return next;
+		}
+		
+	}
+
 }

@@ -1,18 +1,17 @@
 package bhestie.zizcom.tests;
 
-import bhestie.levpos.HeuristicCalculatorGroup;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Random;
+
 import bhestie.levpos.Minimax;
 import bhestie.levpos.State;
 import bhestie.levpos.utils.HistoryStorage;
 import bhestie.zizcom.Board;
 import bhestie.zizcom.Connector;
 
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Random;
-
-public class MainBlack {
+public class MainOld {
 
 	private static final boolean whitePlayer = false;
 	private static final boolean blackPlayer = !whitePlayer;
@@ -83,7 +82,7 @@ public class MainBlack {
 				break;
 			case THREAD_FLAG:
 				try{
-					HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
+					//HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
 					defaultThreads = false;
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
@@ -120,13 +119,13 @@ public class MainBlack {
 			}
 		}
 		if(defaultThreads){
-			HeuristicCalculatorGroup.getInstance().addThreads(3);		
+			//HeuristicCalculatorGroup.getInstance().addThreads(3);		
 		}
 	}
 	
 	public static void main(String[] args) {
 		try{
-			args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "300"}; //FIXME remove this to start it from CLI
+			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "300"}; //FIXME remove this to start it from CLI
 			
 			parse(args);
 			printLogo();
@@ -194,7 +193,7 @@ public class MainBlack {
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");
-			HeuristicCalculatorGroup.getInstance().killAll();
+			//HeuristicCalculatorGroup.getInstance().killAll();
 			System.exit(-7);
 		}
 	}
