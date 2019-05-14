@@ -430,7 +430,7 @@ public class TestState {
 		assertEquals(state.whitePawnSurroundingKing(), 4);
 	}
 
-	@Test
+	/*@Test
 	public void testLogaritmicFunctionInEvaluationEatenWhitePawns() {
 		List<Pawn> initialPawnState = new LinkedList<>();
 		initialPawnState.add(new Pawn(false, 5, 5, true));
@@ -464,7 +464,7 @@ public class TestState {
 				state5.calculateEatenWhitePawnsValue() < state6.calculateEatenWhitePawnsValue() &&
 				state6.calculateEatenWhitePawnsValue() < state7.calculateEatenWhitePawnsValue() &&
 				state7.calculateEatenWhitePawnsValue() < state8.calculateEatenWhitePawnsValue());
-	}
+	}*/
 	
 	@Test
 	public void testEatKingNearTrone() {

@@ -258,18 +258,13 @@ public class State {
 
 	public int whitePawnSurroundingKing(){
 		Pawn k = this.getKing();
+		
+		if (k == null) {
+			return 0;
+		}
 
-		//it doesn't matter to check other things
-		//if king is in the border is escaped
-		//if king is near citadel we don't count here...whe have other heuristic
-		Position[] tp = new Position[]{
-				Position.of(k.getX() + 1, k.getY()), //e
-				Position.of(k.getX(), k.getY() + 1), //s
-				Position.of(k.getX() - 1, k.getY()), //w
-				Position.of(k.getX(), k.getY() - 1)  //n
-		};
-
-		return (int) pawns.stream().filter(p -> p.isWhite() && Position.of(p.getX(), p.getY()).equalsAny(tp)).count();
+		return (int) this.pawns.stream().filter(p -> p.isWhite() && !p.king && Math.abs(p.getX() - k.getX()) + Math.abs(p.getY() - k.getY()) == 1).count();
+		
 	}
 	
 	public List<List<Position>> threatenKingRemaining(){
@@ -665,11 +660,6 @@ public class State {
 		return false;
 	}
 
-	public double calculateEatenWhitePawnsValue(){
-		long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
-		return Math.log(2*(numberOfWhitePawns-1) + 1)/2.82;
-	}
-
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
@@ -731,159 +721,75 @@ public class State {
 		
 		// Check for number of black pawns (eat)
 		{
-			//result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
-			// FIXME check the belowe function! It is incorrect
-			// TODO il valore massimo che puo assmure questa euristica e 16 (non ho ancora mangiato nessuno)
-			//  quindi perche divido per 240? non ddovrei dividere per 16 appunto?
-			//  lasciando 240 il valore non oscilla tra 0 e eatingPoints ma tra 16*eatingPoins/240
-			//  quindi per il primo turno in cui eating poins vale 200 viene 17
-			result += (16 - blackPawnsNumber) * eatingPoints / 16; //Like Bisa's idea on Octagon
+			final long currentEatingPoints;
+			if (blackPawnsNumber > 12) {
+				currentEatingPoints = 14+5 + (blackPawnsNumber - 12) * 2 / 4;
+			} else if (blackPawnsNumber > 7) {
+				currentEatingPoints = 14 + (blackPawnsNumber - 7) * 5 / 5;
+			} else {
+				currentEatingPoints = (blackPawnsNumber) * 14 / 7;
+			}
+			result += currentEatingPoints * eatingPoints / 21;
 		}
 		
-		/*
-		// Check for number of black pawns
-		{
-			long maxResultForBlackPawns = WHITE_HEURISTIC_POINTS_FOR_EATING_BLACK_PAWNS;
-			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
-			// ( e ^ ( (16-x)/10 ) - 1 ) * ( 1 / ( e ^ (16/10) - 1 ) )
-			double tmp = ( Math.exp(16d/10) - 1 ); // Moltiplicatore finale
-			long currentResultForWhitePawns = (long) (( Math.exp((16d-numberOfBlackPawns)/10) - 1 ) * maxResultForBlackPawns / tmp);
-			
-			result += currentResultForWhitePawns;
-		}
-		*/
-		
-		// Check for number of white pawns (the more are the more it increases)
-		/*{
-			long maxResultForWhitePawns = WHITE_HEURISTIC_POINTS_FOR_HAVING_WHITE_PAWNS;
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite()).count();
-			// ( e ^ ( (9-x)/10 ) - 1 ) * ( 1 / ( e ^ (9/10) - 1 ) )
-			//TODO flippare la parabola (conta poco perdere i primi e molto perdere tanti
-			double tmp = ( Math.exp(9d/10) - 1 ); // Moltiplicatore finale
-			long currentResultForWhitePawns = (long) (( Math.exp((9d-numberOfWhitePawns)/10) - 1 ) * maxResultForWhitePawns / tmp);
-			result += currentResultForWhitePawns;
-		}*/
-
 		// Check for number of white pawns (not being eaten)
 		{
-			result += calculateEatenWhitePawnsValue() * dontBeEatenPoints;
-			/*
-			long currentResultForWhitePawns;
-			// FIXME check the function if does what we want
-			// Here some random calculus. The more pawns are eaten, the more I care to avoid being eaten (Bisa did the same...)
-			if (numberOfWhitePawns >= 7) {
-				currentResultForWhitePawns = 7 + (numberOfWhitePawns - 4) * 8 / 4;
-			} else if (numberOfWhitePawns >= 5) {
-				currentResultForWhitePawns = 5 + (numberOfWhitePawns - 4) * 6 / 4;
-			} else if (numberOfWhitePawns >= 3) {
-				currentResultForWhitePawns = 3 + (numberOfWhitePawns - 4) * 4 / 4;
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			final long currentDontBeEaten;
+			if (numberOfWhitePawns > 6) {
+				currentDontBeEaten = 2+2+8+4 + (numberOfWhitePawns - 6) * 6 / 2;
+			} else if (numberOfWhitePawns > 2) {
+				currentDontBeEaten = 2+2 + (numberOfWhitePawns - 2) * 8 / 4;
 			} else {
-				currentResultForWhitePawns = (numberOfWhitePawns - 4) * 2 / 4;
+				currentDontBeEaten = numberOfWhitePawns * 2 / 2;
 			}
-			result += currentResultForWhitePawns * dontBeEatenPoints / 8;
-			*/
+			result += currentDontBeEaten * dontBeEatenPoints / 22;
 		}
-		
-		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-		
-		// TODO calculate remaining position for caputure king. ora se il re è circondato da 2 parti potrebbe capitare che venga mangiato da 2 parti, quindi la remaining poisition è 1, non 2 (anche se è circondato da 2 posizioni)
-		//int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-		//result += remainingPositionForSurroundingKing * WHITE_HEURISTIC_REMAINING_POSITION_FOR_CAPTURE_KING;
 		
 		// King under check
 		{
-			int remainingPositionForSurroundingKing = this.remainingPositionForSurroundingKing();
-			// FIXME check the points gives
-			//  corretto col / 4, in questo modo il valore risultante oscilla tra 0 e kingUnderCheckPoints
-			result += remainingPositionForSurroundingKing / 4 * kingUnderCheckPoints;
+			result += this.remainingPositionForSurroundingKing() * kingUnderCheckPoints / 4;
 		}
 		
-		// TODO Protected King
+		// Protected King
 		{
 			// Maybe count white pawns "linger" the king, then multiply it with the points
 			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
-
-			result += whitePawnSurroundingKing() / 4 * kingProtectedPoints;
-		}
-		
-		/*
-		if (State.TURN > 2 && State.TURN <= 5) {
-			result += (6 - this.rawDistanceFromEscape()) * DISTANCE_FROM_ESCAPE_VALUE_FOR_WHITE_HEURISTIC;
-		}
-
-		if (State.TURN < 3) {
-			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS;
-		} else if (State.TURN == 3) {
-			result += this.mainAxisDefaultPosition() * WHITE_PAWNS_ON_MAIN_AXIS / 2;
-		}
-
-		if (State.TURN > 2) {
-			int kingEscapes = this.kingEscape();
-			if(kingEscapes >= 2)
-				return Minimax.MAXVALUE;
-			result += kingEscapes * WHITE_KING_ESCAPES;
-
-
-			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-				result += WHITE_KING_IN_GOOD_POSITION;
+			int whitePawnsSuroundingKing = this.whitePawnSurroundingKing();
+			if (whitePawnsSuroundingKing < 4) {
+				result += whitePawnsSuroundingKing * kingProtectedPoints / 4;
+			} else {
+				result += 3 * kingProtectedPoints / 4;
 			}
-
-		}*/
+		}
 		
 		// Raw distance from escape
 		{
-			// FIXME
-			//  bhestia dice : giusto
-			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints;
+			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
 		}
 		
 		// White on main axis
 		{
-			// FIXME
-			//  bhestia dice : giusto, col / 8 oscilla tra 0 e whiteOnMainAxisPoints
-			result += this.mainAxisDefaultPosition() / 8 * whiteOnMainAxisPoints;
+			result += (8 - this.mainAxisDefaultPosition()) * whiteOnMainAxisPoints / 8;
 		}
 		
 		// Go in a spot with some escapes
 		{
 			int kingEscapes = this.kingEscape();
 			
-			//XXX Do we really need this? Minimax should do this, right?
 			if(kingEscapes >= 2) {
-				return Minimax.MAXVALUE;
+				return this.getUtilityValue();
 			}
-			// bhestia dice: va bene, kingEscapes al piu vale 1
-			result += kingEscapes * kingEscapesPoints;
+			result += kingEscapes * kingEscapesPoints / 4;
 		}
 		
 		// Go in a "good position"
 		{
 			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-				//ok, la ponderazione non serve, e binaria la cosa
 				result += kingInGoodPositionPoints;
 			}
 		}
-
-		/*
-		if (State.TURN > 2) {
-			int kingEscapes = this.kingEscape();
-			int parentKingEscapes = this.parent.kingEscape();
-			result += kingEscapes * WHITE_KING_ESCAPES;
-			if (kingEscapes > parentKingEscapes) { // more escapes then parent
-				result += (kingEscapes - parentKingEscapes) * WHITE_KING_MORE_ESCAPES_THEN_PARENT;
-			}
-			
-			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-				result += WHITE_KING_IN_GOOD_POSITION;
-			}
-			
-		}
-		*/
-
-		//result += pawns.stream().filter(pawn -> pawn.isWhite()).count() * WHITE_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
-
-		//result += (16 - pawns.stream().filter(pawn -> pawn.isBlack()).count()) * BLACK_PAWNS_VALUE_FOR_WHITE_HEURISTIC;
 
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
