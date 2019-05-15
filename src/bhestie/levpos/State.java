@@ -117,8 +117,8 @@ public class State {
 	 * Returns a generator that generates all possible combination of future states of the current state
 	 * @return an iterator to generate children
 	 */
-	public StateGenerator getChildGenerator() {//FIXEME was parallel
-		return new StateGenerator(this);
+	public StateGenerator getChildGenerator() {
+		return new ParallelStateGenerator(this);
 	}
 	/**
 	 * Returns an Iterable object that generates all possible children of the current status
@@ -348,12 +348,10 @@ public class State {
 		return Math.min(result, Minimax.MAXVALUE);
 	}
 	
-	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult, boolean preferInternal) {
+	private long getPointsForOctagonInCardinalPoint(Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult) {
 		long currentResult = 0;
 		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
-		long numberOfWhitesOutOfInternalOctagon = this.checkROIQuantity(fromInternal.x, fromInternal.y, toInternal.x, toInternal.y, p -> p.isWhite() && !p.position.equals(excludeForInternal));
 		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
-		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
 		
 		if (numberOfWhitesOutOfExternalOctagon >= 2) {
 			maxResult = 0;
@@ -361,14 +359,10 @@ public class State {
 			maxResult = 90 * maxResult / 200;
 		}
 		
-		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult - 50;
-		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
-			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
+		if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
+			currentResult = maxResult;
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
-			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
-			if (numberOfBlackPawnsInInternalOctagon > numberOfBlackPawnsInExternalOctagon)
-				currentResult -= 50;
+			currentResult = numberOfBlackPawnsInExternalOctagon* maxResult / 2;
 		}
 		return currentResult;
 	}
@@ -437,22 +431,22 @@ public class State {
 		
 		// Check for North-east octagon
 		long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
-		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast, malusNorth > 0 || malusEast > 0);
+		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast);
 		result += resultNorthEast;
 		
 		// Check for North-west octagon
 		long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
-		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest, malusNorth > 0 || malusWest > 0);
+		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest);
 		result += resultNorthWest;
 		
 		// Check for South-east octagon
 		long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
-		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast, malusSouth > 0 || malusEast > 0);
+		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast);
 		result += resultSouthEast;
 		
 		// Check for South-west octagon
 		long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
-		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest, malusSouth > 0 || malusWest > 0);
+		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest);
 		result += resultSouthWest;
 		
 		// Check for number of black pawns (not be eaten)
