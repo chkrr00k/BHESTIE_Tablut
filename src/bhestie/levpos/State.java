@@ -424,7 +424,7 @@ public class State {
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
-			blackPawnsDistanceFromKing = 5;
+			blackPawnsDistanceFromKing = -5;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 300;
 			eatingPoints = 325;
@@ -432,7 +432,7 @@ public class State {
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
 			kingAssaultPoints = 100;
-			blackPawnsDistanceFromKing = 10;
+			blackPawnsDistanceFromKing = -10;
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 100;
@@ -440,7 +440,7 @@ public class State {
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
 			kingAssaultPoints = 150;
-			blackPawnsDistanceFromKing = 15;
+			blackPawnsDistanceFromKing = -15;
 		}
 		
 		long result = 0;
