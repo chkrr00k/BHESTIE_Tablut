@@ -368,7 +368,7 @@ public class State {
 		}
 		
 		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult;
+			currentResult = maxResult - 10;
 		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
 			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
