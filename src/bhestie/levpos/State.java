@@ -398,29 +398,29 @@ public class State {
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			octagonPoints = 400;
-			eatingPoints = 350;
-			notBeEatenPoints = 150;
+			eatingPoints = 300;
+			notBeEatenPoints = 200;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
 			kingAssaultPoints = -25;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			octagonPoints = 250;
-			eatingPoints = 350;
-			notBeEatenPoints = 176;
+			eatingPoints = 300;
+			notBeEatenPoints = 226;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
-			octagonPoints = 350;
-			eatingPoints = 275;
+			octagonPoints = 300;
+			eatingPoints = 325;
 			notBeEatenPoints = 175;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
 			kingAssaultPoints = 100;
 		} else { // Desperation phase
 			octagonPoints = 400;
-			eatingPoints = 150;
-			notBeEatenPoints = 200;
+			eatingPoints = 100;
+			notBeEatenPoints = 250;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
 			kingAssaultPoints = 150;
