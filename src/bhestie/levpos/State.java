@@ -21,8 +21,8 @@ public class State {
 	public static int MULTIPLICATOR = 1;
 
 	private static final int END_PREPARATION_PHASE = 7;
-	private static final int END_MAIN_PHASE = 16;
-	private static final int END_ATTACK_PHASE = 30;
+	private static final int END_MAIN_PHASE = 12;
+	private static final int END_ATTACK_PHASE = 20;
 
 	public static int TURN = 0;
 	
@@ -362,7 +362,7 @@ public class State {
 		}
 		
 		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult;
+			currentResult = maxResult - 10;
 		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
 			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
@@ -379,12 +379,12 @@ public class State {
 		// Avoid to let the enemy win
 		int kingEscape = this.kingEscape();
 		if (kingEscape > 0) {
-			return -Minimax.MAXVALUE;
+			return -this.getUtilityValue();
 		}
 		
 		// Negative if black has 3 or less pawns and white has still 2 pawns
 		if (this.pawns.stream().filter(p -> p.isBlack()).count() <= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() >= 2) {
-			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
+			return -this.getUtilityValue(); // try to draw
 		}
 		
 		final int octagonPoints;
@@ -409,12 +409,12 @@ public class State {
 			remainInCitadelsPoints = 124;
 			kingAssaultPoints = 0;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
-			octagonPoints = 500;
-			eatingPoints = 150;
-			notBeEatenPoints = 150;
+			octagonPoints = 450;
+			eatingPoints = 175;
+			notBeEatenPoints = 175;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
-			kingAssaultPoints = 90;
+			kingAssaultPoints = 100;
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 150;
@@ -458,17 +458,17 @@ public class State {
 			long numberOfBlackPawns = this.pawns.stream().filter(p -> p.isBlack()).count();
 			final double currentResultForBlackPawns;
 			
-			if (numberOfBlackPawns >= 12) {
-				currentResultForBlackPawns = 2+5+7 + (numberOfBlackPawns - 4) * 2 / 4;
+			if (numberOfBlackPawns >= 14) {
+				currentResultForBlackPawns = 2+5+9 + (numberOfBlackPawns - 2) * 2 / 2;
 			} else if (numberOfBlackPawns >= 8) {
-				currentResultForBlackPawns = 2+5 + (numberOfBlackPawns - 4) * 7 / 4;
+				currentResultForBlackPawns = 2+5 + (numberOfBlackPawns - 6) * 9 / 8;
 			} else if (numberOfBlackPawns >= 4) {
 				currentResultForBlackPawns = 2 + (numberOfBlackPawns - 4) * 5 / 4;
 			} else {
 				currentResultForBlackPawns = (numberOfBlackPawns - 4) * 2 / 4;
 			}
 			
-			result += currentResultForBlackPawns * notBeEatenPoints / 16;
+			result += currentResultForBlackPawns * notBeEatenPoints / 18;
 		}
 		
 		// Check for number of white pawns (the less are the more it increases) (eat)
@@ -536,6 +536,142 @@ public class State {
 		return result * MULTIPLICATOR;
 	}
 	
+	/**
+	 * The biggest value the more "good" is the board
+	 * @return A number that stimates the "goodness" of the board 
+	 */
+	private long getHeuristicWhite() {
+		// Negative if black has 3 or more pawns and white has only the king
+		if (this.pawns.stream().filter(p -> p.isBlack()).count() >= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() <= 1) {
+			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
+		}
+		
+		final int eatingPoints;
+		final int dontBeEatenPoints;
+		final int kingUnderCheckPoints;
+		final int kingInGoodPositionPoints;
+		final int kingEscapesPoints;
+		final int whiteOnMainAxisPoints;
+		final int rawDistanceFromEscapePoints;
+		final int kingProtectedPoints;
+		
+		if (State.TURN <= END_PREPARATION_PHASE) {
+			eatingPoints = 250;
+			dontBeEatenPoints = 125;
+			kingUnderCheckPoints = 150;
+			kingInGoodPositionPoints = 50;
+			kingEscapesPoints = 100;
+			whiteOnMainAxisPoints = 160;
+			rawDistanceFromEscapePoints = -10; //XXX negative
+			kingProtectedPoints = 175;
+		} else if (State.TURN <= END_MAIN_PHASE) {
+			eatingPoints = 200;
+			dontBeEatenPoints = 125;
+			kingUnderCheckPoints = 150;
+			kingInGoodPositionPoints = 100;
+			kingEscapesPoints = 100;
+			whiteOnMainAxisPoints = 100;
+			rawDistanceFromEscapePoints = 25;
+			kingProtectedPoints = 200;
+		} else if (State.TURN <= END_ATTACK_PHASE) {
+			eatingPoints = 75;
+			dontBeEatenPoints = 165;
+			kingUnderCheckPoints = 190;
+			kingInGoodPositionPoints = 115;
+			kingEscapesPoints = 140;
+			whiteOnMainAxisPoints = 0;
+			rawDistanceFromEscapePoints = 75;
+			kingProtectedPoints = 240;
+		} else { //DESPERATION PHASE
+			eatingPoints = 50;
+			dontBeEatenPoints = 200;
+			kingUnderCheckPoints = 225;
+			kingInGoodPositionPoints = 75;
+			kingEscapesPoints = 200;
+			whiteOnMainAxisPoints = 0;
+			rawDistanceFromEscapePoints = 0;
+			kingProtectedPoints = 250;
+		}
+		
+		long result = 0;
+		
+		// Check for number of black pawns (eat)
+		{
+			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
+			final long currentEatingPoints;
+			if (blackPawnsNumber > 12) {
+				currentEatingPoints = 14+5 + (blackPawnsNumber - 12) * 8 / 4;
+			} else if (blackPawnsNumber > 7) {
+				currentEatingPoints = 14 + (blackPawnsNumber - 7) * 5 / 5;
+			} else {
+				currentEatingPoints = (blackPawnsNumber) * 14 / 7;
+			}
+			result += currentEatingPoints * eatingPoints / 25;
+		}
+		
+		// Check for number of white pawns (not being eaten)
+		{
+			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			final long currentDontBeEaten;
+			if (numberOfWhitePawns > 7) {
+				currentDontBeEaten = 2+2+8+4 + (numberOfWhitePawns - 7) * 6 / 1;
+			} else if (numberOfWhitePawns > 2) {
+				currentDontBeEaten = 2+2 + (numberOfWhitePawns - 2) * 8 / 5;
+			} else {
+				currentDontBeEaten = numberOfWhitePawns * 2 / 2;
+			}
+			result += currentDontBeEaten * dontBeEatenPoints / 22;
+		}
+		
+		// King under check
+		{
+			result += this.remainingPositionForSurroundingKing() * kingUnderCheckPoints / 4;
+		}
+		
+		// Protected King
+		{
+			// Maybe count white pawns "linger" the king, then multiply it with the points
+			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
+			int whitePawnsSuroundingKing = this.whitePawnSurroundingKing();
+			if (whitePawnsSuroundingKing < 4) {
+				result += whitePawnsSuroundingKing * kingProtectedPoints / 4;
+			} else {
+				result += 3 * kingProtectedPoints / 4;
+			}
+		}
+		
+		// Raw distance from escape
+		{
+			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
+		}
+		
+		// White on main axis
+		{
+			result += (8 - this.mainAxisDefaultPosition()) * whiteOnMainAxisPoints / 8;
+		}
+		
+		// Go in a spot with some escapes
+		{
+			final int kingEscapes = this.kingEscape();
+			
+			if(kingEscapes >= 2) {
+				return this.getUtilityValue();
+			}
+			result += kingEscapes * kingEscapesPoints / 4;
+		}
+		
+		// Go in a "good position"
+		{
+			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
+				result += kingInGoodPositionPoints;
+			}
+		}
+	
+	
+		//result = 10; // XXX disabled
+		return result * MULTIPLICATOR;
+	}
+
 	public boolean veryUglyKingPosition() {
 		List<List<Position>> positionWhereKingCanBeEaten = this.threatenKingRemaining();
 		for (List<Position> list : positionWhereKingCanBeEaten) {
@@ -578,142 +714,6 @@ public class State {
 		return false;
 	}
 
-	/**
-	 * The biggest value the more "good" is the board
-	 * @return A number that stimates the "goodness" of the board 
-	 */
-	private long getHeuristicWhite() {
-		// Negative if black has 3 or more pawns and white has only the king
-		if (this.pawns.stream().filter(p -> p.isBlack()).count() >= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() <= 1) {
-			return -Minimax.MAXVALUE; // I'm gonna lose -> try to draw!
-		}
-		
-		final int eatingPoints;
-		final int dontBeEatenPoints;
-		final int kingUnderCheckPoints;
-		final int kingInGoodPositionPoints;
-		final int kingEscapesPoints;
-		final int whiteOnMainAxisPoints;
-		final int rawDistanceFromEscapePoints;
-		final int kingProtectedPoints;
-		
-		if (State.TURN <= END_PREPARATION_PHASE) {
-			eatingPoints = 250;
-			dontBeEatenPoints = 125;
-			kingUnderCheckPoints = 150;
-			kingInGoodPositionPoints = 50;
-			kingEscapesPoints = 100;
-			whiteOnMainAxisPoints = 150;
-			rawDistanceFromEscapePoints = 0;
-			kingProtectedPoints = 175;
-		} else if (State.TURN <= END_MAIN_PHASE) {
-			eatingPoints = 200;
-			dontBeEatenPoints = 125;
-			kingUnderCheckPoints = 150;
-			kingInGoodPositionPoints = 100;
-			kingEscapesPoints = 100;
-			whiteOnMainAxisPoints = 75;
-			rawDistanceFromEscapePoints = 50;
-			kingProtectedPoints = 200;
-		} else if (State.TURN <= END_ATTACK_PHASE) {
-			eatingPoints = 75;
-			dontBeEatenPoints = 165;
-			kingUnderCheckPoints = 190;
-			kingInGoodPositionPoints = 115;
-			kingEscapesPoints = 140;
-			whiteOnMainAxisPoints = 0;
-			rawDistanceFromEscapePoints = 75;
-			kingProtectedPoints = 240;
-		} else { //DESPERATION PHASE
-			eatingPoints = 50;
-			dontBeEatenPoints = 200;
-			kingUnderCheckPoints = 225;
-			kingInGoodPositionPoints = 75;
-			kingEscapesPoints = 200;
-			whiteOnMainAxisPoints = 0;
-			rawDistanceFromEscapePoints = 0;
-			kingProtectedPoints = 250;
-		}
-		
-		long result = 0;
-		
-		// Check for number of black pawns (eat)
-		{
-			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
-			final long currentEatingPoints;
-			if (blackPawnsNumber > 12) {
-				currentEatingPoints = 14+5 + (blackPawnsNumber - 12) * 2 / 4;
-			} else if (blackPawnsNumber > 7) {
-				currentEatingPoints = 14 + (blackPawnsNumber - 7) * 5 / 5;
-			} else {
-				currentEatingPoints = (blackPawnsNumber) * 14 / 7;
-			}
-			result += currentEatingPoints * eatingPoints / 21;
-		}
-		
-		// Check for number of white pawns (not being eaten)
-		{
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
-			final long currentDontBeEaten;
-			if (numberOfWhitePawns > 6) {
-				currentDontBeEaten = 2+2+8+4 + (numberOfWhitePawns - 6) * 6 / 2;
-			} else if (numberOfWhitePawns > 2) {
-				currentDontBeEaten = 2+2 + (numberOfWhitePawns - 2) * 8 / 4;
-			} else {
-				currentDontBeEaten = numberOfWhitePawns * 2 / 2;
-			}
-			result += currentDontBeEaten * dontBeEatenPoints / 22;
-		}
-		
-		// King under check
-		{
-			result += this.remainingPositionForSurroundingKing() * kingUnderCheckPoints / 4;
-		}
-		
-		// Protected King
-		{
-			// Maybe count white pawns "linger" the king, then multiply it with the points
-			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
-			int whitePawnsSuroundingKing = this.whitePawnSurroundingKing();
-			if (whitePawnsSuroundingKing < 4) {
-				result += whitePawnsSuroundingKing * kingProtectedPoints / 4;
-			} else {
-				result += 3 * kingProtectedPoints / 4;
-			}
-		}
-		
-		// Raw distance from escape
-		{
-			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
-		}
-		
-		// White on main axis
-		{
-			result += (8 - this.mainAxisDefaultPosition()) * whiteOnMainAxisPoints / 8;
-		}
-		
-		// Go in a spot with some escapes
-		{
-			int kingEscapes = this.kingEscape();
-			
-			if(kingEscapes >= 2) {
-				return this.getUtilityValue();
-			}
-			result += kingEscapes * kingEscapesPoints / 4;
-		}
-		
-		// Go in a "good position"
-		{
-			if(this.checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king))){
-				result += kingInGoodPositionPoints;
-			}
-		}
-
-
-		//result = 10; // XXX disabled
-		return result * MULTIPLICATOR;
-	}
-	
 	/**
 	 * Checks if the board is in a terminal position.
 	 * @return If the board is in a terminal position.
