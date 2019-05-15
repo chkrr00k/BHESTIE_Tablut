@@ -362,11 +362,13 @@ public class State {
 		}
 		
 		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult - 10;
+			currentResult = maxResult - 50;
 		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
 			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
 			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
+			if (numberOfBlackPawnsInInternalOctagon > numberOfBlackPawnsInExternalOctagon)
+				currentResult -= 50;
 		}
 		return currentResult;
 	}
@@ -395,22 +397,22 @@ public class State {
 		final int kingAssaultPoints;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			octagonPoints = 700;
-			eatingPoints = 50;
-			notBeEatenPoints = 125;
-			whiteKingGoodPositionPoints = 25;
-			remainInCitadelsPoints = 100;
-			kingAssaultPoints = 0;
+			octagonPoints = 400;
+			eatingPoints = 350;
+			notBeEatenPoints = 150;
+			whiteKingGoodPositionPoints = 0;
+			remainInCitadelsPoints = 125;
+			kingAssaultPoints = -25;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			octagonPoints = 500;
-			eatingPoints = 100;
+			octagonPoints = 250;
+			eatingPoints = 350;
 			notBeEatenPoints = 176;
-			whiteKingGoodPositionPoints = 100;
-			remainInCitadelsPoints = 124;
+			whiteKingGoodPositionPoints = 50;
+			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
-			octagonPoints = 450;
-			eatingPoints = 175;
+			octagonPoints = 350;
+			eatingPoints = 275;
 			notBeEatenPoints = 175;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
@@ -418,10 +420,10 @@ public class State {
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 150;
-			notBeEatenPoints = 150;
+			notBeEatenPoints = 200;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
-			kingAssaultPoints = 200;
+			kingAssaultPoints = 150;
 		}
 		
 		long result = 0;
@@ -561,25 +563,25 @@ public class State {
 			kingUnderCheckPoints = 150;
 			kingInGoodPositionPoints = 50;
 			kingEscapesPoints = 100;
-			whiteOnMainAxisPoints = 160;
+			whiteOnMainAxisPoints = 100;
 			rawDistanceFromEscapePoints = -10; //XXX negative
-			kingProtectedPoints = 175;
+			kingProtectedPoints = 235;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			eatingPoints = 175;
-			dontBeEatenPoints = 150;
-			kingUnderCheckPoints = 150;
+			dontBeEatenPoints = 225;
+			kingUnderCheckPoints = 175;
 			kingInGoodPositionPoints = 100;
 			kingEscapesPoints = 100;
-			whiteOnMainAxisPoints = 100;
+			whiteOnMainAxisPoints = -50;
 			rawDistanceFromEscapePoints = 25;
 			kingProtectedPoints = 200;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			eatingPoints = 75;
 			dontBeEatenPoints = 165;
 			kingUnderCheckPoints = 190;
-			kingInGoodPositionPoints = 115;
+			kingInGoodPositionPoints = 150;
 			kingEscapesPoints = 140;
-			whiteOnMainAxisPoints = 0;
+			whiteOnMainAxisPoints = -25;
 			rawDistanceFromEscapePoints = 75;
 			kingProtectedPoints = 240;
 		} else { //DESPERATION PHASE
