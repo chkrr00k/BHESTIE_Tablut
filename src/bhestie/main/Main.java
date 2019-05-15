@@ -43,6 +43,7 @@ public class Main {
 							"In oculis eius quasi hamo capiet eum, et in sudibus perforabit nares eius.\n");
 	}
 	
+	private static final int DEFAULT_THREADS_NUMBER = 4;
 	private static final String WHITE = "white";
 	private static final String BLACK = "black";
 	private static final String THREAD_FLAG = "-t";
@@ -56,7 +57,7 @@ public class Main {
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
-			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
+			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: " + DEFAULT_THREADS_NUMBER + ")\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
 			+ "\t" + SCALING_DOWN_FLAG + " <n>\tThe times the process have to signaled to be scaled down in depth "
@@ -82,7 +83,7 @@ public class Main {
 			System.err.println("You need to give me the color you want to play!\n [white|black]");
 			System.exit(-1);
 		}
-		boolean defaultThreads = true;
+		int numberOfThreads = DEFAULT_THREADS_NUMBER;
 		for(int i = 1; i < args.length; i++){
 			switch(args[i]){
 			case HELP_FLAG:
@@ -91,8 +92,7 @@ public class Main {
 				break;
 			case THREAD_FLAG:
 				try{
-					ThreadPool.getInstance().setMaxThreads(Integer.parseInt(args[++i]));
-					defaultThreads = false;
+					numberOfThreads = Integer.parseInt(args[++i]);
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
 					System.exit(-2);
@@ -142,16 +142,13 @@ public class Main {
 				}
 				break;
 			}
-			
 		}
-		if(defaultThreads){
-			ThreadPool.getInstance().setMaxThreads(4);		
-		}
+		ThreadPool.getInstance().setMaxThreads(numberOfThreads);	
 	}
 	
 	public static void main(String[] args) {
 		try{
-//			args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+			args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "4", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 
 			parse(args);
 			printLogo();

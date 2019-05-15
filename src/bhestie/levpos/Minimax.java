@@ -32,7 +32,7 @@ public final class Minimax {
 	
 	private static Interrupter interrupter;
 	
-	public static final long MAXVALUE = 1000000L;
+	public static long MAXVALUE = 1000000L;
 	
 	private static ThreadPool threadPool = ThreadPool.getInstance();
 	
@@ -64,10 +64,18 @@ public final class Minimax {
 		Minimax.signal = false;
 		
 		nodeExplored = 0;
+		
+		State.MULTIPLICATOR = 1;
+		Minimax.MAXVALUE = 1000000L;
+		/*for (int i = 0; i < Minimax.DEPTH; i++) { // = 2^depth
+			State.MULTIPLICATOR *= 2;
+			Minimax.MAXVALUE *= 2;
+		}*/
+		
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);
 		interrupterThread.start();
-		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Minimax.MAXVALUE, Minimax.MAXVALUE, true);
+		long alphaBethResult = alphaBeth(state, Minimax.DEPTH, -Long.MAX_VALUE, Long.MAX_VALUE, true);
 		interrupterThread.interrupt();
 		if (!Minimax.FIXEDDEPTH && !Minimax.signal) {
 			Minimax.scaleUp();
@@ -82,7 +90,7 @@ public final class Minimax {
 		nodeExplored++;
 		long v = 0;
 		if(s.isTerminal()){
-			final long utility = s.getUtility();
+			final long utility = s.getHeuristic();
 			if (utility > maxHeuFound) {
 				stack.clear();
 				maxHeuFound = utility;
@@ -102,8 +110,10 @@ public final class Minimax {
 			}
 			return heuristic;
 		} else if(max){
-			v = - Minimax.MAXVALUE;
-			for(State c : s.getChildren()){
+	        v = -Long.MAX_VALUE;
+	        boolean entered = false;
+	        for(State c : s.getChildren()){
+        		entered = true;
 				v = Math.max(v, alphaBeth(c, depth - 1, alpha, beth, false));
 				alpha = Math.max(alpha, v);
 				if(beth <= alpha){
@@ -111,15 +121,23 @@ public final class Minimax {
 					break;
 				}
 			}
+	        if (!entered) {
+	        	v = -v;
+	        }
 		}else{
-			v = Minimax.MAXVALUE;
-			for(State c : s.getChildren()){
+	        v = Long.MAX_VALUE;
+	        boolean entered = false;
+	        for(State c : s.getChildren()){
+        		entered = true;
 				v = Math.min(v, alphaBeth(c, depth - 1, alpha, beth, true));
 				beth = Math.min(beth, v);
 				if(beth <= alpha){
 					break;
 				}
 			}
+	        if (!entered) {
+	        	v = -v;
+	        }
 		}
 		return v;
 	}
