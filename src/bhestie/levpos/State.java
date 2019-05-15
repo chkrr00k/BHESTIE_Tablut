@@ -556,8 +556,8 @@ public class State {
 		final int kingProtectedPoints;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			eatingPoints = 250;
-			dontBeEatenPoints = 125;
+			eatingPoints = 150;
+			dontBeEatenPoints = 225;
 			kingUnderCheckPoints = 150;
 			kingInGoodPositionPoints = 50;
 			kingEscapesPoints = 100;
@@ -565,8 +565,8 @@ public class State {
 			rawDistanceFromEscapePoints = -10; //XXX negative
 			kingProtectedPoints = 175;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			eatingPoints = 200;
-			dontBeEatenPoints = 125;
+			eatingPoints = 175;
+			dontBeEatenPoints = 150;
 			kingUnderCheckPoints = 150;
 			kingInGoodPositionPoints = 100;
 			kingEscapesPoints = 100;
