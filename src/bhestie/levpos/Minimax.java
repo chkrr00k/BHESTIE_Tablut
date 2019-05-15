@@ -74,10 +74,10 @@ public final class Minimax {
 		
 		State.MULTIPLICATOR = 1;
 		Minimax.MAXVALUE = 1000000L;
-		for (int i = 0; i < Minimax.DEPTH; i++) { // = 2^depth
+		/*for (int i = 0; i < Minimax.DEPTH; i++) { // = 2^depth
 			State.MULTIPLICATOR *= 2;
 			Minimax.MAXVALUE *= 2;
-		}
+		}*/
 		
 		Thread interrupterThread = new Thread(interrupter, "Interrupter");
 		interrupterThread.setDaemon(true);

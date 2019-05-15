@@ -294,7 +294,7 @@ public class State {
 		return this.getHeuristic(1);
 	}
 	
-	private long getHeuristic(double minPercentage) {
+	private long getHeuristic(int level) {
 		long result;
 		if (this.heuristicCache == null) {
 			
@@ -336,18 +336,12 @@ public class State {
 		}
 		
 		// The following code set the percentage in order to set more weight the more the State is near the init State (the State I have to find the best move)
-		double percentage = 1;
+		double percentage = 1d / (level + 1);
 		final int size = this.unfold().size(); // Numbers of parents
-		for (int i = 0; i < size; i++) { // (1/2) ^ size
-			percentage /= 2;
-		}
-		if (percentage < minPercentage)
-			minPercentage = percentage;
 		if (size > 1) { // If the parent is not the initial state calculate the heuristic recursivly
 			result *= percentage;
-			result += this.parent.getHeuristic(minPercentage);
-		} else { // If I don't have parents -> I'm the last one (with percentage 0.5) and I add the minPercentage to my percentage value
-			percentage += minPercentage; // If is the last one (and the percentage should be 0.5) add the minPercentage
+			result += this.parent.getHeuristic(level + 1);
+		} else { // If I don't have parents -> I'm the last one
 			result *= Math.min(percentage, 1);
 		}
 		
