@@ -24,6 +24,7 @@ public class Main {
 	
 	private static int port;
 	private static String host = "localhost";
+	private static boolean verbose = false;
 	
 	private static final void printLogo(){
 		System.out.println( "BBBBBB  HH    H          SSSSS       II EEEEEE\n" +
@@ -54,6 +55,7 @@ public class Main {
 	private static final String HOST_FLAG = "-H";
 	private static final String SCALING_UP_FLAG = "-s:up";
 	private static final String SCALING_DOWN_FLAG = "-s:dw";
+	private static final String VERBOSE_FLAG = "-v";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
@@ -108,6 +110,9 @@ public class Main {
 				break;
 			case FIXED_DEPTH_FLAG:
 				Minimax.FIXEDDEPTH = true;
+				break;
+			case VERBOSE_FLAG:
+				Main.verbose = true;
 				break;
 			case DEPTH_FLAG:
 				try{
@@ -176,11 +181,12 @@ public class Main {
 			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
 			for(;;) {
-				LocalTime before = LocalTime.now();
-				long result = Minimax.alphaBethInit(currentState);
-				System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
-				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
-
+				if(verbose){
+					LocalTime before = LocalTime.now();
+					long result = Minimax.alphaBethInit(currentState);
+					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
+					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
+				}
 				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
 					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
@@ -196,17 +202,21 @@ public class Main {
 				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
-				long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-				long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-				System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
+				if(verbose){
+					long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+					long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
+				}
 				HistoryStorage historyStorage = currentState.historyStorage; // Keep it
 				currentState = null;
 				unfold = null;
 				Minimax.stack.clear();
 				System.gc();
-				long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-				long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-				System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
+				if(verbose){
+					long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+					long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
+				}
 				b = c.readBoard(); // Gets the board after our move
 				Thread.yield(); // Let the enemy "think correctly"
 				b = c.readBoard(); // Gets the board after the enemy move
