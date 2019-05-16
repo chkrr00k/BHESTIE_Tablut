@@ -377,13 +377,13 @@ public class State {
 		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
 		
 		if (numberOfWhitesOutOfExternalOctagon >= 2) {
-			maxResult = 0;
+			maxResult = 10;
 		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
 			maxResult = 90 * maxResult / 200;
 		}
 		
 		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult - 10;
+			currentResult = maxResult - 30;
 		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
 			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
