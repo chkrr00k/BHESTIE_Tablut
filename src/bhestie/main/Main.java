@@ -149,7 +149,7 @@ public class Main {
 	public static void main(String[] args) {
 		try{
 			//args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "5", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 
 			parse(args);
 			printLogo();

@@ -410,7 +410,7 @@ public class State {
 		final int blackPawnsDistanceFromKing;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			octagonPoints = 800;
+			octagonPoints = 1600;
 			eatingPoints = 200;
 			notBeEatenPoints = 300;
 			whiteKingGoodPositionPoints = 0;
@@ -418,13 +418,13 @@ public class State {
 			kingAssaultPoints = -25;
 			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			octagonPoints = 250;
+			octagonPoints = 800;
 			eatingPoints = 300;
 			notBeEatenPoints = 226;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
-			blackPawnsDistanceFromKing = -5;
+			blackPawnsDistanceFromKing = -50;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 300;
 			eatingPoints = 325;
@@ -432,7 +432,7 @@ public class State {
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
 			kingAssaultPoints = 100;
-			blackPawnsDistanceFromKing = -10;
+			blackPawnsDistanceFromKing = -100;
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 100;
@@ -440,7 +440,7 @@ public class State {
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
 			kingAssaultPoints = 150;
-			blackPawnsDistanceFromKing = -15;
+			blackPawnsDistanceFromKing = -150;
 		}
 		
 		long result = 0;
@@ -550,7 +550,6 @@ public class State {
 
 			result += points * kingAssaultPoints;
 
-
 			result += getSumBlackPawnsDistanceFromKing() * blackPawnsDistanceFromKing / 6;
 
 			/*
@@ -593,25 +592,28 @@ public class State {
 		final int whiteOnMainAxisPoints;
 		final int rawDistanceFromEscapePoints;
 		final int kingProtectedPoints;
+		final int whitePawnsInCornerPositionValue;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			eatingPoints = 400;
+			eatingPoints = 800;
 			dontBeEatenPoints = 200;
 			kingUnderCheckPoints = 70;
 			kingInGoodPositionPoints = 50;
-			kingEscapesPoints = 100;
+			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = 100;
 			rawDistanceFromEscapePoints = 20; //XXX negative
 			kingProtectedPoints = 0;
+			whitePawnsInCornerPositionValue = 80;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			eatingPoints = 225;
+			eatingPoints = 600;
 			dontBeEatenPoints = 225;
 			kingUnderCheckPoints = 175;
 			kingInGoodPositionPoints = 100;
-			kingEscapesPoints = 100;
+			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = -50;
 			rawDistanceFromEscapePoints = 25;
-			kingProtectedPoints = 150;//si incarta troppo
+			kingProtectedPoints = 120;//si incarta troppo
+			whitePawnsInCornerPositionValue = 80;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			eatingPoints = 75;
 			dontBeEatenPoints = 165;
@@ -621,6 +623,7 @@ public class State {
 			whiteOnMainAxisPoints = -25;
 			rawDistanceFromEscapePoints = 75;
 			kingProtectedPoints = 240;
+			whitePawnsInCornerPositionValue = 40;
 		} else { //DESPERATION PHASE
 			eatingPoints = 50;
 			dontBeEatenPoints = 200;
@@ -630,6 +633,7 @@ public class State {
 			whiteOnMainAxisPoints = 0;
 			rawDistanceFromEscapePoints = 0;
 			kingProtectedPoints = 250;
+			whitePawnsInCornerPositionValue = 0;
 		}
 		
 		long result = 0;
@@ -719,10 +723,14 @@ public class State {
 				result += kingInGoodPositionPoints;
 			}
 		}
-	
+		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
 	
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
+	}
+
+	public int whitePawnsInCornerPositions(){
+		return (int) pawns.stream().filter(p -> p.position.equalsAny(cornerPosition)).count();
 	}
 
 	public boolean veryUglyKingPosition() {
@@ -1072,6 +1080,8 @@ public class State {
 	/**
 	 * List of positions where the king have to be fully surrounded.
 	 */
+
+	private static final List<Position> cornerPosition = new ArrayList<>(4);
 	private static final List<Position> protectedKingPositions = new ArrayList<>(5);
 	private static final List<Position> escapeRouteBlocked = new ArrayList<Position>(8);
 	static {
@@ -1164,6 +1174,12 @@ public class State {
 		//SE
 		escapeRouteBlocked.add(Position.of(7, 8)); //VII
 		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
+
+		cornerPosition.add(Position.of(9 ,9));
+		cornerPosition.add(Position.of(1 ,1));
+		cornerPosition.add(Position.of(1 ,9));
+		cornerPosition.add(Position.of(9 ,1));
+
 	}
 
 	
