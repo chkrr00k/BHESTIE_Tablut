@@ -7,28 +7,22 @@ public final class Minimax {
 	/**
 	 * If the scaling system is disabled.<br/>
 	 * If true the depth can't be modified.
-	 * @see Minimax.DEPTH
 	 */
 	public static boolean FIXEDDEPTH = false;
 	/**
 	 * Current depth at which the program is operating. It's also the starting depth position.
-	 * @see Minimax.FIXEDDEPTH
 	 */
 	public static int DEPTH = 3; // current depth
 	/**
 	 * Time the algorithm can be executed before performing a scaling up.<br/>
 	 * If set at 0 it updates every time it gets executed, if it's at 1 it gets executed two times and then it gets updated.<br/> 
 	 * If the scaling system is disabled this part is ignored
-	 * @see Minimax.DEPTH
-	 * @see Minimax.FIXEDDEPTH
 	 */
 	public static int SCALINGFACTORUP = 10; // time it has to be signaled to start scaling up
 	/**
 	 * Time the algorithm can be signaled before performing a scaling up.<br/>
 	 * If set at 0 it updates every time it gets signaled, if it's at 1 it gets signaled two times and then it gets updated.<br/> 
 	 * If the scaling system is disabled this part is ignored
-	 * @see Minimax.DEPTH
-	 * @see Minimax.FIXEDDEPTH
 	 */
 	public static int SCALINGFACTORDOWN = 0; // time it has to be signaled to start scaling down
 	
@@ -63,7 +57,6 @@ public final class Minimax {
 	/**
 	 * 
 	 * @param state Stato where find next best solution
-	 * @param depth Max depth
 	 * @return The alphabeth value
 	 */
 	public static final long alphaBethInit(final State state) {

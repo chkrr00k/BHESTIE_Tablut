@@ -1,20 +1,17 @@
-package bhestie.main;
+package bhestie.zizcom.tests;
+
+import bhestie.levpos.Minimax;
+import bhestie.levpos.State;
+import bhestie.levpos.utils.HistoryStorage;
+import bhestie.zizcom.Board;
+import bhestie.zizcom.Connector;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import bhestie.levpos.Minimax;
-import bhestie.levpos.State;
-import bhestie.levpos.ThreadPool;
-import bhestie.levpos.utils.HistoryStorage;
-import bhestie.zizcom.Board;
-import bhestie.zizcom.Connector;
-
-public class Main {
+public class MainOld2 {
 
 	private static final boolean whitePlayer = false;
 	private static final boolean blackPlayer = !whitePlayer;
@@ -24,7 +21,6 @@ public class Main {
 	
 	private static int port;
 	private static String host = "localhost";
-	private static boolean verbose = false;
 	
 	private static final void printLogo(){
 		System.out.println( "BBBBBB  HH    H          SSSSS       II EEEEEE\n" +
@@ -44,7 +40,6 @@ public class Main {
 							"In oculis eius quasi hamo capiet eum, et in sudibus perforabit nares eius.\n");
 	}
 	
-	private static final int DEFAULT_THREADS_NUMBER = 4;
 	private static final String WHITE = "white";
 	private static final String BLACK = "black";
 	private static final String THREAD_FLAG = "-t";
@@ -53,19 +48,12 @@ public class Main {
 	private static final String TIMEOUT_FLAG = "-l";
 	private static final String HELP_FLAG = "-h";
 	private static final String HOST_FLAG = "-H";
-	private static final String SCALING_UP_FLAG = "-s:up";
-	private static final String SCALING_DOWN_FLAG = "-s:dw";
-	private static final String VERBOSE_FLAG = "-v";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
-			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: " + DEFAULT_THREADS_NUMBER + ")\n"
+			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: 3)\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
-			+ "\t" + SCALING_DOWN_FLAG + " <n>\tThe times the process have to signaled to be scaled down in depth "
-					+ "(default: " + Minimax.SCALINGFACTORDOWN + ")\n"
-			+ "\t" + SCALING_UP_FLAG + " <n>\tThe times the process have to signaled to be scaled up in depth "
-					+ "(default: " + Minimax.SCALINGFACTORUP + ")\n"
 			+ "\t" + HOST_FLAG + " <ip>\t\tThe game server host address you want to connect (default: " + host + ")\n"
 			+ "\t" + TIMEOUT_FLAG + " <n>\t\tTHe max timeout time (default: " + Minimax.TIMEOUT + ")\n";
 	
@@ -85,7 +73,7 @@ public class Main {
 			System.err.println("You need to give me the color you want to play!\n [white|black]");
 			System.exit(-1);
 		}
-		int numberOfThreads = DEFAULT_THREADS_NUMBER;
+		boolean defaultThreads = true;
 		for(int i = 1; i < args.length; i++){
 			switch(args[i]){
 			case HELP_FLAG:
@@ -94,7 +82,8 @@ public class Main {
 				break;
 			case THREAD_FLAG:
 				try{
-					numberOfThreads = Integer.parseInt(args[++i]);
+					//HeuristicCalculatorGroup.getInstance().addThreads(Integer.parseInt(args[++i]));
+					defaultThreads = false;
 				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
 					System.err.println("You need to give me the number of threads you want!\n " + THREAD_FLAG + " <number>");
 					System.exit(-2);
@@ -110,9 +99,6 @@ public class Main {
 				break;
 			case FIXED_DEPTH_FLAG:
 				Minimax.FIXEDDEPTH = true;
-				break;
-			case VERBOSE_FLAG:
-				Main.verbose = true;
 				break;
 			case DEPTH_FLAG:
 				try{
@@ -130,32 +116,17 @@ public class Main {
 					System.exit(-4);
 				}
 				break;
-			case SCALING_DOWN_FLAG:
-				try{
-					Minimax.SCALINGFACTORDOWN = Integer.parseInt(args[++i]);
-				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
-					System.err.println("You need to give me the scale factor you want!\n " + SCALING_DOWN_FLAG + " <number>");
-					System.exit(-10);
-				}
-				break;
-			case SCALING_UP_FLAG:
-				try{
-					Minimax.SCALINGFACTORUP = Integer.parseInt(args[++i]);
-				}catch(NumberFormatException | ArrayIndexOutOfBoundsException e){
-					System.err.println("You need to give me the scale factor you want!\n " + SCALING_UP_FLAG + " <number>");
-					System.exit(-11);
-				}
-				break;
 			}
 		}
-		ThreadPool.getInstance().setMaxThreads(numberOfThreads);	
+		if(defaultThreads){
+			//HeuristicCalculatorGroup.getInstance().addThreads(3);		
+		}
 	}
 	
 	public static void main(String[] args) {
 		try{
-			//args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-
+			args = new String[]{"black", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+			
 			parse(args);
 			printLogo();
 			
@@ -181,12 +152,11 @@ public class Main {
 			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
 			for(;;) {
-				if(verbose){
-					LocalTime before = LocalTime.now();
-					long result = Minimax.alphaBethInit(currentState);
-					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
-					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
-				}
+				LocalTime before = LocalTime.now();
+				long result = Minimax.alphaBethInit(currentState);
+				System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
+				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
+
 				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
 					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
@@ -196,27 +166,22 @@ public class Main {
 						currentState = unfold.get(unfoldSize - 1);
 					}
 				} else {
-					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
-					currentState = actions.get(r.nextInt(actions.size()));
-					System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+					List<State> futureStates = currentState.getActions();
+					currentState = futureStates.get(r.nextInt(futureStates.size()));
 				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
-				if(verbose){
-					long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-					long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-					System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
-				}
+				long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+				long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+				System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
 				HistoryStorage historyStorage = currentState.historyStorage; // Keep it
 				currentState = null;
 				unfold = null;
 				Minimax.stack.clear();
 				System.gc();
-				if(verbose){
-					long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-					long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-					System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
-				}
+				long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+				long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+				System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
 				b = c.readBoard(); // Gets the board after our move
 				Thread.yield(); // Let the enemy "think correctly"
 				b = c.readBoard(); // Gets the board after the enemy move
@@ -228,8 +193,7 @@ public class Main {
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");
-			e.printStackTrace();
-			ThreadPool.getInstance().killAll();
+			//HeuristicCalculatorGroup.getInstance().killAll();
 			System.exit(-7);
 		}
 	}

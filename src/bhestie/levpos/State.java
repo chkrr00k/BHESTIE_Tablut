@@ -259,10 +259,12 @@ public class State {
 			final int y = king.getY();
 
 			List<Position> escapes = escapePositions.stream().filter(e -> !this.pawns.stream().anyMatch(p -> p.position.equals(e))).collect(Collectors.toList());
-			int distanceRecord = 6;//maximum distance
+			int distanceRecord = 7;//maximum distance
 			for(Position position : escapes) {
 				int distance = Math.abs(position.x - x);
 				distance += Math.abs(position.y - y);
+				if(pawns.stream().anyMatch(p -> p.position.equals(position)))
+					distance--;
 				if(distance < distanceRecord)
 					distanceRecord = distance;
 			}
@@ -373,9 +375,19 @@ public class State {
 	 */
 	private long getHeuristicBlack() {
 		// Avoid to let the enemy win
-		int kingEscape = this.kingEscape();
-		if (kingEscape > 0) {
-			return -this.getUtilityValue();
+		int kingEscapes = this.kingEscape();
+
+		if(kingEscapes >= 2) {
+			if (this.unfold().size() == 1) { // If the move is the first or the second (hence the first for the player) is the best
+				return - (Long.MAX_VALUE - 1000);
+				//return Minimax.MAXVALUE;
+			} else {
+				//return Long.MAX_VALUE;
+				return - Minimax.MAXVALUE;
+				//return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
+			}
+		} else if (kingEscapes > 0) {
+			return - this.getUtilityValue();
 		}
 		
 		// Negative if black has 3 or less pawns and white has still 2 pawns
@@ -389,35 +401,40 @@ public class State {
 		final int whiteKingGoodPositionPoints;
 		final int remainInCitadelsPoints;
 		final int kingAssaultPoints;
+		final int blackPawnsDistanceFromKing;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			octagonPoints = 400;
-			eatingPoints = 300;
-			notBeEatenPoints = 200;
+			octagonPoints = 1600;
+			eatingPoints = 200;
+			notBeEatenPoints = 300;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
 			kingAssaultPoints = -25;
+			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			octagonPoints = 250;
+			octagonPoints = 800;
 			eatingPoints = 300;
 			notBeEatenPoints = 226;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
+			blackPawnsDistanceFromKing = -50;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 300;
 			eatingPoints = 325;
 			notBeEatenPoints = 225;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
-			kingAssaultPoints = 50;
+			kingAssaultPoints = 100;
+			blackPawnsDistanceFromKing = -100;
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 150;
 			notBeEatenPoints = 275;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
-			kingAssaultPoints = 75;
+			kingAssaultPoints = 150;
+			blackPawnsDistanceFromKing = -150;
 		}
 		
 		long result = 0;
@@ -524,12 +541,31 @@ public class State {
 			} else {
 				points += 100 /  Math.sqrt(xBar * xBar + yBar * yBar);
 			}
-			
+
 			result += points * kingAssaultPoints;
+
+			result += getSumBlackPawnsDistanceFromKing() * blackPawnsDistanceFromKing / 6;
+
+			/*
+			if(parent != null) {
+				if (getSumBlackPawnsDistanceFromKing() > parent.getSumBlackPawnsDistanceFromKing()) {
+					result += blackPawnsDistanceFromKing;
+				}
+			}
+			*/
 		}
 		
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
+	}
+
+	public double getSumBlackPawnsDistanceFromKing(){
+		int distance = 0;
+		int pawnsNumber = (int) this.pawns.stream().filter(p -> p.isBlack()).count();
+		for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
+			distance += Math.abs(king.getX()-p.getX()) + Math.abs(king.getY()-p.getY());
+		}
+		return distance/pawnsNumber;
 	}
 	
 	/**
@@ -550,25 +586,28 @@ public class State {
 		final int whiteOnMainAxisPoints;
 		final int rawDistanceFromEscapePoints;
 		final int kingProtectedPoints;
+		final int whitePawnsInCornerPositionValue;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			eatingPoints = 150;
-			dontBeEatenPoints = 225;
-			kingUnderCheckPoints = 150;
+			eatingPoints = 800;
+			dontBeEatenPoints = 200;
+			kingUnderCheckPoints = 70;
 			kingInGoodPositionPoints = 50;
-			kingEscapesPoints = 100;
+			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = 100;
-			rawDistanceFromEscapePoints = -10; //XXX negative
-			kingProtectedPoints = 235;
+			rawDistanceFromEscapePoints = 20; //XXX negative
+			kingProtectedPoints = 0;
+			whitePawnsInCornerPositionValue = 80;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			eatingPoints = 175;
+			eatingPoints = 600;
 			dontBeEatenPoints = 225;
 			kingUnderCheckPoints = 175;
 			kingInGoodPositionPoints = 100;
-			kingEscapesPoints = 100;
+			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = -50;
 			rawDistanceFromEscapePoints = 25;
-			kingProtectedPoints = 200;
+			kingProtectedPoints = 120;//si incarta troppo
+			whitePawnsInCornerPositionValue = 80;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			eatingPoints = 75;
 			dontBeEatenPoints = 165;
@@ -578,6 +617,7 @@ public class State {
 			whiteOnMainAxisPoints = -25;
 			rawDistanceFromEscapePoints = 75;
 			kingProtectedPoints = 240;
+			whitePawnsInCornerPositionValue = 40;
 		} else { //DESPERATION PHASE
 			eatingPoints = 50;
 			dontBeEatenPoints = 200;
@@ -587,6 +627,7 @@ public class State {
 			whiteOnMainAxisPoints = 0;
 			rawDistanceFromEscapePoints = 0;
 			kingProtectedPoints = 250;
+			whitePawnsInCornerPositionValue = 0;
 		}
 		
 		long result = 0;
@@ -594,6 +635,8 @@ public class State {
 		// Check for number of black pawns (eat)
 		{
 			long blackPawnsNumber = pawns.stream().filter(pawn -> pawn.isBlack()).count();
+			result += (16 - blackPawnsNumber) * eatingPoints / 16;
+			/*
 			final long currentEatingPoints;
 			if (blackPawnsNumber > 12) {
 				currentEatingPoints = 14+5 + (blackPawnsNumber - 12) * 8 / 4;
@@ -603,6 +646,7 @@ public class State {
 				currentEatingPoints = (blackPawnsNumber) * 14 / 7;
 			}
 			result += currentEatingPoints * eatingPoints / 25;
+			*/
 		}
 		
 		// Check for number of white pawns (not being eaten)
@@ -630,7 +674,11 @@ public class State {
 			//if (checkROI(3, 3, 7, 7, holedROIPredicateFactory(3, 3, 7, 7).and(p -> p.king)))
 			int whitePawnsSuroundingKing = this.whitePawnSurroundingKing();
 			if (whitePawnsSuroundingKing < 4) {
-				result += whitePawnsSuroundingKing * kingProtectedPoints / 4;
+				if(whitePawnsSuroundingKing == 1)
+					result += kingProtectedPoints / 4;
+				else if(whitePawnsSuroundingKing == 2)
+					result += 1.5 * kingProtectedPoints / 4;
+				else result *= 2 * kingProtectedPoints;
 			} else {
 				result += 3 * kingProtectedPoints / 4;
 			}
@@ -638,7 +686,7 @@ public class State {
 		
 		// Raw distance from escape
 		{
-			result += (6 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
+			result += (7 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
 		}
 		
 		// White on main axis
@@ -651,7 +699,14 @@ public class State {
 			final int kingEscapes = this.kingEscape();
 			
 			if(kingEscapes >= 2) {
-				return this.getUtilityValue();
+				if (this.unfold().size() == 1) { // If the move is the first or the second (hence the first for the player) is the best
+					return Long.MAX_VALUE - 1000;
+					//return Minimax.MAXVALUE;
+				} else {
+					//return Long.MAX_VALUE;
+					return Minimax.MAXVALUE;
+					//return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
+				}
 			}
 			result += kingEscapes * kingEscapesPoints / 4;
 		}
@@ -662,10 +717,14 @@ public class State {
 				result += kingInGoodPositionPoints;
 			}
 		}
-	
+		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
 	
 		//result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
+	}
+
+	public int whitePawnsInCornerPositions(){
+		return (int) pawns.stream().filter(p -> p.position.equalsAny(cornerPosition)).count();
 	}
 
 	public boolean veryUglyKingPosition() {
@@ -779,8 +838,11 @@ public class State {
 	private long getUtilityValue() {
 		if (this.unfold().size() == 1) { // If the move is the first or the second (hence the first for the player) is the best
 			return Long.MAX_VALUE;
+			//return Minimax.MAXVALUE;
 		} else {
-			return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
+			//return Long.MAX_VALUE;
+			return Minimax.MAXVALUE;
+			//return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
 		}
 	}
 	
@@ -1012,6 +1074,8 @@ public class State {
 	/**
 	 * List of positions where the king have to be fully surrounded.
 	 */
+
+	private static final List<Position> cornerPosition = new ArrayList<>(4);
 	private static final List<Position> protectedKingPositions = new ArrayList<>(5);
 	private static final List<Position> escapeRouteBlocked = new ArrayList<Position>(8);
 	static {
@@ -1104,6 +1168,12 @@ public class State {
 		//SE
 		escapeRouteBlocked.add(Position.of(7, 8)); //VII
 		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
+
+		cornerPosition.add(Position.of(9 ,9));
+		cornerPosition.add(Position.of(1 ,1));
+		cornerPosition.add(Position.of(1 ,9));
+		cornerPosition.add(Position.of(9 ,1));
+
 	}
 
 	
@@ -1277,7 +1347,6 @@ public class State {
 		 * Checks if a Pawn can move to X and Y. In this case inserts a new action in the list
 		 * @param x The nex X position
 		 * @param y The new Y position
-		 * @param actions The list of next possible states
 		 * @param currentPawn The pawn that is moving
 		 * @return If it added a new action of not
 		 */
