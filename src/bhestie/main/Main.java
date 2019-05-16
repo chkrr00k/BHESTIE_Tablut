@@ -205,7 +205,12 @@ public class Main {
 						System.out.println("I Ii II L");
 					}
 				}
+				try{
 				c.writeAction(currentState.getAction()); // Sends our move
+				}catch(NullPointerException npe){
+					System.out.println("I Ii II L");
+					throw npe;
+				}
 				
 				if(verbose){
 					long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;

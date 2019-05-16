@@ -356,7 +356,7 @@ public class State {
 		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
 		
 		if (numberOfWhitesOutOfExternalOctagon >= 2) {
-			maxResult = 0;
+			maxResult = 30 * maxResult / 200;
 		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
 			maxResult = 90 * maxResult / 200;
 		}
@@ -368,31 +368,6 @@ public class State {
 		}
 		return currentResult;
 	}
-	
-	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult, boolean preferInternal) {
-		long currentResult = 0;
-		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
-		long numberOfWhitesOutOfInternalOctagon = this.checkROIQuantity(fromInternal.x, fromInternal.y, toInternal.x, toInternal.y, p -> p.isWhite() && !p.position.equals(excludeForInternal));
-		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
-		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
-		
-		if (numberOfWhitesOutOfExternalOctagon >= 2) {
-			maxResult = 10;
-		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
-			maxResult = 90 * maxResult / 200;
-		}
-		
-		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult - 30;
-		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
-			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
-		} else { 														// Non ho fatto nè quello interno nè quello esterno
-			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
-			if (numberOfBlackPawnsInInternalOctagon > 0)
-				currentResult -= 15;
-		}
-		return currentResult;
-}
 	
 	/**
 	 * The biggest value the more "good" is the board
@@ -473,41 +448,25 @@ public class State {
 		// Check for North-east octagon
 		final long resultNorthEast;
 		final long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
-		if(State.TURN > State.END_PREPARATION_PHASE){
-			resultNorthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast);
-		}else{
-			resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast, malusNorth > 0 || malusEast > 0);
-		}
+		resultNorthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast);
 		result += resultNorthEast;
 		
 		// Check for North-west octagon
 		final long resultNorthWest;
 		final long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
-		if(State.TURN > State.END_PREPARATION_PHASE){
-			resultNorthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest);
-		}else{
-			resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest, malusNorth > 0 || malusWest > 0);
-		}
+		resultNorthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest);
 		result += resultNorthWest;
 		
 		// Check for South-east octagon
 		final long resultSouthEast;
 		final long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
-		if(State.TURN > State.END_PREPARATION_PHASE){
-			resultSouthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast);
-		}else{
-			resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast, malusSouth > 0 || malusEast > 0);
-		}
+		resultSouthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast);
 		result += resultSouthEast;
 		
 		// Check for South-west octagon
 		final long resultSouthWest;
 		final long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
-		if(State.TURN > State.END_PREPARATION_PHASE){
-			resultSouthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest);
-		}else{
-			resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest, malusSouth > 0 || malusWest > 0);
-		}
+		resultSouthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest);
 		result += resultSouthWest;
 		
 		// Check for number of black pawns (not be eaten)
@@ -600,6 +559,14 @@ public class State {
 		}
 		
 		//result = 10; // XXX disabled
+		result = result * (octagonPoints
+			+ eatingPoints
+			+ notBeEatenPoints
+			+ whiteKingGoodPositionPoints
+			+ remainInCitadelsPoints
+			+ kingAssaultPoints
+			+ blackPawnsDistanceFromKing) / 1000;
+		
 		return result * MULTIPLICATOR;
 	}
 
@@ -754,7 +721,15 @@ public class State {
 		}
 		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
 	
-		result = 10; // XXX disabled
+		result = result * (eatingPoints
+			+ dontBeEatenPoints
+			+ kingUnderCheckPoints
+			+ kingInGoodPositionPoints
+			+ kingEscapesPoints
+			+ whiteOnMainAxisPoints
+			+ rawDistanceFromEscapePoints
+			+ kingProtectedPoints
+			+ whitePawnsInCornerPositionValue) / 1000;
 		return result * MULTIPLICATOR;
 	}
 
@@ -1098,7 +1073,62 @@ public class State {
 		}
 		return result * modificator;
 	}
+
 	
+	private List<Position> explore(Position p, List<Position> explored){
+		
+		final List<Position> tp = new ArrayList<Position>(4);
+		if(p.x + 1 <= 9 && !explored.contains(Position.of(p.x + 1, p.y))){
+			tp.add(Position.of(p.x + 1, p.y)); //e
+		}
+		if(p.y + 1 <= 9 && !explored.contains(Position.of(p.x, p.y + 1))){
+			tp.add(Position.of(p.x, p.y + 1)); //s
+		}
+		if(p.x - 1 >= 1 && !explored.contains(Position.of(p.x - 1, p.y))){
+			tp.add(Position.of(p.x - 1, p.y)); //w
+		}
+		if(p.y - 1 >= 1 && !explored.contains(Position.of(p.x, p.y - 1))){
+			tp.add(Position.of(p.x, p.y - 1)); //n
+		}
+		
+		final List<Position> result = Stream.concat(this.pawns.stream().filter(pa -> !pa.king).map(pa -> pa.position), citadels.stream().flatMap(c -> c.citadelPositions.stream()))
+			.filter(po -> {
+				for(Position pos : tp){
+					if(pos.equals(po)){
+						return true;
+					}
+				}
+				return false;
+			})
+			.collect(Collectors.toList());
+		
+		return tp.stream()
+				.filter(po -> !result.contains(po))
+				.collect(Collectors.toList());
+
+	}
+	
+	public int evaluate(List<Position> lp, int depth, List<Position> explored){
+		int last = Integer.MAX_VALUE;
+		int ndepth = depth + 1;
+		explored.addAll(lp);
+		for(Position p : lp){
+			if(escapePositions.contains(p)){
+				if(this.pawns.stream().anyMatch(pa -> pa.position.equals(p))){
+					return Integer.MAX_VALUE;
+				}else{
+					return depth;
+				}
+			}else{
+				last = Math.min(last, evaluate(explore(p, explored), ndepth, explored));
+			}
+		}
+		return last;
+	}
+	
+	public int movesToGoal(){
+		return evaluate(explore(this.getKing().position, new LinkedList<Position>()), 1, new LinkedList<Position>());
+	}
 	/**
 	 * default white pawns positions
 	 */

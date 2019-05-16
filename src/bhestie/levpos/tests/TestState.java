@@ -1,9 +1,6 @@
 package bhestie.levpos.tests;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +33,16 @@ public class TestState {
 		double utility = s.getUtility();
 		assertEquals(0, utility, 0.01);
     }
+    
+    @Test
+	public void testExpl() throws Exception {
+    	List<Pawn> pawns = new LinkedList<>();
+		pawns.add(new Pawn(false, 5, 5, true));
+		pawns.add(new Pawn(true, 9, 7, false));
+		pawns.add(new Pawn(true, 7, 9, false));
+		State s = new State(pawns, true, new HistoryStorage(), null, true);
+		System.out.println(s.movesToGoal());
+	}
     
     @Test
 	public void testStateGenerator() throws Exception {
