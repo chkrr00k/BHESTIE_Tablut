@@ -24,7 +24,7 @@ public class Main {
 	
 	private static int port;
 	private static String host = "localhost";
-	private static boolean verbose = false;
+	public static boolean verbose = false;
 	
 	private static final void printLogo(){
 		System.out.println( "BBBBBB  HH    H          SSSSS       II EEEEEE\n" +
@@ -181,9 +181,9 @@ public class Main {
 			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
 			for(;;) {
+				long result = Minimax.alphaBethInit(currentState);
 				if(verbose){
 					LocalTime before = LocalTime.now();
-					long result = Minimax.alphaBethInit(currentState);
 					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
 					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 				}
@@ -197,8 +197,13 @@ public class Main {
 					}
 				} else {
 					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
-					currentState = actions.get(r.nextInt(actions.size()));
-					System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+					int size = actions.size();
+					if(size > 0){
+						currentState = actions.get(r.nextInt(size));
+						System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+					}else{
+						System.out.println("I Ii II L");
+					}
 				}
 				c.writeAction(currentState.getAction()); // Sends our move
 				
@@ -223,8 +228,9 @@ public class Main {
 				
 				State.TURN++;
 				currentState = new State(b.convert().get(), Minimax.player, historyStorage, null);
-				
-				System.out.println(State.TURN);
+				if(verbose){
+					System.out.println(State.TURN);
+				}
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");

@@ -2,6 +2,8 @@ package bhestie.levpos;
 import java.util.LinkedList;
 import java.util.List;
 
+import bhestie.main.Main;
+
 public final class Minimax {
 	
 	/**
@@ -148,7 +150,9 @@ public final class Minimax {
 				Minimax.DEPTH++;
 				Minimax.CURRENTSCALINGUP = 0;
 				Minimax.CURRENTSCALINGDOWN = 0;
-				System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+				if(Main.verbose){
+					System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+				}
 			}else{
 				Minimax.CURRENTSCALINGUP++;
 			}
@@ -162,7 +166,9 @@ public final class Minimax {
 				Minimax.DEPTH--;
 				Minimax.CURRENTSCALINGDOWN = 0;
 				Minimax.CURRENTSCALINGUP = 0;
-				System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+				if(Main.verbose){
+					System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+				}
 			}else{
 				Minimax.CURRENTSCALINGDOWN++;
 			}
