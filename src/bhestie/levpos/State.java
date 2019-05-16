@@ -66,7 +66,7 @@ public class State {
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
 	 * @param historyStorage The history storage
-	 * @param parent The parent
+	 * @param parent The parent of the state
 	 */
 	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent){
 		this(pawns, turn, historyStorage, parent, false);
