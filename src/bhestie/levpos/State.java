@@ -388,6 +388,8 @@ public class State {
 			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
 			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
+			if (numberOfBlackPawnsInInternalOctagon > 0)
+				currentResult -= 15;
 		}
 		return currentResult;
 }
@@ -429,7 +431,7 @@ public class State {
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			octagonPoints = 1600;
 			eatingPoints = 150;
-			notBeEatenPoints = 300;
+			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
 			kingAssaultPoints = -25;
@@ -437,7 +439,7 @@ public class State {
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			octagonPoints = 800;
 			eatingPoints = 300;
-			notBeEatenPoints = 300;
+			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
@@ -445,7 +447,7 @@ public class State {
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 300;
 			eatingPoints = 325;
-			notBeEatenPoints = 250;
+			notBeEatenPoints = 300;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
 			kingAssaultPoints = 100;
@@ -453,7 +455,7 @@ public class State {
 		} else { // Desperation phase
 			octagonPoints = 400;
 			eatingPoints = 150;
-			notBeEatenPoints = 275;
+			notBeEatenPoints = 275+50;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
 			kingAssaultPoints = 150;
@@ -752,7 +754,7 @@ public class State {
 		}
 		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
 	
-		//result = 10; // XXX disabled
+		result = 10; // XXX disabled
 		return result * MULTIPLICATOR;
 	}
 
