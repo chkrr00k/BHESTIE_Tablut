@@ -2,6 +2,7 @@ package bhestie.main;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -167,6 +168,18 @@ public class Main {
 		    	port = BlackPort;
 			
 			Connector c = new Connector("__BHeStIE__", port, host);
+			Comparator<State> cs = new Comparator<State>(){
+
+				@Override
+				public int compare(State arg0, State arg1) {
+					if(Minimax.player){
+						return arg1.movesToGoal() - arg0.movesToGoal();
+					}else{
+						return arg0.movesToGoal() - arg1.movesToGoal();
+					}
+				}
+				
+			};
 			Board b = null;
 			if (!c.init()) {
 				System.err.println("Where's my server?");
@@ -189,7 +202,8 @@ public class Main {
 				}
 				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
-					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+					Minimax.stack.sort(cs);
+					currentState = Minimax.stack.get(0);
 					unfold = currentState.unfold();
 					int unfoldSize = unfold.size();
 					if (unfoldSize > 0){

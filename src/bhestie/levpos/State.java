@@ -409,7 +409,7 @@ public class State {
 			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
-			kingAssaultPoints = -25;
+			kingAssaultPoints = -10;
 			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			octagonPoints = 800;
@@ -425,7 +425,7 @@ public class State {
 			notBeEatenPoints = 300;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
-			kingAssaultPoints = 100;
+			kingAssaultPoints = 10;
 			blackPawnsDistanceFromKing = -100;
 		} else { // Desperation phase
 			octagonPoints = 400;
@@ -433,7 +433,7 @@ public class State {
 			notBeEatenPoints = 275+50;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
-			kingAssaultPoints = 150;
+			kingAssaultPoints = 15;
 			blackPawnsDistanceFromKing = -150;
 		}
 		
@@ -559,13 +559,13 @@ public class State {
 		}
 		
 		//result = 10; // XXX disabled
-		result = result * (octagonPoints
+/*		result = result * (octagonPoints
 			+ eatingPoints
 			+ notBeEatenPoints
 			+ whiteKingGoodPositionPoints
 			+ remainInCitadelsPoints
 			+ kingAssaultPoints
-			+ blackPawnsDistanceFromKing) / 1000;
+			+ blackPawnsDistanceFromKing) / 1000;*/
 		
 		return result * MULTIPLICATOR;
 	}
@@ -720,7 +720,7 @@ public class State {
 			}
 		}
 		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
-	
+/*	
 		result = result * (eatingPoints
 			+ dontBeEatenPoints
 			+ kingUnderCheckPoints
@@ -729,7 +729,7 @@ public class State {
 			+ whiteOnMainAxisPoints
 			+ rawDistanceFromEscapePoints
 			+ kingProtectedPoints
-			+ whitePawnsInCornerPositionValue) / 1000;
+			+ whitePawnsInCornerPositionValue) / 1000;*/
 		return result * MULTIPLICATOR;
 	}
 
