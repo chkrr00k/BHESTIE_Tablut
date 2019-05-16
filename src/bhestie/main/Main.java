@@ -2,9 +2,7 @@ package bhestie.main;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -170,25 +168,6 @@ public class Main {
 			
 			Connector c = new Connector("__BHeStIE__", port, host);
 			Board b = null;
-			Optional<State> optStat = Optional.empty();
-			Comparator<State> comstat = new Comparator<State>() {
-				private Random r = new Random(port + System.currentTimeMillis());
-				@Override
-				public int compare(State o1, State o2) {
-					int result;
-					
-					if((result = o1.movesToGoal() - o2.movesToGoal()) == 0){
-						result = this.r.nextInt(Minimax.stack.size());
-					}
-					if(Minimax.player){
-						result = - result;
-					}
-					
-					return result;
-				}
-				
-			};
-			
 			if (!c.init()) {
 				System.err.println("Where's my server?");
 				System.exit(-8);
@@ -199,7 +178,7 @@ public class Main {
 			if (Minimax.player == blackPlayer) {
 				b = c.readBoard(); // Wait for enemy move
 			}
-			
+			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
 			for(;;) {
 				long result = Minimax.alphaBethInit(currentState);
@@ -210,13 +189,7 @@ public class Main {
 				}
 				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
-					optStat = Minimax.stack.stream().min(comstat);
-					if(optStat.isPresent()){
-						currentState = optStat.get();
-					}else{
-						Minimax.stack.sort(comstat);
-						currentState = Minimax.stack.get(0);
-					}
+					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
 					unfold = currentState.unfold();
 					int unfoldSize = unfold.size();
 					if (unfoldSize > 0){
@@ -226,7 +199,7 @@ public class Main {
 					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
 					int size = actions.size();
 					if(size > 0){
-						currentState = actions.get(new Random(port + System.currentTimeMillis()).nextInt(size));
+						currentState = actions.get(r.nextInt(size));
 						System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
 					}else{
 						System.out.println("I Ii II L");
