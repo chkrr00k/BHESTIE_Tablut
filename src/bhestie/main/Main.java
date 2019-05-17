@@ -205,11 +205,27 @@ public class Main {
 
 				@Override
 				public int compare(State arg0, State arg1) {
+					int result = 0;
 					if(Minimax.player){
-						return arg1.movesToGoal() - arg0.movesToGoal();
+						result = arg1.movesToGoal() - arg0.movesToGoal();
 					}else{
-						return arg0.movesToGoal() - arg1.movesToGoal();
+						result = arg0.movesToGoal() - arg1.movesToGoal();
 					}
+					if(result == 0){
+						if(Minimax.player){
+							result = arg1.routeBlocked() - arg0.routeBlocked();
+						}else{
+							result = arg0.routeBlocked() - arg1.routeBlocked();
+						}
+					}
+					if(result == 0){
+						if(Minimax.player){
+							result = arg0.whitePawnSurroundingKing() - arg1.whitePawnSurroundingKing();
+						}else{
+							result = arg1.whitePawnSurroundingKing() - arg0.whitePawnSurroundingKing();
+						}
+					}
+					return result;
 				}
 				
 			};
@@ -237,6 +253,7 @@ public class Main {
 				if (Minimax.stack.size() > 0) {
 					try{
 						final List<State> ls = getBaseState();
+						System.out.println(ls);
 						ls.sort(cs);
 						currentState = ls.get(0);
 					}catch(Exception e){
