@@ -402,7 +402,8 @@ public class State {
 				//return Minimax.MAXVALUE; // It is a very good move, but not optimal because not sure to win!
 			}
 		} else if (kingEscapes > 0) {
-			return - this.getUtilityValue();
+			//return - this.getUtilityValue();
+			return -Minimax.MAXVALUE;
 		}
 		
 		// Negative if black has 3 or less pawns and white has still 2 pawns
@@ -420,35 +421,35 @@ public class State {
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			octagonPoints = 1600;
-			eatingPoints = 150;
-			notBeEatenPoints = 350;
+			eatingPoints = 500;
+			notBeEatenPoints = 400;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
-			kingAssaultPoints = -10;
+			kingAssaultPoints = 0;
 			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			octagonPoints = 800;
-			eatingPoints = 300;
-			notBeEatenPoints = 350;
+			octagonPoints = 900;
+			eatingPoints = 500;
+			notBeEatenPoints = 400;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
 			blackPawnsDistanceFromKing = -50;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
-			octagonPoints = 300;
-			eatingPoints = 325;
-			notBeEatenPoints = 300;
+			octagonPoints = 600;
+			eatingPoints = 500;
+			notBeEatenPoints = 500;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
-			kingAssaultPoints = 10;
+			kingAssaultPoints = 0;
 			blackPawnsDistanceFromKing = -100;
 		} else { // Desperation phase
 			octagonPoints = 400;
-			eatingPoints = 150;
-			notBeEatenPoints = 275+50;
+			eatingPoints = 500;
+			notBeEatenPoints = 400;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
-			kingAssaultPoints = 15;
+			kingAssaultPoints = 0;
 			blackPawnsDistanceFromKing = -150;
 		}
 		
