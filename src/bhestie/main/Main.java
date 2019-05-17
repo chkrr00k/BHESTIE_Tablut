@@ -254,7 +254,6 @@ public class Main {
 				if (Minimax.stack.size() > 0) {
 					try{
 						final List<State> ls = getBaseState();
-						System.out.println(ls);
 						ls.sort(cs);
 						currentState = ls.get(0);
 					}catch(Exception e){
