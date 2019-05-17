@@ -257,12 +257,72 @@ public class State {
 	}
 
 	/**
-	this evaluation should make the heuristic going to an escape way instead staying in a static situation
-	it calculates the distance between the king and the nearest escape
-	it must be modified to take care of the rest of the table situation
-	(black's pawn have closed the escape way)
+	it's changed...now it search for the escape group in wich i'm going
+	 if there are more black's pawn...there is a malus.
+	 if there are more white pawns there is a bonus.
 	 */
 	private int rawDistanceFromEscape(){
+		final Pawn king = this.getKing();
+		if(king == null)
+			return 0;
+		else {
+			final int x = king.getX();
+			final int y = king.getY();
+
+			int distanceRecord = 8;//maximum distance
+			int choosedExitGroup = -1;
+
+			for (int count = 0; count < cornerPosition.size(); count++) {
+				int distance = Math.abs(x - cornerPosition.get(count).x);
+				distance += Math.abs(y - cornerPosition.get(count).y);
+				if (distance < distanceRecord) {
+					distanceRecord = distance;
+					choosedExitGroup = count;
+				}
+			}
+
+			if (choosedExitGroup == -1)
+				return 0;
+
+			if (choosedExitGroup == 0) {
+				int count = 0;
+				count += pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup1) && p.isWhite()).count();
+				count -= pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup1) && p.isBlack()).count();
+				count += 2 * pawns.stream().filter(p -> p.position.equals(Position.of(1,1))).count();
+				count += 0.4 * checkROIQuantity(2,2,4,4,p -> p.isWhite());
+				count -= 0.4 * checkROIQuantity(2,2,4,4,p -> p.isBlack());
+				return count;
+			}
+			if (choosedExitGroup == 1) {
+				int count = 0;
+				count += pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup2) && p.isWhite()).count();
+				count -= pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup2) && p.isBlack()).count();
+				count += 2 * pawns.stream().filter(p -> p.position.equals(Position.of(9,1))).count();
+				count += 0.4 * checkROIQuantity(8,2,6,4,p -> p.isWhite());
+				count -= 0.4 * checkROIQuantity(8,2,6,4,p -> p.isBlack());
+				return count;
+			}
+			if (choosedExitGroup == 2) {
+				int count = 0;
+				count += pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup3) && p.isWhite()).count();
+				count -= pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup3) && p.isBlack()).count();
+				count += 2 * pawns.stream().filter(p -> p.position.equals(Position.of(1,9))).count();
+				count += 0.4 * checkROIQuantity(2,8,4,6,p -> p.isWhite());
+				count -= 0.4 * checkROIQuantity(2,8,4,6,p -> p.isBlack());
+				return count;
+			}
+			if (choosedExitGroup == 3) {
+				int count = 0;
+				count += pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup4) && p.isWhite()).count();
+				count -= pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup4) && p.isBlack()).count();
+				count += 2 * pawns.stream().filter(p -> p.position.equals(Position.of(9,9))).count();
+				count += 0.4 * checkROIQuantity(6,6,8,8,p -> p.isWhite());
+				count -= 0.4 * checkROIQuantity(6,6,8,8,p -> p.isBlack());
+				return count;
+			}
+			return 0; //smoething went wrong
+		}
+		/*
 		final Pawn king = this.getKing();
 		if(king == null)
 			return 0;
@@ -283,7 +343,10 @@ public class State {
 			}
 			return distanceRecord;
 		}
+		*/
 	}
+
+
 
 	
 	
@@ -421,37 +484,43 @@ public class State {
 		final int blackPawnsDistanceFromKing;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			octagonPoints = 1600;
-			eatingPoints = 500;
-			notBeEatenPoints = 400;
+			if(Minimax.player)
+				octagonPoints = 1600;
+			else
+				octagonPoints = 400;
+			eatingPoints = 900;
+			notBeEatenPoints = 600;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
 			kingAssaultPoints = 0;
 			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			octagonPoints = 900;
-			eatingPoints = 500;
+			if(Minimax.player)
+				octagonPoints = 900;
+			else
+				octagonPoints = 150;
+			eatingPoints = 900;
 			notBeEatenPoints = 400;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
-			blackPawnsDistanceFromKing = -50;
+			blackPawnsDistanceFromKing = -100;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 600;
-			eatingPoints = 500;
-			notBeEatenPoints = 500;
+			eatingPoints = 900;
+			notBeEatenPoints = 600;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
 			kingAssaultPoints = 0;
-			blackPawnsDistanceFromKing = -100;
+			blackPawnsDistanceFromKing = -200;
 		} else { // Desperation phase
-			octagonPoints = 400;
-			eatingPoints = 500;
-			notBeEatenPoints = 400;
+			octagonPoints = 0;
+			eatingPoints = 700;
+			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
 			kingAssaultPoints = 0;
-			blackPawnsDistanceFromKing = -150;
+			blackPawnsDistanceFromKing = -400;
 		}
 		
 		long result = 0;
@@ -607,21 +676,32 @@ public class State {
 		final int kingProtectedPoints;
 		final int whitePawnsInCornerPositionValue;
 		final int whitePawnsInExitPositionValue;
+		final int goInDominatedByWhiteExitValue;
+		final int goInDominatedByBlackExitValue;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
-			eatingPoints = 800;
-			dontBeEatenPoints = 200;
+			eatingPoints = 1600;
+			dontBeEatenPoints = 400;
 			kingUnderCheckPoints = 70;
 			kingInGoodPositionPoints = 50;
 			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = 100;
 			rawDistanceFromEscapePoints = 20; //XXX negative
 			kingProtectedPoints = 0;
-			whitePawnsInCornerPositionValue = 80;
-			whitePawnsInExitPositionValue = 30;
+
+			if(State.TURN < 2) {
+				whitePawnsInExitPositionValue = 0;
+				whitePawnsInCornerPositionValue = 20;
+			}
+			else {
+				whitePawnsInExitPositionValue = 30;
+				whitePawnsInCornerPositionValue = 80;
+			}
+			goInDominatedByWhiteExitValue = 30;
+			goInDominatedByBlackExitValue = -40;
 		} else if (State.TURN <= END_MAIN_PHASE) {
-			eatingPoints = 600;
-			dontBeEatenPoints = 225;
+			eatingPoints = 1200;
+			dontBeEatenPoints = 400;
 			kingUnderCheckPoints = 175;
 			kingInGoodPositionPoints = 100;
 			kingEscapesPoints = 50;
@@ -630,9 +710,11 @@ public class State {
 			kingProtectedPoints = 120;//si incarta troppo
 			whitePawnsInCornerPositionValue = 80;
 			whitePawnsInExitPositionValue = 30;
+			goInDominatedByWhiteExitValue = 30;
+			goInDominatedByBlackExitValue = -40;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
-			eatingPoints = 75;
-			dontBeEatenPoints = 165;
+			eatingPoints = 600;
+			dontBeEatenPoints = 400;
 			kingUnderCheckPoints = 190;
 			kingInGoodPositionPoints = 150;
 			kingEscapesPoints = 140;
@@ -641,6 +723,8 @@ public class State {
 			kingProtectedPoints = 240;
 			whitePawnsInCornerPositionValue = 40;
 			whitePawnsInExitPositionValue = 30;
+			goInDominatedByWhiteExitValue = 30;
+			goInDominatedByBlackExitValue = -30;
 		} else { //DESPERATION PHASE
 			eatingPoints = 50;
 			dontBeEatenPoints = 200;
@@ -652,6 +736,8 @@ public class State {
 			kingProtectedPoints = 250;
 			whitePawnsInCornerPositionValue = 0;
 			whitePawnsInExitPositionValue = 30;
+			goInDominatedByWhiteExitValue = 30;
+			goInDominatedByBlackExitValue = -30;
 		}
 		
 		long result = 0;
@@ -710,7 +796,15 @@ public class State {
 		
 		// Raw distance from escape
 		{
-			result += (7 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
+			result += this.rawDistanceFromEscape() * goInDominatedByWhiteExitValue;
+
+			/*
+			//result += (7 - this.rawDistanceFromEscape()) * rawDistanceFromEscapePoints / 6;
+			if(this.rawDistanceFromEscape() > 0)
+				result += goInDominatedByWhiteExitValue;
+			if(this.rawDistanceFromEscape() < 0)
+				result += goInDominatedByBlackExitValue;
+			*/
 		}
 		
 		// White on main axis
@@ -785,6 +879,8 @@ public class State {
 			count++;
 		if(count4 > 0)
 			count++;
+		if(count > 2)
+			count = 2;
 		return count;
 	}
 
@@ -1309,10 +1405,12 @@ public class State {
 		escapeRouteBlocked.add(Position.of(7, 8)); //VII
 		escapeRouteBlocked.add(Position.of(8, 7)); //VIII
 
-		cornerPosition.add(Position.of(9 ,9));
 		cornerPosition.add(Position.of(1 ,1));
-		cornerPosition.add(Position.of(1 ,9));
 		cornerPosition.add(Position.of(9 ,1));
+		cornerPosition.add(Position.of(1 ,9));
+		cornerPosition.add(Position.of(9 ,9));
+
+
 
 	}
 
