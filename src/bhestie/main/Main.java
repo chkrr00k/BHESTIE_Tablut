@@ -1,5 +1,6 @@
 package bhestie.main;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -163,6 +164,26 @@ public class Main {
 				.collect(Collectors.toList());
 	}
 	
+	private static State panicState(State currentState, Comparator<State> cs) {
+		List<State> actions = StreamSupport.stream(currentState.getChildren(true).spliterator(), false).collect(Collectors.toList());
+		int size = actions.size();
+		if(size > 0){
+			//currentState = actions.get(r.nextInt(size));
+			try{
+				actions.sort(cs);
+				System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+				return actions.get(0);
+			}catch (NullPointerException npe) {
+				System.out.println("I Ii II L");
+				System.exit(-1000);
+			}
+		}else{
+			System.out.println("I Ii II L");
+			System.exit(-1000);
+		}
+		return null;
+	}
+
 	public static void main(String[] args) {
 		try{
 			//args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
@@ -173,10 +194,11 @@ public class Main {
 			
 			Minimax.init();
 		    
-		    if (Minimax.player == whitePlayer)
+		    if (Minimax.player == whitePlayer){
 		    	port = WhitePort;
-		    else
+		    }else{
 		    	port = BlackPort;
+		    }
 			
 			Connector c = new Connector("__BHeStIE__", port, host);
 			Comparator<State> cs = new Comparator<State>(){
@@ -204,6 +226,7 @@ public class Main {
 			}
 			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
+			List<State> unfold = null;
 			for(;;) {
 				long result = Minimax.alphaBethInit(currentState);
 				if(verbose){
@@ -212,24 +235,29 @@ public class Main {
 					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 				}
 				if (Minimax.stack.size() > 0) {
-					final List<State> ls = getBaseState();
-					ls.sort(cs);
-					currentState = ls.get(0);
-				} else {
-					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
-					int size = actions.size();
-					if(size > 0){
-						currentState = actions.get(r.nextInt(size));
-						System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
-					}else{
-						System.out.println("I Ii II L");
+					try{
+						final List<State> ls = getBaseState();
+						ls.sort(cs);
+						currentState = ls.get(0);
+					}catch(Exception e){
+						currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+						unfold = currentState.unfold();
+						int unfoldSize = unfold.size();
+						if (unfoldSize > 0){
+							currentState = unfold.get(unfoldSize - 1);
+						}else{
+							currentState = panicState(currentState, cs);
+						}
+						unfold = null;
 					}
+				} else {
+					currentState = panicState(currentState, cs);
 				}
 				try{
-				c.writeAction(currentState.getAction()); // Sends our move
+					c.writeAction(currentState.getAction()); // Sends our move
 				}catch(NullPointerException npe){
 					System.out.println("I Ii II L");
-					throw npe;
+					break;
 				}
 				
 				if(verbose){
@@ -248,8 +276,12 @@ public class Main {
 				}
 				b = c.readBoard(); // Gets the board after our move
 				Thread.yield(); // Let the enemy "think correctly"
+				try{
 				b = c.readBoard(); // Gets the board after the enemy move
-				
+				}catch(IOException ioe){
+					System.out.println("VAE VICTIS");
+					System.exit(1000);
+				}
 				State.TURN++;
 				currentState = new State(b.convert().get(), Minimax.player, historyStorage, null);
 				if(verbose){
