@@ -77,9 +77,11 @@ public class Position {
 	static {
 		int size = 11;
 		flightweightPositions = new Position[size][size];
-		for (int i = 1; i <= 9; i++)
-			for (int j = 1; j <= 9; j++)
+		for (int i = 1; i <= 9; i++){
+			for (int j = 1; j <= 9; j++){
 				Position.of(i, j); // Cache all board values (not the perimetral)
+			}
+		}
 	}
 	private static final Position[][] flightweightPositions; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
 	/**
