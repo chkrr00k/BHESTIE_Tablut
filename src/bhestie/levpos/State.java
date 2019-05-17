@@ -264,8 +264,9 @@ public class State {
 			for(Position position : escapes) {
 				int distance = Math.abs(position.x - x);
 				distance += Math.abs(position.y - y);
-				if(pawns.stream().anyMatch(p -> p.position.equals(position)))
+				if(pawns.stream().anyMatch(p -> p.position.equals(position))) {
 					distance--;
+				}
 				if(distance < distanceRecord)
 					distanceRecord = distance;
 			}
@@ -591,6 +592,7 @@ public class State {
 		final int rawDistanceFromEscapePoints;
 		final int kingProtectedPoints;
 		final int whitePawnsInCornerPositionValue;
+		final int whitePawnsInExitPositionValue;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			eatingPoints = 800;
@@ -602,6 +604,7 @@ public class State {
 			rawDistanceFromEscapePoints = 20; //XXX negative
 			kingProtectedPoints = 0;
 			whitePawnsInCornerPositionValue = 80;
+			whitePawnsInExitPositionValue = 30;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			eatingPoints = 600;
 			dontBeEatenPoints = 225;
@@ -612,6 +615,7 @@ public class State {
 			rawDistanceFromEscapePoints = 25;
 			kingProtectedPoints = 120;//si incarta troppo
 			whitePawnsInCornerPositionValue = 80;
+			whitePawnsInExitPositionValue = 30;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			eatingPoints = 75;
 			dontBeEatenPoints = 165;
@@ -622,6 +626,7 @@ public class State {
 			rawDistanceFromEscapePoints = 75;
 			kingProtectedPoints = 240;
 			whitePawnsInCornerPositionValue = 40;
+			whitePawnsInExitPositionValue = 30;
 		} else { //DESPERATION PHASE
 			eatingPoints = 50;
 			dontBeEatenPoints = 200;
@@ -632,6 +637,7 @@ public class State {
 			rawDistanceFromEscapePoints = 0;
 			kingProtectedPoints = 250;
 			whitePawnsInCornerPositionValue = 0;
+			whitePawnsInExitPositionValue = 30;
 		}
 		
 		long result = 0;
@@ -721,7 +727,10 @@ public class State {
 				result += kingInGoodPositionPoints;
 			}
 		}
-		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
+		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue;
+
+		result += whitePawnsInExitPosition() * whitePawnsInExitPositionValue;
+
 /*	
 		result = result * (eatingPoints
 			+ dontBeEatenPoints
@@ -746,6 +755,23 @@ public class State {
 	
 	public int whitePawnsInCornerPositions(){
 		return (int) pawns.stream().filter(p -> p.position.equalsAny(cornerPosition)).count();
+	}
+
+	public int whitePawnsInExitPosition(){
+		int count1 = (int) pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup1)).count();
+		int count2 = (int) pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup2)).count();
+		int count3 = (int) pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup3)).count();
+		int count4 = (int) pawns.stream().filter(p -> p.position.equalsAny(escapePositionGroup4)).count();
+		int count = 0;
+		if(count1 > 0)
+			count++;
+		if(count2 > 0)
+			count++;
+		if(count3 > 0)
+			count++;
+		if(count4 > 0)
+			count++;
+		return count;
 	}
 
 	public boolean veryUglyKingPosition() {
@@ -1150,6 +1176,10 @@ public class State {
 	/**
 	 * List of positions where the king have to be fully surrounded.
 	 */
+	private static final List<Position> escapePositionGroup1 = new ArrayList<>(4);
+	private static final List<Position> escapePositionGroup2 = new ArrayList<>(4);
+	private static final List<Position> escapePositionGroup3 = new ArrayList<>(4);
+	private static final List<Position> escapePositionGroup4 = new ArrayList<>(4);
 
 	private static final List<Position> cornerPosition = new ArrayList<>(4);
 	private static final List<Position> protectedKingPositions = new ArrayList<>(5);
@@ -1208,6 +1238,26 @@ public class State {
 		escapePositions.add(Position.of(3, 9));
 		escapePositions.add(Position.of(7, 9));
 		escapePositions.add(Position.of(8, 9));
+
+		escapePositionGroup1.add(Position.of(1,2));
+		escapePositionGroup1.add(Position.of(1,3));
+		escapePositionGroup1.add(Position.of(2,1));
+		escapePositionGroup1.add(Position.of(3,1));
+
+		escapePositionGroup2.add(Position.of(7,1));
+		escapePositionGroup2.add(Position.of(8,1));
+		escapePositionGroup2.add(Position.of(9,2));
+		escapePositionGroup2.add(Position.of(9,3));
+
+		escapePositionGroup3.add(Position.of(1,7));
+		escapePositionGroup3.add(Position.of(1,8));
+		escapePositionGroup3.add(Position.of(2,9));
+		escapePositionGroup3.add(Position.of(3,9));
+
+		escapePositionGroup4.add(Position.of(7,9));
+		escapePositionGroup4.add(Position.of(8,9));
+		escapePositionGroup4.add(Position.of(9,7));
+		escapePositionGroup4.add(Position.of(9,8));
 
 		/***** PROTECTED KING POSITIONS *****/
 		protectedKingPositions.add(tronePosition);
