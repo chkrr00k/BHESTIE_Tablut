@@ -121,11 +121,22 @@ public class State {
 		return new ParallelStateGenerator(this);
 	}
 	/**
+	 * Returns a generator that generates all possible combination of future states of the current state
+	 * @return an iterator to generate children
+	 */
+	public StateGenerator getChildGenerator(boolean all) {
+		return new ParallelStateGenerator(this, all);
+	}
+	/**
 	 * Returns an Iterable object that generates all possible children of the current status
 	 * @return an Iterable object
 	 */
 	public StateChild getChildren(){
 		return new StateChild(this);
+	}
+
+	public StateChild getChildren(boolean b) {
+		return new StateChild(this, b);
 	}
 
 	public int whitePawnSurroundingKing(){
@@ -287,7 +298,10 @@ public class State {
 	*far away from king
 	 **/
 	private int mainAxisDefaultPosition(){
-		return (int) pawns.stream().parallel().filter(pawn -> pawn.isWhite() && pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
+		return (int) pawns.stream()
+				.parallel()
+				.filter(pawn -> pawn.isWhite() && pawn.position.equalsAny(defaultWhitePawnsPosition))
+				.count();
 	}
 
 	/**
@@ -1323,9 +1337,13 @@ public class State {
 		private Pawn currentPawn;
 		private int ei, wi, si, ni;
 		private boolean estop, wstop, sstop, nstop;
+		
+		private final boolean all;
 			
- 		public StateGenerator(State s) {
+ 		public StateGenerator(State s, boolean all) {
 			super();
+			this.all = all;
+			
 			this.s = s;
 			this.next = null;
 			this.nextPresent = false;
@@ -1355,6 +1373,9 @@ public class State {
 			
 			this.refreshCurrentPawn();
 			
+		}
+ 		public StateGenerator(State s) {
+ 			this(s, false);
 		}
 
 		private List<Pawn> filterPawns(){
@@ -1430,12 +1451,20 @@ public class State {
 						if (this.nextPresent = (tmp = this.processPosition(this.ei++, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
+						}else if(this.all && !tmp.isValid() && tmp.isPresent()){
+							this.next = tmp.get();
+							this.nextPresent = true;
+							found = true;
 						}else if(!tmp.isPresent()){
 							this.estop = true;
 						}
 					}else if(!this.sstop && this.si >= this.stopDecrementX){
 						if (this.nextPresent = (tmp = this.processPosition(this.si--, this.currentPawn.getY(), this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
+							found = true;
+						}else if(this.all && !tmp.isValid() && tmp.isPresent()){
+							this.next = tmp.get();
+							this.nextPresent = true;
 							found = true;
 						}else if(!tmp.isPresent()){
 							this.sstop = true;
@@ -1444,12 +1473,20 @@ public class State {
 						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.ni++, this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
 							found = true;
+						}else if(this.all && !tmp.isValid() && tmp.isPresent()){
+							this.next = tmp.get();
+							this.nextPresent = true;
+							found = true;
 						}else if(!tmp.isPresent()){
 							this.nstop = true;
 						}
 					}else if(!this.wstop && this.checkAll && this.wi >= this.stopDecrementY){
 						if(this.nextPresent = (tmp = this.processPosition(this.currentPawn.getX(), this.wi--, this.currentPawn)).isPresentValid()){
 							this.next = tmp.get();
+							found = true;
+						}else if(this.all && !tmp.isValid() && tmp.isPresent()){
+							this.next = tmp.get();
+							this.nextPresent = true;
 							found = true;
 						}else if(!tmp.isPresent()){
 							this.wstop = true;
@@ -1586,9 +1623,12 @@ public class State {
 	public class StateChild implements Iterable<State>{
 		private StateGenerator sg;
 		
-		public StateChild(State s) {
+		public StateChild(State s, boolean all) {
 			super();
-			this.sg = s.getChildGenerator();
+			this.sg = s.getChildGenerator(all);
+		}
+		public StateChild(State s) {
+			this(s, false);
 		}
 
 		public Stream<State> stream() {
@@ -1602,9 +1642,9 @@ public class State {
 	}
 	
 	private static class OptionalState {
-		private State s;
-		private boolean isValid;
-		private boolean isPresent;
+		private final State s;
+		private final boolean isValid;
+		private final boolean isPresent;
 		
 		private OptionalState(State s, boolean isValid, boolean isPresent) {
 			if(s == null){
@@ -1651,13 +1691,16 @@ public class State {
 		private boolean finishedToGenerate = false;
 		private ConcurrentLinkedQueue<State> generatedQueue = new ConcurrentLinkedQueue<>();
 		
-		public ParallelStateGenerator(State s) {
-			super(s);
+		public ParallelStateGenerator(State s, boolean all) {
+			super(s, all);
 			
 			// Chiedo al pool di thread di calcolare i QUEUESIZE next values
 			for (int i = 0; i < QUEUESIZE; i++) {
 				threadPool.add(this);
 			}
+		}
+		public ParallelStateGenerator(State s) {
+			this(s, false);
 		}
 		
 		private Optional<State> getNext() {
