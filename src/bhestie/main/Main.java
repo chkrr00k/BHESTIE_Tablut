@@ -1,6 +1,7 @@
 package bhestie.main;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -272,7 +273,7 @@ public class Main {
 				}
 				try{
 					c.writeAction(currentState.getAction()); // Sends our move
-				}catch(NullPointerException npe){
+				}catch(NullPointerException | SocketException npe){
 					System.out.println("I Ii II L");
 					break;
 				}
