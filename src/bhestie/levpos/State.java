@@ -66,7 +66,7 @@ public class State {
 	 * @param pawns The pawns in the board
 	 * @param turn The turn. TRUE=Black, FALSE=White
 	 * @param historyStorage The history storage
-	 * @param parent The parent
+	 * @param parent The parent of the state
 	 */
 	public State(List<Pawn> pawns, boolean turn, HistoryStorage historyStorage, State parent){
 		this(pawns, turn, historyStorage, parent, false);
@@ -117,8 +117,8 @@ public class State {
 	 * Returns a generator that generates all possible combination of future states of the current state
 	 * @return an iterator to generate children
 	 */
-	public StateGenerator getChildGenerator() {//FIXEME was parallel
-		return new StateGenerator(this);
+	public StateGenerator getChildGenerator() {
+		return new ParallelStateGenerator(this);
 	}
 	/**
 	 * Returns an Iterable object that generates all possible children of the current status
@@ -350,27 +350,21 @@ public class State {
 		return Math.min(result, Minimax.MAXVALUE);
 	}
 	
-	private long getPointsForOctagonInCardinalPoint(Position p1Internal, Position p2Internal, Position fromInternal, Position toInternal, Position excludeForInternal, Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult, boolean preferInternal) {
+	private long getPointsForExternalOctagonInCardinalPoint(Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult) {
 		long currentResult = 0;
 		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
-		long numberOfWhitesOutOfInternalOctagon = this.checkROIQuantity(fromInternal.x, fromInternal.y, toInternal.x, toInternal.y, p -> p.isWhite() && !p.position.equals(excludeForInternal));
 		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
-		long numberOfBlackPawnsInInternalOctagon = numberOfWhitesOutOfInternalOctagon == 0 ? this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1Internal) || p.position.equals(p2Internal))).count() : 0;
 		
 		if (numberOfWhitesOutOfExternalOctagon >= 2) {
-			maxResult = 0;
+			maxResult = 30 * maxResult / 200;
 		} else if (numberOfWhitesOutOfExternalOctagon == 1) {
 			maxResult = 90 * maxResult / 200;
 		}
 		
-		if (numberOfBlackPawnsInInternalOctagon == 2) { 				// Se ho fatto l'ottagono interno
-			currentResult = maxResult - 50;
-		} else if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
-			currentResult = ((preferInternal && numberOfWhitesOutOfInternalOctagon == 0) ? maxResult/2 : maxResult);
+		if (numberOfBlackPawnsInExternalOctagon == 2) { 			// Altrimenti se ho fatto l'ottagono esterno
+			currentResult = maxResult;
 		} else { 														// Non ho fatto nè quello interno nè quello esterno
-			currentResult = Math.max(numberOfBlackPawnsInInternalOctagon, numberOfBlackPawnsInExternalOctagon) * maxResult / 2;
-			if (numberOfBlackPawnsInInternalOctagon > numberOfBlackPawnsInExternalOctagon)
-				currentResult -= 50;
+			currentResult = numberOfBlackPawnsInExternalOctagon * maxResult / 2;
 		}
 		return currentResult;
 	}
@@ -411,16 +405,16 @@ public class State {
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			octagonPoints = 1600;
-			eatingPoints = 200;
-			notBeEatenPoints = 300;
+			eatingPoints = 150;
+			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 0;
 			remainInCitadelsPoints = 125;
-			kingAssaultPoints = -25;
+			kingAssaultPoints = -10;
 			blackPawnsDistanceFromKing = 0;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			octagonPoints = 800;
 			eatingPoints = 300;
-			notBeEatenPoints = 226;
+			notBeEatenPoints = 350;
 			whiteKingGoodPositionPoints = 50;
 			remainInCitadelsPoints = 174;
 			kingAssaultPoints = 0;
@@ -428,18 +422,18 @@ public class State {
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			octagonPoints = 300;
 			eatingPoints = 325;
-			notBeEatenPoints = 175;
+			notBeEatenPoints = 300;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 10;
-			kingAssaultPoints = 100;
+			kingAssaultPoints = 10;
 			blackPawnsDistanceFromKing = -100;
 		} else { // Desperation phase
 			octagonPoints = 400;
-			eatingPoints = 100;
-			notBeEatenPoints = 250;
+			eatingPoints = 150;
+			notBeEatenPoints = 275+50;
 			whiteKingGoodPositionPoints = 100;
 			remainInCitadelsPoints = 0;
-			kingAssaultPoints = 150;
+			kingAssaultPoints = 15;
 			blackPawnsDistanceFromKing = -150;
 		}
 		
@@ -451,25 +445,28 @@ public class State {
 		long malusEast =  this.checkROI(1, 1, 4, 9, p -> p.king) || (this.pawns.stream().filter(p -> p.isWhite() && !p.king && p.position.y == 5 && (p.position.x == 4 || p.position.x == 4)).count() < 2) ? 25 : 0;
 		
 		
-		
 		// Check for North-east octagon
-		long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
-		long resultNorthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 3), Position.of(7, 4), Position.of(6, 1), Position.of(9, 4), Position.of(6, 4), Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast, malusNorth > 0 || malusEast > 0);
+		final long resultNorthEast;
+		final long maxResultNorthEast = (200 - malusNorth - malusEast) * octagonPoints / 800;
+		resultNorthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 2), Position.of(8, 3), Position.of(7, 1), Position.of(9, 3), Position.of(7, 3), maxResultNorthEast);
 		result += resultNorthEast;
 		
 		// Check for North-west octagon
-		long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
-		long resultNorthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 4), Position.of(4, 3), Position.of(1, 1), Position.of(4, 4), Position.of(4, 4), Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest, malusNorth > 0 || malusWest > 0);
+		final long resultNorthWest;
+		final long maxResultNorthWest = (200 - malusNorth - malusWest) * octagonPoints / 800;
+		resultNorthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 3), Position.of(3, 2), Position.of(1, 1), Position.of(3, 3), Position.of(3, 3), maxResultNorthWest);
 		result += resultNorthWest;
 		
 		// Check for South-east octagon
-		long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
-		long resultSouthEast = this.getPointsForOctagonInCardinalPoint(Position.of(6, 7), Position.of(7, 6), Position.of(6, 6), Position.of(9, 9), Position.of(6, 6), Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast, malusSouth > 0 || malusEast > 0);
+		final long resultSouthEast;
+		final long maxResultSouthEast = (200 - malusSouth - malusEast) * octagonPoints / 800;
+		resultSouthEast = this.getPointsForExternalOctagonInCardinalPoint(Position.of(7, 8), Position.of(8, 7), Position.of(7, 7), Position.of(9, 9), Position.of(7, 7), maxResultSouthEast);
 		result += resultSouthEast;
 		
 		// Check for South-west octagon
-		long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
-		long resultSouthWest = this.getPointsForOctagonInCardinalPoint(Position.of(3, 6), Position.of(4, 7), Position.of(1, 6), Position.of(4, 9), Position.of(4, 6), Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest, malusSouth > 0 || malusWest > 0);
+		final long resultSouthWest;
+		final long maxResultSouthWest = (200 - malusSouth - malusWest) * octagonPoints / 800;
+		resultSouthWest = this.getPointsForExternalOctagonInCardinalPoint(Position.of(2, 7), Position.of(3, 8), Position.of(1, 7), Position.of(3, 9), Position.of(3, 7), maxResultSouthWest);
 		result += resultSouthWest;
 		
 		// Check for number of black pawns (not be eaten)
@@ -562,18 +559,17 @@ public class State {
 		}
 		
 		//result = 10; // XXX disabled
+/*		result = result * (octagonPoints
+			+ eatingPoints
+			+ notBeEatenPoints
+			+ whiteKingGoodPositionPoints
+			+ remainInCitadelsPoints
+			+ kingAssaultPoints
+			+ blackPawnsDistanceFromKing) / 1000;*/
+		
 		return result * MULTIPLICATOR;
 	}
 
-	public double getSumBlackPawnsDistanceFromKing(){
-		int distance = 0;
-		int pawnsNumber = (int) this.pawns.stream().filter(p -> p.isBlack()).count();
-		for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
-			distance += Math.abs(king.getX()-p.getX()) + Math.abs(king.getY()-p.getY());
-		}
-		return distance/pawnsNumber;
-	}
-	
 	/**
 	 * The biggest value the more "good" is the board
 	 * @return A number that stimates the "goodness" of the board 
@@ -724,11 +720,28 @@ public class State {
 			}
 		}
 		result += whitePawnsInCornerPositions() * whitePawnsInCornerPositionValue / 4;
-	
-		//result = 10; // XXX disabled
+/*	
+		result = result * (eatingPoints
+			+ dontBeEatenPoints
+			+ kingUnderCheckPoints
+			+ kingInGoodPositionPoints
+			+ kingEscapesPoints
+			+ whiteOnMainAxisPoints
+			+ rawDistanceFromEscapePoints
+			+ kingProtectedPoints
+			+ whitePawnsInCornerPositionValue) / 1000;*/
 		return result * MULTIPLICATOR;
 	}
 
+	public double getSumBlackPawnsDistanceFromKing(){
+		int distance = 0;
+		int pawnsNumber = (int) this.pawns.stream().filter(p -> p.isBlack()).count();
+		for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
+			distance += Math.abs(king.getX()-p.getX()) + Math.abs(king.getY()-p.getY());
+		}
+		return distance/pawnsNumber;
+	}
+	
 	public int whitePawnsInCornerPositions(){
 		return (int) pawns.stream().filter(p -> p.position.equalsAny(cornerPosition)).count();
 	}
@@ -1060,7 +1073,62 @@ public class State {
 		}
 		return result * modificator;
 	}
+
 	
+	private List<Position> explore(Position p, List<Position> explored){
+		
+		final List<Position> tp = new ArrayList<Position>(4);
+		if(p.x + 1 <= 9 && !explored.contains(Position.of(p.x + 1, p.y))){
+			tp.add(Position.of(p.x + 1, p.y)); //e
+		}
+		if(p.y + 1 <= 9 && !explored.contains(Position.of(p.x, p.y + 1))){
+			tp.add(Position.of(p.x, p.y + 1)); //s
+		}
+		if(p.x - 1 >= 1 && !explored.contains(Position.of(p.x - 1, p.y))){
+			tp.add(Position.of(p.x - 1, p.y)); //w
+		}
+		if(p.y - 1 >= 1 && !explored.contains(Position.of(p.x, p.y - 1))){
+			tp.add(Position.of(p.x, p.y - 1)); //n
+		}
+		
+		final List<Position> result = Stream.concat(this.pawns.stream().filter(pa -> !pa.king).map(pa -> pa.position), citadels.stream().flatMap(c -> c.citadelPositions.stream()))
+			.filter(po -> {
+				for(Position pos : tp){
+					if(pos.equals(po)){
+						return true;
+					}
+				}
+				return false;
+			})
+			.collect(Collectors.toList());
+		
+		return tp.stream()
+				.filter(po -> !result.contains(po))
+				.collect(Collectors.toList());
+
+	}
+	
+	public int evaluate(List<Position> lp, int depth, List<Position> explored){
+		int last = Integer.MAX_VALUE;
+		int ndepth = depth + 1;
+		explored.addAll(lp);
+		for(Position p : lp){
+			if(escapePositions.contains(p)){
+				if(this.pawns.stream().anyMatch(pa -> pa.position.equals(p))){
+					return Integer.MAX_VALUE;
+				}else{
+					return depth;
+				}
+			}else{
+				last = Math.min(last, evaluate(explore(p, explored), ndepth, explored));
+			}
+		}
+		return last;
+	}
+	
+	public int movesToGoal(){
+		return evaluate(explore(this.getKing().position, new LinkedList<Position>()), 1, new LinkedList<Position>());
+	}
 	/**
 	 * default white pawns positions
 	 */

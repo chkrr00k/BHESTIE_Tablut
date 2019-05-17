@@ -2,6 +2,7 @@ package bhestie.main;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ public class Main {
 	
 	private static int port;
 	private static String host = "localhost";
+	public static boolean verbose = false;
 	
 	private static final void printLogo(){
 		System.out.println( "BBBBBB  HH    H          SSSSS       II EEEEEE\n" +
@@ -54,6 +56,7 @@ public class Main {
 	private static final String HOST_FLAG = "-H";
 	private static final String SCALING_UP_FLAG = "-s:up";
 	private static final String SCALING_DOWN_FLAG = "-s:dw";
+	private static final String VERBOSE_FLAG = "-v";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
 			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
@@ -109,6 +112,9 @@ public class Main {
 			case FIXED_DEPTH_FLAG:
 				Minimax.FIXEDDEPTH = true;
 				break;
+			case VERBOSE_FLAG:
+				Main.verbose = true;
+				break;
 			case DEPTH_FLAG:
 				try{
 					Minimax.DEPTH = Integer.parseInt(args[++i]);
@@ -149,7 +155,7 @@ public class Main {
 	public static void main(String[] args) {
 		try{
 			//args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
-			args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
+			//args = new String[]{"white", FIXED_DEPTH_FLAG, DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
 
 			parse(args);
 			printLogo();
@@ -162,6 +168,18 @@ public class Main {
 		    	port = BlackPort;
 			
 			Connector c = new Connector("__BHeStIE__", port, host);
+			Comparator<State> cs = new Comparator<State>(){
+
+				@Override
+				public int compare(State arg0, State arg1) {
+					if(Minimax.player){
+						return arg1.movesToGoal() - arg0.movesToGoal();
+					}else{
+						return arg0.movesToGoal() - arg1.movesToGoal();
+					}
+				}
+				
+			};
 			Board b = null;
 			if (!c.init()) {
 				System.err.println("Where's my server?");
@@ -176,14 +194,16 @@ public class Main {
 			Random r = new Random(port + System.currentTimeMillis());
 			State currentState = new State(b.convert().get(), Minimax.player);
 			for(;;) {
-				LocalTime before = LocalTime.now();
 				long result = Minimax.alphaBethInit(currentState);
-				System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
-				System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
-
+				if(verbose){
+					LocalTime before = LocalTime.now();
+					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
+					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
+				}
 				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
-					currentState = Minimax.stack.get(r.nextInt(Minimax.stack.size()));
+					Minimax.stack.sort(cs);
+					currentState = Minimax.stack.get(0);
 					unfold = currentState.unfold();
 					int unfoldSize = unfold.size();
 					if (unfoldSize > 0){
@@ -191,30 +211,45 @@ public class Main {
 					}
 				} else {
 					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
-					currentState = actions.get(r.nextInt(actions.size()));
-					System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+					int size = actions.size();
+					if(size > 0){
+						currentState = actions.get(r.nextInt(size));
+						System.out.println("VNA SALVS VICTIS NVLLAM SPERARE SALVTEM");
+					}else{
+						System.out.println("I Ii II L");
+					}
 				}
+				try{
 				c.writeAction(currentState.getAction()); // Sends our move
+				}catch(NullPointerException npe){
+					System.out.println("I Ii II L");
+					throw npe;
+				}
 				
-				long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-				long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-				System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
+				if(verbose){
+					long memoryBefore = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+					long freeBefore = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					System.out.println("Before\n\tMemory allocated = " + memoryBefore + "\tFree = " + freeBefore);
+				}
 				HistoryStorage historyStorage = currentState.historyStorage; // Keep it
 				currentState = null;
 				unfold = null;
 				Minimax.stack.clear();
 				System.gc();
-				long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
-				long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
-				System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
+				if(verbose){
+					long memoryAfter = Runtime.getRuntime().totalMemory() / 1024 / 1024;
+					long freeAfter = Runtime.getRuntime().freeMemory() / 1024 / 1024;
+					System.out.println("After\n\tMemory allocated = " + memoryAfter + "\tFree = " + freeAfter);
+				}
 				b = c.readBoard(); // Gets the board after our move
 				Thread.yield(); // Let the enemy "think correctly"
 				b = c.readBoard(); // Gets the board after the enemy move
 				
 				State.TURN++;
 				currentState = new State(b.convert().get(), Minimax.player, historyStorage, null);
-				
-				System.out.println(State.TURN);
+				if(verbose){
+					System.out.println(State.TURN);
+				}
 			}
 		}catch(Exception e){
 			System.err.println("Something happened.\nSomething happened.");
