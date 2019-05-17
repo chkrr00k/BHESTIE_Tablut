@@ -152,6 +152,17 @@ public class Main {
 		ThreadPool.getInstance().setMaxThreads(numberOfThreads);	
 	}
 	
+	private static List<State> getBaseState(){
+		return Minimax.stack.stream()
+				.parallel()
+				.map(s -> {
+					final List<State> r = s.unfold();
+					return r.get(r.size() - 1);
+				})
+				.distinct()
+				.collect(Collectors.toList());
+	}
+	
 	public static void main(String[] args) {
 		try{
 			//args = new String[]{"white", SCALING_DOWN_FLAG, "0", SCALING_UP_FLAG, "0", DEPTH_FLAG, "3", TIMEOUT_FLAG, "50"}; //FIXME remove this to start it from CLI
@@ -200,15 +211,10 @@ public class Main {
 					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
 					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 				}
-				List<State> unfold = null;
 				if (Minimax.stack.size() > 0) {
-					Minimax.stack.sort(cs);
-					currentState = Minimax.stack.get(0);
-					unfold = currentState.unfold();
-					int unfoldSize = unfold.size();
-					if (unfoldSize > 0){
-						currentState = unfold.get(unfoldSize - 1);
-					}
+					final List<State> ls = getBaseState();
+					ls.sort(cs);
+					currentState = ls.get(0);
 				} else {
 					List<State> actions = StreamSupport.stream(currentState.getChildren().spliterator(), false).collect(Collectors.toList());
 					int size = actions.size();
@@ -233,7 +239,6 @@ public class Main {
 				}
 				HistoryStorage historyStorage = currentState.historyStorage; // Keep it
 				currentState = null;
-				unfold = null;
 				Minimax.stack.clear();
 				System.gc();
 				if(verbose){
