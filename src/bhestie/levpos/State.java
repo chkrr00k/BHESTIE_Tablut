@@ -135,7 +135,7 @@ public class State {
 			return 0;
 		}
 
-		return (int) this.pawns.stream().filter(p -> p.isWhite() && !p.king && Math.abs(p.getX() - k.getX()) + Math.abs(p.getY() - k.getY()) == 1).count();
+		return (int) this.pawns.stream().parallel().filter(p -> p.isWhite() && !p.king && Math.abs(p.getX() - k.getX()) + Math.abs(p.getY() - k.getY()) == 1).count();
 		
 	}
 	
@@ -152,6 +152,7 @@ public class State {
 		
 		// here are all the pawns surrounding the king
 		List<Position> l = Stream.concat(this.pawns.stream()
+					.parallel()
 					.filter(p -> p.isBlack())
 					.map(p -> p.position),
 				citadels.stream()
@@ -236,8 +237,8 @@ public class State {
 			threatenPositions.add(Position.of(king.getX() - 1, king.getY()));
 			threatenPositions.add(Position.of(king.getX(), king.getY() - 1));
 
-			final Stream<Position> s = Stream.concat(this.pawns.stream().filter(p -> p.isBlack()).map(p -> p.position),
-					citadels.stream().flatMap(c -> c.citadelPositions.stream()));
+			final Stream<Position> s = Stream.concat(this.pawns.stream().parallel().filter(p -> p.isBlack()).map(p -> p.position),
+					citadels.stream().parallel().flatMap(c -> c.citadelPositions.stream()));
 			final int count = (int) s.distinct().filter(p -> p.equalsAny(threatenPositions)).count();
 			
 			return 4 - count - (tronePosition.equalsAny(threatenPositions) ? 1 : 0);
@@ -258,7 +259,7 @@ public class State {
 			final int x = king.getX();
 			final int y = king.getY();
 
-			List<Position> escapes = escapePositions.stream().filter(e -> !this.pawns.stream().anyMatch(p -> p.position.equals(e))).collect(Collectors.toList());
+			List<Position> escapes = escapePositions.stream().parallel().filter(e -> !this.pawns.stream().anyMatch(p -> p.position.equals(e))).collect(Collectors.toList());
 			int distanceRecord = 7;//maximum distance
 			for(Position position : escapes) {
 				int distance = Math.abs(position.x - x);
@@ -285,7 +286,7 @@ public class State {
 	*far away from king
 	 **/
 	private int mainAxisDefaultPosition(){
-		return (int) pawns.stream().filter(pawn -> pawn.isWhite() && pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
+		return (int) pawns.stream().parallel().filter(pawn -> pawn.isWhite() && pawn.position.equalsAny(defaultWhitePawnsPosition)).count();
 	}
 
 	/**
@@ -353,7 +354,7 @@ public class State {
 	private long getPointsForExternalOctagonInCardinalPoint(Position p1External, Position p2External, Position fromExternal, Position toExternal, Position excludeForExternal, long maxResult) {
 		long currentResult = 0;
 		long numberOfWhitesOutOfExternalOctagon = this.checkROIQuantity(fromExternal.x, fromExternal.y, toExternal.x, toExternal.y, p -> p.isWhite() && !p.position.equals(excludeForExternal));
-		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
+		long numberOfBlackPawnsInExternalOctagon = this.pawns.stream().parallel().filter(p -> p.isBlack() && (p.position.equals(p1External) || p.position.equals(p2External))).count();
 		
 		if (numberOfWhitesOutOfExternalOctagon >= 2) {
 			maxResult = 30 * maxResult / 200;
@@ -392,7 +393,7 @@ public class State {
 		}
 		
 		// Negative if black has 3 or less pawns and white has still 2 pawns
-		if (this.pawns.stream().filter(p -> p.isBlack()).count() <= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() >= 2) {
+		if (this.pawns.stream().parallel().filter(p -> p.isBlack()).count() <= 3 && this.pawns.stream().filter(p -> p.isWhite()).count() >= 2) {
 			return -this.getUtilityValue(); // try to draw
 		}
 		
@@ -490,7 +491,7 @@ public class State {
 		
 		// Check for number of white pawns (the less are the more it increases) (eat)
 		{
-			long numberOfWhitePawns = this.pawns.stream().filter(p -> p.isWhite() && !p.king).count();
+			long numberOfWhitePawns = this.pawns.stream().parallel().filter(p -> p.isWhite() && !p.king).count();
 			final double currentResultForWhitePawns;
 			// ln( (x+1) / 9 ) / ( ln(9) * (-1) )
 			double tmp = ((double)(numberOfWhitePawns + 1)) / 10;
@@ -535,7 +536,7 @@ public class State {
 			int xBar = 0;
 			int yBar = 0;
 			final Pawn king = this.getKing();
-			for (Pawn p : this.pawns.stream().filter(p -> p.isBlack()).collect(Collectors.toList())) {
+			for (Pawn p : this.pawns.stream().parallel().filter(p -> p.isBlack()).collect(Collectors.toList())) {
 				xBar += p.getX() - king.getX();
 				yBar += p.getY() - king.getY();
 			}
@@ -1005,7 +1006,7 @@ public class State {
 	 * @return the number of selected pawns there
 	 */
 	public long checkROIQuantity(int stx, int sty, int enx, int eny, Predicate<Pawn> pr){
-		return this.pawns.stream().filter((p)->{
+		return this.pawns.stream().parallel().filter((p)->{
 			return (p.getX() >= stx && p.getX() <= enx) // X check
 					&& (p.getY() >= sty && p.getY() <= eny) // Y check
 					&& pr.test(p); // predicate to custom check
