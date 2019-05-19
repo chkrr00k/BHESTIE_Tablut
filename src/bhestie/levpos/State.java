@@ -31,6 +31,7 @@ public class State {
 	private Long heuristicCache = null; 	// Cached heuristic
 	private Boolean isTerminalCache = null;	// Cache isTerminal
 	private Long utilityCache = null;		// Cache utility
+	private List<List<Position>> threatenKingRemainingCache = null; // Cache threatenRemaining
 	
 	private final State parent;
 	private final boolean drawCase;
@@ -151,8 +152,11 @@ public class State {
 	}
 	
 	public List<List<Position>> threatenKingRemaining(){
+		if (this.threatenKingRemainingCache != null) {
+			return this.threatenKingRemainingCache;
+		}
 		Pawn k = this.getKing();
-		final boolean kingInProtected = protectedKingPositions.contains(k.position); // XXX remove for optimization
+		final boolean kingInProtected = protectedKingPositions.contains(k.position);
 		
 		Position[] tp = new Position[]{
 			Position.of(k.getX() + 1, k.getY()), //e
@@ -211,6 +215,7 @@ public class State {
 			result.add(tmp);
 		}
 		
+		this.threatenKingRemainingCache = result;
 		return result;
 	}
 
@@ -644,7 +649,6 @@ public class State {
 			*/
 		}
 		
-		//result = 10; // XXX disabled
 /*		result = result * (octagonPoints
 			+ eatingPoints
 			+ notBeEatenPoints
@@ -672,12 +676,12 @@ public class State {
 		final int kingInGoodPositionPoints;
 		final int kingEscapesPoints;
 		final int whiteOnMainAxisPoints;
-		final int rawDistanceFromEscapePoints;
+		//final int rawDistanceFromEscapePoints;
 		final int kingProtectedPoints;
 		final int whitePawnsInCornerPositionValue;
 		final int whitePawnsInExitPositionValue;
 		final int goInDominatedByWhiteExitValue;
-		final int goInDominatedByBlackExitValue;
+		//final int goInDominatedByBlackExitValue;
 		
 		if (State.TURN <= END_PREPARATION_PHASE) {
 			eatingPoints = 1600;
@@ -686,7 +690,7 @@ public class State {
 			kingInGoodPositionPoints = 50;
 			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = 100;
-			rawDistanceFromEscapePoints = 20; //XXX negative
+			//rawDistanceFromEscapePoints = 20;
 			kingProtectedPoints = 0;
 
 			if(State.TURN < 2) {
@@ -698,7 +702,7 @@ public class State {
 				whitePawnsInCornerPositionValue = 80;
 			}
 			goInDominatedByWhiteExitValue = 30;
-			goInDominatedByBlackExitValue = -40;
+			//goInDominatedByBlackExitValue = -40;
 		} else if (State.TURN <= END_MAIN_PHASE) {
 			eatingPoints = 1200;
 			dontBeEatenPoints = 400;
@@ -706,12 +710,12 @@ public class State {
 			kingInGoodPositionPoints = 100;
 			kingEscapesPoints = 50;
 			whiteOnMainAxisPoints = -50;
-			rawDistanceFromEscapePoints = 25;
+			//rawDistanceFromEscapePoints = 25;
 			kingProtectedPoints = 120;//si incarta troppo
 			whitePawnsInCornerPositionValue = 80;
 			whitePawnsInExitPositionValue = 30;
 			goInDominatedByWhiteExitValue = 30;
-			goInDominatedByBlackExitValue = -40;
+			//goInDominatedByBlackExitValue = -40;
 		} else if (State.TURN <= END_ATTACK_PHASE) {
 			eatingPoints = 600;
 			dontBeEatenPoints = 400;
@@ -719,12 +723,12 @@ public class State {
 			kingInGoodPositionPoints = 150;
 			kingEscapesPoints = 140;
 			whiteOnMainAxisPoints = -25;
-			rawDistanceFromEscapePoints = 75;
+			//rawDistanceFromEscapePoints = 75;
 			kingProtectedPoints = 240;
 			whitePawnsInCornerPositionValue = 40;
 			whitePawnsInExitPositionValue = 30;
 			goInDominatedByWhiteExitValue = 30;
-			goInDominatedByBlackExitValue = -30;
+			//goInDominatedByBlackExitValue = -30;
 		} else { //DESPERATION PHASE
 			eatingPoints = 50;
 			dontBeEatenPoints = 200;
@@ -732,12 +736,12 @@ public class State {
 			kingInGoodPositionPoints = 75;
 			kingEscapesPoints = 200;
 			whiteOnMainAxisPoints = 0;
-			rawDistanceFromEscapePoints = 0;
+			//rawDistanceFromEscapePoints = 0;
 			kingProtectedPoints = 250;
 			whitePawnsInCornerPositionValue = 0;
 			whitePawnsInExitPositionValue = 30;
 			goInDominatedByWhiteExitValue = 30;
-			goInDominatedByBlackExitValue = -30;
+			//goInDominatedByBlackExitValue = -30;
 		}
 		
 		long result = 0;
