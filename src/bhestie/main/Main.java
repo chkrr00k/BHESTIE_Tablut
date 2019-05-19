@@ -47,7 +47,7 @@ public class Main {
 							"In oculis eius quasi hamo capiet eum, et in sudibus perforabit nares eius.\n");
 	}
 	
-	private static final int DEFAULT_THREADS_NUMBER = 4;
+	private static final int DEFAULT_THREADS_NUMBER = 2;
 	private static final String WHITE = "white";
 	private static final String BLACK = "black";
 	private static final String THREAD_FLAG = "-t";
@@ -61,7 +61,7 @@ public class Main {
 	private static final String VERBOSE_FLAG = "-v";
 	private static final String HELP_STRING = "HELP!\n"
 			+ "\t[white|black]\tThe color the player will play\n"
-			+ "\t" + HELP_FLAG + " <n>\t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
+			+ "\t" + HELP_FLAG + " \t\tYes, i'm telling you this is the command to show the help even if you just did it\n"
 			+ "\t" + THREAD_FLAG + " <n>\t\tHow many thread the program will use (default: " + DEFAULT_THREADS_NUMBER + ")\n"
 			+ "\t" + FIXED_DEPTH_FLAG + "\t\tIf the program can't autoscale its depthness (default: " + Minimax.FIXEDDEPTH + ")\n"
 			+ "\t" + DEPTH_FLAG + " <n>\t\tThe current max depth (default: " + Minimax.DEPTH + ")\n"
@@ -306,9 +306,9 @@ public class Main {
 				}
 			}
 		}catch(Exception e){
-			System.err.println("Something happened.\nSomething happened.");
-			e.printStackTrace();
+			System.err.println("Something happened.\nSomething happened.\n");
 			ThreadPool.getInstance().killAll();
+			e.printStackTrace();
 			System.exit(-7);
 		}
 	}

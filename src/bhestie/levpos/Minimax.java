@@ -14,7 +14,7 @@ public final class Minimax {
 	/**
 	 * Current depth at which the program is operating. It's also the starting depth position.
 	 */
-	public static int DEPTH = 3; // current depth
+	public static int DEPTH = 4; // current depth
 	/**
 	 * Time the algorithm can be executed before performing a scaling up.<br/>
 	 * If set at 0 it updates every time it gets executed, if it's at 1 it gets executed two times and then it gets updated.<br/> 
@@ -30,7 +30,7 @@ public final class Minimax {
 	
 	private static int CURRENTSCALINGUP = 0, CURRENTSCALINGDOWN = 0; //current times it has been signaled to go up or down;
 	
-	public static int TIMEOUT = 59; // In seconds
+	public static int TIMEOUT = 60; // In seconds
 	
 	private static Interrupter interrupter;
 	
@@ -87,7 +87,7 @@ public final class Minimax {
 	}
 	
 	private static long maxHeuFound;
-	public static long nodeExplored = 0; // TODO remove in the last commit
+	public static long nodeExplored = 0;
 	private static final long alphaBeth(final State s, final int depth, double alpha, double beth, final boolean max){
 		nodeExplored++;
 		long v = 0;
@@ -151,7 +151,7 @@ public final class Minimax {
 				Minimax.CURRENTSCALINGUP = 0;
 				Minimax.CURRENTSCALINGDOWN = 0;
 				if(Main.verbose){
-					System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+					System.out.println("Increasing DEPTH. Now=" + Minimax.DEPTH);
 				}
 			}else{
 				Minimax.CURRENTSCALINGUP++;
@@ -167,7 +167,7 @@ public final class Minimax {
 				Minimax.CURRENTSCALINGDOWN = 0;
 				Minimax.CURRENTSCALINGUP = 0;
 				if(Main.verbose){
-					System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); // TODO remove for the last commit
+					System.out.println("Decreasing DEPTH. Now=" + Minimax.DEPTH); 
 				}
 			}else{
 				Minimax.CURRENTSCALINGDOWN++;
@@ -186,9 +186,11 @@ class Interrupter implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(1000 * secs - 500);
+			Thread.sleep(1000 * secs - 1000);
 			Minimax.interrupt();
-			System.out.println("Signaled"); // TODO remove in the last commit
+			if (Main.verbose) {
+				System.out.println("Signaled");
+			}
 		} catch (Exception e) {
 			return;
 		}

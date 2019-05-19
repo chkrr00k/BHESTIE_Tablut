@@ -1,7 +1,5 @@
 package bhestie.levpos;
 
-import java.util.ArrayList;
-
 public class Pawn {
 	/**
 	 * TRUE=Black, FALSE=White
@@ -109,26 +107,5 @@ public class Pawn {
 	public boolean equals(Pawn pawn) {
 		return (this.bw==pawn.bw && this.position.x==pawn.position.x && this.position.y==pawn.position.y && this.king==pawn.king);
 	}
-	
-	private static final ArrayList<Pawn> flightweightPawns = new ArrayList<>();
-	/**
-	 * Flightweight Pawn. Returns a Pawn.
-	 * @param bw TRUE=Black, FALSE=White
-	 * @param x X Position
-	 * @param y Y Position
-	 * @param king TRUE if the Pawn is the king. (Valid only if bw=FALSE)
-	 * @return The pawn
-	 * @throws IllegalArgumentException If both king and bw are TRUE
-	 */
-	public static Pawn of(final boolean bw, final int x, final int y, final boolean king) throws IllegalArgumentException {
-		for (Pawn pawn : flightweightPawns) {
-			if (bw==pawn.bw && x==pawn.position.x && y==pawn.position.y && king==pawn.king)
-				return pawn;
-		}
-		Pawn pawn = new Pawn(bw, x, y, king);
-		flightweightPawns.add(pawn);
-		return pawn;
-	}
-
 
 }
