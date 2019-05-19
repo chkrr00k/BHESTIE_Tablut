@@ -2,6 +2,8 @@ Welcome to the README of Behemouth HEuristical STrategic Intelligence Engine (BH
 
 To use this fantastic artificial intelligence software I'll show you a small guide for the params it supports:
 
+The program you have to call is "runner.sh".
+
 [white|black]	The color the player will play
 	-h 			Yes, i'm telling you this is the command to show the help even if you just did it
 	-t <n>		How many thread the program will use (default: 2)
