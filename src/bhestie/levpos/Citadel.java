@@ -7,7 +7,7 @@ public class Citadel {
 	/**
 	 * Citadel constructor.
 	 * Important: the first element of the ArrayList MUST be the internal citadel
-	 * @param ArrayList of citadel positions
+	 * @param positions of citadel positions
 	 */
 	public Citadel(ArrayList<Position> positions) {
 		this.citadelPositions = positions;
@@ -35,7 +35,7 @@ public class Citadel {
 	 * @return if a position (identified by X and Y) is inside a citadel 
 	 */
 	public boolean isXYInCitadel(int x, int y) {
-		return this.isPositionInCitadel(new Position(x, y));
+		return this.isPositionInCitadel(Position.of(x, y));
 	}
 	/**
 	 * Checks if a position (identified by X and Y) is inside a citadel (excluding the internal position)
@@ -44,7 +44,7 @@ public class Citadel {
 	 * @return if a position (identified by X and Y) is inside a citadel (excluding the internal position)
 	 */
 	public boolean isXYInFringeCitadels(int x, int y) {
-		int position = (this.citadelPositions.indexOf(new Position(x, y)));
+		int position = (this.citadelPositions.indexOf(Position.of(x, y)));
 		return (position > 0);
 	}
 }

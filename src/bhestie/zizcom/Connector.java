@@ -51,6 +51,10 @@ public class Connector {
 			this.dos = new DataOutputStream(this.s.getOutputStream());
 			this.dis = new DataInputStream(this.s.getInputStream());
 			this.host = null; // saves us some bytes;
+			if(this.dis == null|| this.dos == null){
+				this.error = true;
+				return false;
+			}
 			return true;
 		}catch(IOException e){
 			this.error = true;
@@ -110,7 +114,6 @@ public class Connector {
 			byte[] rB = new byte[len];
 			this.dis.readFully(rB, 0, len);
 			String result = new String(rB, StandardCharsets.UTF_8);
-			System.out.println(result);
 			return result;
 		}catch(IOException e){
 			this.error = true;

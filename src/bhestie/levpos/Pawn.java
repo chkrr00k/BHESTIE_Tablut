@@ -6,7 +6,7 @@ public class Pawn {
 	/**
 	 * TRUE=Black, FALSE=White
 	 */
-	public final boolean bw;
+	private final boolean bw;
 	/**
 	 * The Pawn position
 	 */
@@ -28,16 +28,48 @@ public class Pawn {
 		if (king && bw)
 			throw new IllegalArgumentException("Can't exist a Black King.");
 		this.bw = bw;
-		this.position = new Position(x, y);
+		this.position = Position.of(x, y);
 		this.king = king;
 	}
 
+	/**
+	 * Function that says if this pawn can move on the turn
+	 * @param turn Current turn (TRUE=Black, FALSE=White)
+	 * @return True if the pawn can move in the turn passed
+	 */
 	public boolean filterByTurn(boolean turn) {
-		if (turn) { // black
-			return bw;
-		} else { // white
-			return !bw;
-		}
+		return (this.bw == turn);
+	}
+	
+	/**
+	 * @return If is Black
+	 */
+	public boolean isBlack() {
+		return this.bw;
+	}
+	
+	/**
+	 * 
+	 * @return If is White
+	 */
+	public boolean isWhite() {
+		return !this.bw;
+	}
+
+	/**
+	 * 
+	 * @return The X coord
+	 */
+	public final int getX(){
+		return this.position.x;
+	}
+	
+	/**
+	 * 
+	 * @return The Y coord
+	 */
+	public final int getY() {
+		return this.position.y;
 	}
 	
 	@Override
@@ -97,4 +129,6 @@ public class Pawn {
 		flightweightPawns.add(pawn);
 		return pawn;
 	}
+
+
 }

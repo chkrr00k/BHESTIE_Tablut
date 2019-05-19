@@ -58,7 +58,7 @@ public class Action implements Serializable{
 		builder.append(to);
 		builder.append(", state=");
 		builder.append(state);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

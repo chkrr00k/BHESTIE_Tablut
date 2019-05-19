@@ -1,6 +1,6 @@
 package bhestie.levpos;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Position {
 	/**
@@ -16,7 +16,7 @@ public class Position {
 	 * @param x X position
 	 * @param y Y position
 	 */
-	public Position(int x, int y) {
+	private Position(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -42,15 +42,48 @@ public class Position {
 		Position position = (Position) obj;
 		return (this.x==position.x && this.y==position.y);
 	}
+
+	public boolean equalsAny(List<Position> listPosition) {
+		for(Position position : listPosition){
+			if(this.equals(position))
+				return true;
+		}
+		return false;
+
+	}
+	
+	public boolean equalsAny(Position[] positions) {
+		for(Position position : positions){
+			if(this.equals(position))
+				return true;
+		}
+		return false;
+	}
+	
 	public boolean equals(Position position) {
 		return (this.x==position.x && this.y==position.y);
 	}
 	@Override
 	public String toString() {
-		return "[" + x + ";" + y + "]";
+		StringBuilder result = new StringBuilder();
+		result.append('[');
+		result.append(x);
+		result.append(';');
+		result.append(y);
+		result.append(']');
+		return result.toString();
 	}
 	
-	private static final ArrayList<Position> flightweightPositions = new ArrayList<>(81); // Can't have more than 81 elements
+	static {
+		int size = 11;
+		flightweightPositions = new Position[size][size];
+		for (int i = 1; i <= 9; i++){
+			for (int j = 1; j <= 9; j++){
+				Position.of(i, j); // Cache all board values (not the perimetral)
+			}
+		}
+	}
+	private static final Position[][] flightweightPositions; // 11x11. In this way I cover from 0 (impossibile) to 10 (impossile) and I can save the generated value in the board linger
 	/**
 	 * Flightweight of position. It returns a Position.
 	 * @param x The X position.
@@ -58,12 +91,17 @@ public class Position {
 	 * @return A position of (X, Y)
 	 */
 	public static Position of(final int x, final int y) {
-		for (Position position : flightweightPositions) {
-			if (position.x==x && position.y==y)
-				return position;
+		Position result;
+		try {
+			result = flightweightPositions[x][y];
+		} catch(IndexOutOfBoundsException e) {
+			System.out.println("Non ottimizzato");
+			return new Position(x, y);
 		}
-		Position result = new Position(x, y);
-		flightweightPositions.add(result);
+		if (result == null) {
+			result = new Position(x, y);
+			flightweightPositions[x][y] = result;
+		}
 		return result;
 	}
 }

@@ -29,8 +29,9 @@ public class Board implements Serializable{
 	}
 	/**
 	 * Convert the internal received array to a list of pawns and frees the pawn array
+	 * @return the same board for nice tricky trickery as {@code board.convert().get()}
 	 */
-	public void convert(){
+	public Board convert(){
 		final short size = (short) (this.board.length - 1); // start point of the array
 		String tile = ""; // tmp value to optimize array access;
 		for(short i = size, p = 0; i >= 0 && p <= PAWNS_NUMBER; i--){ // reversed loop because theoretically faster
@@ -54,12 +55,20 @@ public class Board implements Serializable{
 			}
 		}
 		this.board = null; // frees the board;
+		return this;
 	}
-	
+	/**
+	 * @return the pawns of the board
+	 */
 	public List<Pawn> get(){
 		return this.pawns;
 	}
-	public List<Pawn> getAndInit(){
+	/**
+	 * @see convert()
+	 * @return the converted list
+	 */
+	@Deprecated
+	public List<Pawn> getConvert(){
 		if(this.pawns == null){
 			this.convert();
 		}
@@ -84,7 +93,7 @@ public class Board implements Serializable{
 		StringBuilder builder = new StringBuilder();
 		builder.append("Board [pawns=");
 		builder.append(pawns);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 
