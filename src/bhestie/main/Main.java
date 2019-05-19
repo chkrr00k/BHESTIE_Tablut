@@ -245,9 +245,9 @@ public class Main {
 			State currentState = new State(b.convert().get(), Minimax.player);
 			List<State> unfold = null;
 			for(;;) {
+				LocalTime before = LocalTime.now();
 				long result = Minimax.alphaBethInit(currentState);
 				if(verbose){
-					LocalTime before = LocalTime.now();
 					System.out.println("Explored = " + Minimax.nodeExplored + " in " + ChronoUnit.MILLIS.between(before, LocalTime.now()));
 					System.out.println(result + " Prevedo di " + (result == 0 ? "pareggiare" : (result > 0 ? "vincere" : "perdere")));
 				}
