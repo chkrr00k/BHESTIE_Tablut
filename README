@@ -17,3 +17,10 @@ The program you have to call is "runner.sh".
 The first param MUST be black or white and it decides which player it is going to be!
 You can change the timeout by setting the parameter -l.
 To change the IP of the server set the -H parameter.
+
+This project was made by:
+- https://github.com/andre-bisa
+- https://github.com/LorenzoBalducci96
+- https://github.com/davidegiordano
+- https://github.com/chkrr00k
+as a part of an Artificial Intelligence game competition.
