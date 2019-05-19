@@ -26,7 +26,7 @@ public final class Minimax {
 	 * If set at 0 it updates every time it gets signaled, if it's at 1 it gets signaled two times and then it gets updated.<br/> 
 	 * If the scaling system is disabled this part is ignored
 	 */
-	public static int SCALINGFACTORDOWN = 0; // time it has to be signaled to start scaling down
+	public static int SCALINGFACTORDOWN = 1; // time it has to be signaled to start scaling down
 	
 	private static int CURRENTSCALINGUP = 0, CURRENTSCALINGDOWN = 0; //current times it has been signaled to go up or down;
 	

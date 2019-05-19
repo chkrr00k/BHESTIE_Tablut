@@ -4,12 +4,14 @@ To use this fantastic artificial intelligence software I'll show you a small gui
 
 The program you have to call is "runner.sh".
 
+To use this program you need at least JDK 1.8.
+
 [white|black]	The color the player will play
 	-h 			Yes, i'm telling you this is the command to show the help even if you just did it
 	-t <n>		How many thread the program will use (default: 2)
 	-f			If the program can't autoscale its depthness (default: false)
 	-d <n>		The current max depth (default: 4)
-	-s:dw <n>	The times the process have to signaled to be scaled down in depth (default: 0)
+	-s:dw <n>	The times the process have to signaled to be scaled down in depth (default: 1)
 	-s:up <n>	The times the process have to signaled to be scaled up in depth (default: 10)
 	-H <ip>		The game server host address you want to connect (default: localhost)
 	-l <n>		THe max timeout time (default: 60)
