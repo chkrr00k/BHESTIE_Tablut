@@ -12,6 +12,6 @@ To use this fantastic artificial intelligence software I'll show you a small gui
 	-H <ip>		The game server host address you want to connect (default: localhost)
 	-l <n>		THe max timeout time (default: 60)
 
-The first param MUST be black or white and it decides the player it is going to be!
+The first param MUST be black or white and it decides which player it is going to be!
 You can change the timeout by setting the parameter -l.
 To change the IP of the server set the -H parameter.
